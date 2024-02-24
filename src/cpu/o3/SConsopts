@@ -28,4 +28,4 @@
 
 Import('*')
 
-main.Append(ALL_CPU_MODELS=['O3CPU'])
+CpuModel('O3CPU', default=True)

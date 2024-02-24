@@ -10,7 +10,7 @@
  * unmodified and in its entirety in all distributions of the software,
  * modified or unmodified, in source code or in binary form.
  *
- * Copyright 2015, 2021 LabWare
+ * Copyright 2015 LabWare
  * Copyright 2014 Google, Inc.
  * Copyright (c) 2002-2005 The Regents of The University of Michigan
  * All rights reserved.
@@ -171,7 +171,7 @@ class BaseRemoteGDB
     void replaceThreadContext(ThreadContext *_tc);
     bool selectThreadContext(ContextID id);
 
-    void trap(ContextID id, int signum);
+    bool trap(ContextID id, int type);
 
     /** @} */ // end of api_remote_gdb
 
@@ -190,19 +190,8 @@ class BaseRemoteGDB
     /*
      * Connection to the external GDB.
      */
-
-    /*
-     * Asynchronous socket events and event handlers.
-     *
-     * These events occur asynchronously and are handled asynchronously
-     * to main simulation loop - therefore they *shall not* interact with
-     * rest of gem5.
-     *
-     * The only thing they do is to schedule a synchronous event at instruction
-     * boundary to deal with the request.
-     */
     void incomingData(int revent);
-    void incomingConnection(int revent);
+    void connectWrapper(int revent) { connect(); }
 
     template <void (BaseRemoteGDB::*F)(int revent)>
     class SocketEvent : public PollEvent
@@ -218,16 +207,14 @@ class BaseRemoteGDB
         void process(int revent) { (gdb->*F)(revent); }
     };
 
-    typedef SocketEvent<&BaseRemoteGDB::incomingConnection>
-        IncomingConnectionEvent;
-    typedef SocketEvent<&BaseRemoteGDB::incomingData>
-        IncomingDataEvent;
+    typedef SocketEvent<&BaseRemoteGDB::connectWrapper> ConnectEvent;
+    typedef SocketEvent<&BaseRemoteGDB::incomingData> DataEvent;
 
-    friend IncomingConnectionEvent;
-    friend IncomingDataEvent;
+    friend ConnectEvent;
+    friend DataEvent;
 
-    IncomingConnectionEvent *incomingConnectionEvent;
-    IncomingDataEvent *incomingDataEvent;
+    ConnectEvent *connectEvent;
+    DataEvent *dataEvent;
 
     ListenSocket listener;
     int _port;
@@ -251,16 +238,9 @@ class BaseRemoteGDB
     }
 
     /*
-     * Process commands from remote GDB. If simulation has been
-     * stopped because of some kind of fault (as segmentation violation,
-     * or SW trap), 'signum' is the signal value reported back to GDB
-     * in "S" packet (this is done in trap()).
-     */
-    void processCommands(int signum=0);
-
-    /*
      * Simulator side debugger state.
      */
+    bool active = false;
     bool attached = false;
     bool threadSwitching = false;
 
@@ -270,9 +250,6 @@ class BaseRemoteGDB
     ThreadContext *tc = nullptr;
 
     BaseGdbRegCache *regCachePtr = nullptr;
-
-    EventWrapper<BaseRemoteGDB, &BaseRemoteGDB::connect> connectEvent;
-    EventWrapper<BaseRemoteGDB, &BaseRemoteGDB::detach>  disconnectEvent;
 
     class TrapEvent : public Event
     {

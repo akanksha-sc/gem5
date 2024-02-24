@@ -33,7 +33,6 @@
 #include "arch/sparc/types.hh"
 #include "base/logging.hh"
 #include "cpu/thread_context.hh"
-#include "mem/se_translating_port_proxy.hh"
 
 namespace gem5
 {
@@ -106,8 +105,6 @@ SEWorkload::flushWindows(ThreadContext *tc)
     const size_t reg_bytes = is_64 ? 8 : 4;
     uint8_t bytes[8];
 
-    SETranslatingPortProxy proxy(tc);
-
     CWP = (CWP + Cansave + 2) % NWindows;
     while (NWindows - 2 - Cansave != 0) {
         panic_if(Otherwin, "Otherwin non-zero.");
@@ -125,7 +122,7 @@ SEWorkload::flushWindows(ThreadContext *tc)
                 uint32_t regVal = htobe<uint32_t>(tc->readIntReg(index));
                 memcpy(bytes, &regVal, reg_bytes);
             }
-            if (!proxy.tryWriteBlob(addr, bytes, reg_bytes)) {
+            if (!tc->getVirtProxy().tryWriteBlob(addr, bytes, reg_bytes)) {
                 warn("Failed to save register to the stack when "
                         "flushing windows.");
             }

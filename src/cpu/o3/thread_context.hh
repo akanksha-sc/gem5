@@ -143,6 +143,14 @@ class ThreadContext : public gem5::ThreadContext
 
     void setProcessPtr(Process *p) override { thread->setProcessPtr(p); }
 
+    PortProxy &getVirtProxy() override;
+
+    void
+    initMemProxies(gem5::ThreadContext *tc) override
+    {
+        thread->initMemProxies(tc);
+    }
+
     /** Returns this thread's status. */
     Status status() const override { return thread->status(); }
 
@@ -212,7 +220,7 @@ class ThreadContext : public gem5::ThreadContext
         return getWritableVecRegFlat(flattenRegId(id).index());
     }
 
-    RegVal
+    const TheISA::VecElem &
     readVecElem(const RegId& reg) const override
     {
         return readVecElemFlat(flattenRegId(reg).index(), reg.elemIndex());
@@ -258,7 +266,7 @@ class ThreadContext : public gem5::ThreadContext
     }
 
     void
-    setVecElem(const RegId& reg, RegVal val) override
+    setVecElem(const RegId& reg, const TheISA::VecElem& val) override
     {
         setVecElemFlat(flattenRegId(reg).index(), reg.elemIndex(), val);
     }
@@ -372,10 +380,10 @@ class ThreadContext : public gem5::ThreadContext
     void setVecRegFlat(RegIndex idx,
             const TheISA::VecRegContainer& val) override;
 
-    RegVal readVecElemFlat(RegIndex idx,
+    const TheISA::VecElem &readVecElemFlat(RegIndex idx,
             const ElemIndex& elemIndex) const override;
     void setVecElemFlat(RegIndex idx, const ElemIndex& elemIdx,
-                        RegVal val) override;
+                        const TheISA::VecElem& val) override;
 
     const TheISA::VecPredRegContainer&
         readVecPredRegFlat(RegIndex idx) const override;

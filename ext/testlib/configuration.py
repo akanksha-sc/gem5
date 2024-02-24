@@ -213,7 +213,7 @@ def define_defaults(defaults):
                                                       os.pardir,
                                                       os.pardir))
     defaults.result_path = os.path.join(os.getcwd(), 'testing-results')
-    defaults.resource_url = 'http://dist.gem5.org/dist/develop'
+    defaults.resource_url = 'http://dist.gem5.org/dist/v21-1'
     defaults.resource_path = os.path.abspath(os.path.join(defaults.base_dir,
                                             'tests',
                                             'gem5',
@@ -248,7 +248,6 @@ def define_constants(constants):
     constants.length_tag_type = 'length'
     constants.quick_tag = 'quick'
     constants.long_tag = 'long'
-    constants.very_long_tag = 'very-long'
 
     constants.host_isa_tag_type = 'host'
     constants.host_x86_64_tag = 'x86_64'
@@ -273,7 +272,6 @@ def define_constants(constants):
         constants.length_tag_type: (
             constants.quick_tag,
             constants.long_tag,
-            constants.very_long_tag,
         ),
         constants.host_isa_tag_type: (
             constants.host_x86_64_tag,

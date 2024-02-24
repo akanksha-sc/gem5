@@ -771,12 +771,47 @@ class DynInst : public ExecContext, public RefCounted
 
     /** Pushes a result onto the instResult queue. */
     /** @{ */
+    /** Scalar result. */
     template<typename T>
     void
-    setResult(T &&t)
+    setScalarResult(T &&t)
     {
         if (instFlags[RecordResult]) {
-            instResult.emplace(std::forward<T>(t));
+            instResult.push(InstResult(std::forward<T>(t),
+                        InstResult::ResultType::Scalar));
+        }
+    }
+
+    /** Full vector result. */
+    template<typename T>
+    void
+    setVecResult(T &&t)
+    {
+        if (instFlags[RecordResult]) {
+            instResult.push(InstResult(std::forward<T>(t),
+                        InstResult::ResultType::VecReg));
+        }
+    }
+
+    /** Vector element result. */
+    template<typename T>
+    void
+    setVecElemResult(T &&t)
+    {
+        if (instFlags[RecordResult]) {
+            instResult.push(InstResult(std::forward<T>(t),
+                        InstResult::ResultType::VecElem));
+        }
+    }
+
+    /** Predicate result. */
+    template<typename T>
+    void
+    setVecPredResult(T &&t)
+    {
+        if (instFlags[RecordResult]) {
+            instResult.push(InstResult(std::forward<T>(t),
+                            InstResult::ResultType::VecPredReg));
         }
     }
     /** @} */
@@ -1220,7 +1255,7 @@ class DynInst : public ExecContext, public RefCounted
         return this->cpu->getWritableVecReg(this->regs.renamedDestIdx(idx));
     }
 
-    RegVal
+    TheISA::VecElem
     readVecElemOperand(const StaticInst *si, int idx) const override
     {
         return this->cpu->readVecElem(this->regs.renamedSrcIdx(idx));
@@ -1252,14 +1287,14 @@ class DynInst : public ExecContext, public RefCounted
     setIntRegOperand(const StaticInst *si, int idx, RegVal val) override
     {
         this->cpu->setIntReg(this->regs.renamedDestIdx(idx), val);
-        setResult(val);
+        setScalarResult(val);
     }
 
     void
     setFloatRegOperandBits(const StaticInst *si, int idx, RegVal val) override
     {
         this->cpu->setFloatReg(this->regs.renamedDestIdx(idx), val);
-        setResult(val);
+        setScalarResult(val);
     }
 
     void
@@ -1267,15 +1302,16 @@ class DynInst : public ExecContext, public RefCounted
                      const TheISA::VecRegContainer& val) override
     {
         this->cpu->setVecReg(this->regs.renamedDestIdx(idx), val);
-        setResult(val);
+        setVecResult(val);
     }
 
     void
-    setVecElemOperand(const StaticInst *si, int idx, RegVal val) override
+    setVecElemOperand(const StaticInst *si, int idx,
+            const TheISA::VecElem val) override
     {
         int reg_idx = idx;
         this->cpu->setVecElem(this->regs.renamedDestIdx(reg_idx), val);
-        setResult(val);
+        setVecElemResult(val);
     }
 
     void
@@ -1283,14 +1319,14 @@ class DynInst : public ExecContext, public RefCounted
                          const TheISA::VecPredRegContainer& val) override
     {
         this->cpu->setVecPredReg(this->regs.renamedDestIdx(idx), val);
-        setResult(val);
+        setVecPredResult(val);
     }
 
     void
     setCCRegOperand(const StaticInst *si, int idx, RegVal val) override
     {
         this->cpu->setCCReg(this->regs.renamedDestIdx(idx), val);
-        setResult(val);
+        setScalarResult(val);
     }
 };
 

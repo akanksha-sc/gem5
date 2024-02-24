@@ -100,7 +100,9 @@ class SimpleFlag : public Flag
     void sync() override { _tracing = _globalEnable && _enabled; }
 
   public:
-    SimpleFlag(const char *name, const char *desc, bool is_format=false);
+    SimpleFlag(const char *name, const char *desc, bool is_format=false)
+      : Flag(name, desc), _isFormat(is_format)
+    {}
 
     void enable() override  { _enabled = true;  sync(); }
     void disable() override { _enabled = false; sync(); }
@@ -132,20 +134,6 @@ class CompoundFlag : public Flag
 
     void enable() override;
     void disable() override;
-};
-
-class AllFlagsFlag : public CompoundFlag
-{
-  protected:
-    static int _version;
-
-  public:
-    AllFlagsFlag();
-
-    void add(SimpleFlag *flag);
-
-    static AllFlagsFlag &instance();
-    static int version() { return _version; }
 };
 
 typedef std::map<std::string, Flag *> FlagsMap;

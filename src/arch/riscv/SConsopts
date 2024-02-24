@@ -28,4 +28,4 @@
 
 Import('*')
 
-main.Append(ALL_ISAS=['riscv'])
+all_isa_list.append('riscv')

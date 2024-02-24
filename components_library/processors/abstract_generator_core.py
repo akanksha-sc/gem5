@@ -31,8 +31,6 @@ from ..utils.override import overrides
 from .cpu_types import CPUTypes
 from .abstract_core import AbstractCore
 
-from typing import Optional
-
 
 class AbstractGeneratorCore(AbstractCore):
     """The abstract generator core
@@ -84,9 +82,7 @@ class AbstractGeneratorCore(AbstractCore):
 
     @overrides(AbstractCore)
     def connect_interrupt(
-        self,
-        interrupt_requestor: Optional[Port] = None,
-        interrupt_responce: Optional[Port] = None,
+        self, interrupt_requestor: Port, interrupt_responce: Port
     ) -> None:
         """
         Since generator cores are not used in full system mode, no need to

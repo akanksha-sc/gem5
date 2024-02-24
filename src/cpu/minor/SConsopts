@@ -37,4 +37,4 @@
 
 Import('*')
 
-main.Append(ALL_CPU_MODELS=['MinorCPU'])
+CpuModel('MinorCPU', default=True)

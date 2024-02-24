@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2021 Arm Limited
+ * Copyright (c) 2020 ARM Limited
  * All rights reserved.
  *
  * The license below extends only to copyright in the software and shall
@@ -37,8 +37,6 @@
 
 #ifndef __ARCH_GENERIC_MMU_HH__
 #define __ARCH_GENERIC_MMU_HH__
-
-#include <set>
 
 #include "params/BaseMMU.hh"
 #include "mem/request.hh"
@@ -100,62 +98,27 @@ class BaseMMU : public SimObject
     }
 
   public:
-    /**
-     * Called at init time, this method is traversing the TLB hierarchy
-     * and pupulating the instruction/data/unified containers accordingly
-     */
-    void init() override;
-
     virtual void flushAll();
 
     void demapPage(Addr vaddr, uint64_t asn);
 
-    virtual Fault
-    translateAtomic(const RequestPtr &req, ThreadContext *tc,
-                    Mode mode);
+    Fault translateAtomic(const RequestPtr &req, ThreadContext *tc,
+                          Mode mode);
 
-    virtual void
-    translateTiming(const RequestPtr &req, ThreadContext *tc,
-                    Translation *translation, Mode mode);
+    void translateTiming(const RequestPtr &req, ThreadContext *tc,
+                         Translation *translation, Mode mode);
 
-    virtual Fault
-    translateFunctional(const RequestPtr &req, ThreadContext *tc,
-                        Mode mode);
+    Fault translateFunctional(const RequestPtr &req, ThreadContext *tc,
+                              Mode mode);
 
-    virtual Fault
-    finalizePhysical(const RequestPtr &req, ThreadContext *tc,
-                     Mode mode) const;
+    Fault finalizePhysical(const RequestPtr &req, ThreadContext *tc,
+                           Mode mode) const;
 
     virtual void takeOverFrom(BaseMMU *old_mmu);
 
   public:
     BaseTLB* dtb;
     BaseTLB* itb;
-
-  protected:
-    /**
-     * It is possible from the MMU to traverse the entire hierarchy of
-     * TLBs, starting from the DTB and ITB (generally speaking from the
-     * first level) up to the last level via the nextLevel pointer. So
-     * in theory no extra data should be stored in the BaseMMU.
-     *
-     * This design makes some operations a bit more complex. For example
-     * if we have a unified (I+D) L2, it will be pointed by both ITB and
-     * DTB. If we want to invalidate all TLB entries, we should be
-     * careful to not invalidate L2 twice, but if we simply follow the
-     * next level pointer, we might do so. This is not a problem from
-     * a functional perspective but alters the TLB statistics (a single
-     * invalidation is recorded twice)
-     *
-     * We then provide a different view of the set of TLBs in the system.
-     * At the init phase we traverse the TLB hierarchy and we add every
-     * TLB to the appropriate set. This makes invalidation (and any
-     * operation targeting a specific kind of TLBs) easier.
-     */
-    std::set<BaseTLB*> instruction;
-    std::set<BaseTLB*> data;
-    std::set<BaseTLB*> unified;
-
 };
 
 } // namespace gem5

@@ -854,8 +854,8 @@ module_init(py::module_ &m_internal)
                 # constructor.
                 code('template <class CxxClass>')
                 code('class Dummy${cls}Shunt<CxxClass, std::enable_if_t<')
-                code('    std::is_constructible_v<CxxClass,')
-                code('        const ${cls}Params &>>>')
+                code('    std::is_constructible<CxxClass,')
+                code('        const ${cls}Params &>::value>>')
                 code('{')
                 code('  public:')
                 code('    using Params = ${cls}Params;')
@@ -871,8 +871,8 @@ module_init(py::module_ &m_internal)
                 # not exist.
                 code('template <class CxxClass>')
                 code('class Dummy${cls}Shunt<CxxClass, std::enable_if_t<')
-                code('    !std::is_constructible_v<CxxClass,')
-                code('        const ${cls}Params &>>>')
+                code('    !std::is_constructible<CxxClass,')
+                code('        const ${cls}Params &>::value>>')
                 code('{')
                 code('  public:')
                 code('    using Params = Dummy${cls}ParamsClass;')
@@ -889,7 +889,7 @@ module_init(py::module_ &m_internal)
                 # method, or the Dummy one. Either an implementation is
                 # mandantory since this was shunted off to the dummy class, or
                 # one is optional which will override this weak version.
-                code('[[maybe_unused]] ${{cls.cxx_class}} *')
+                code('GEM5_VAR_USED ${{cls.cxx_class}} *')
                 code('Dummy${cls}Shunt<${{cls.cxx_class}}>::Params::create() '
                      'const')
                 code('{')
@@ -1715,9 +1715,6 @@ class SimObject(object, metaclass=MetaSimObject):
     def getCCParams(self):
         if self._ccParams:
             return self._ccParams
-
-        # Ensure that m5.internal.params is available.
-        import m5.internal.params
 
         cc_params_struct = getattr(m5.internal.params, '%sParams' % self.type)
         cc_params = cc_params_struct()

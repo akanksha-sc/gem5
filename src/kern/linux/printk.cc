@@ -37,7 +37,6 @@
 #include "base/compiler.hh"
 #include "cpu/thread_context.hh"
 #include "mem/port_proxy.hh"
-#include "mem/translating_port_proxy.hh"
 
 namespace gem5
 {
@@ -52,8 +51,7 @@ printk(std::string &str, ThreadContext *tc, Addr format_ptr,
 {
     std::string format;
     std::ostringstream out;
-    TranslatingPortProxy proxy(tc);
-    proxy.readString(format, format_ptr);
+    tc->getVirtProxy().readString(format, format_ptr);
 
     const char *p = format.c_str();
 
@@ -111,7 +109,7 @@ printk(std::string &str, ThreadContext *tc, Addr format_ptr,
                 break;
               case 'P':
                 format = true;
-                [[fallthrough]];
+                GEM5_FALLTHROUGH;
               case 'p':
                 hexnum = true;
                 break;
@@ -183,7 +181,7 @@ printk(std::string &str, ThreadContext *tc, Addr format_ptr,
                     Addr s_ptr = args.get<Addr>();
                     std::string s;
                     if (s_ptr)
-                        proxy.readString(s, s_ptr);
+                        tc->getVirtProxy().readString(s, s_ptr);
                     else
                         s = "<NULL>";
 
@@ -221,7 +219,7 @@ printk(std::string &str, ThreadContext *tc, Addr format_ptr,
                     uint64_t n = args.get<uint64_t>();
                     Addr s_ptr = args.get<Addr>();
                     std::string s;
-                    proxy.readString(s, s_ptr);
+                    tc->getVirtProxy().readString(s, s_ptr);
                     out << s << ": " << n;
                 }
                 break;

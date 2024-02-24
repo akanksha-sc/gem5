@@ -24,7 +24,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Optional
 from components_library.runtime import get_runtime_isa
 from components_library.processors.abstract_core import AbstractCore
 
@@ -33,11 +32,11 @@ from ..isas import ISA
 from ..utils.override import overrides
 
 from m5.objects import (
-    BaseMMU,
     Port,
     AtomicSimpleCPU,
     DerivO3CPU,
     TimingSimpleCPU,
+    X86KvmCPU,
     BaseCPU,
     Process,
 )
@@ -54,7 +53,6 @@ class SimpleCore(AbstractCore):
         elif cpu_type == CPUTypes.TIMING:
             self.core = TimingSimpleCPU(cpu_id=core_id)
         elif cpu_type == CPUTypes.KVM:
-            from m5.objects import X86KvmCPU
             self.core = X86KvmCPU(cpu_id=core_id)
         else:
             raise NotImplementedError
@@ -86,8 +84,7 @@ class SimpleCore(AbstractCore):
 
     @overrides(AbstractCore)
     def connect_interrupt(
-        self, interrupt_requestor: Optional[Port] = None,
-        interrupt_responce: Optional[Port] = None
+        self, interrupt_requestor: Port, interrupt_responce: Port
     ) -> None:
 
         # TODO: This model assumes that we will only create an interrupt
@@ -95,12 +92,6 @@ class SimpleCore(AbstractCore):
         self.core.createInterruptController()
 
         if get_runtime_isa() == ISA.X86:
-            if interrupt_requestor != None:
-                self.core.interrupts[0].pio = interrupt_requestor
-                self.core.interrupts[0].int_responder = interrupt_requestor
-            if interrupt_responce != None:
-                self.core.interrupts[0].int_requestor = interrupt_responce
-
-    @overrides(AbstractCore)
-    def get_mmu(self) -> BaseMMU:
-        return self.core.mmu
+            self.core.interrupts[0].pio = interrupt_requestor
+            self.core.interrupts[0].int_requestor = interrupt_responce
+            self.core.interrupts[0].int_responder = interrupt_requestor

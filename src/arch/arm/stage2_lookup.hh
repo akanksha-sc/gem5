@@ -59,14 +59,15 @@ class TLB;
 class Stage2LookUp : public BaseMMU::Translation
 {
   private:
-    MMU                     *mmu;
+    TLB                     *stage1Tlb;
+    TLB               *stage2Tlb;
     TlbEntry                stage1Te;
     RequestPtr              s1Req;
     BaseMMU::Translation    *transState;
     BaseMMU::Mode           mode;
     bool                    timing;
     bool                    functional;
-    MMU::ArmTranslationType tranType;
+    TLB::ArmTranslationType tranType;
     TlbEntry                *stage2Te;
     RequestPtr              req;
     Fault                   fault;
@@ -75,22 +76,22 @@ class Stage2LookUp : public BaseMMU::Translation
     bool                    secure;
 
   public:
-    Stage2LookUp(MMU *_mmu, TlbEntry s1_te, const RequestPtr &_req,
-        MMU::Translation *_transState, BaseMMU::Mode _mode, bool _timing,
-        bool _functional, bool _secure, MMU::ArmTranslationType _tranType) :
-        mmu(_mmu), stage1Te(s1_te), s1Req(_req),
+    Stage2LookUp(TLB *s1Tlb, TLB *s2Tlb, TlbEntry s1Te, const RequestPtr &_req,
+        BaseMMU::Translation *_transState, BaseMMU::Mode _mode, bool _timing,
+        bool _functional, bool _secure, TLB::ArmTranslationType _tranType) :
+        stage1Tlb(s1Tlb), stage2Tlb(s2Tlb), stage1Te(s1Te), s1Req(_req),
         transState(_transState), mode(_mode), timing(_timing),
         functional(_functional), tranType(_tranType), stage2Te(nullptr),
         fault(NoFault), complete(false), selfDelete(false), secure(_secure)
     {
         req = std::make_shared<Request>();
-        req->setVirt(s1_te.pAddr(s1Req->getVaddr()), s1Req->getSize(),
+        req->setVirt(s1Te.pAddr(s1Req->getVaddr()), s1Req->getSize(),
                      s1Req->getFlags(), s1Req->requestorId(), 0);
     }
 
     Fault getTe(ThreadContext *tc, TlbEntry *destTe);
 
-    void mergeTe(BaseMMU::Mode mode);
+    void mergeTe(const RequestPtr &req, BaseMMU::Mode mode);
 
     void setSelfDelete() { selfDelete = true; }
 

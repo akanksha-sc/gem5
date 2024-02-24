@@ -390,6 +390,11 @@ class System : public SimObject, public PCEventScope
     AddrRangeList getShadowRomRanges() const { return ShadowRomRanges; }
 
     /**
+     * Get the architecture.
+     */
+    Arch getArch() const { return Arch::TheISA; }
+
+    /**
      * Get the guest byte order.
      */
     ByteOrder

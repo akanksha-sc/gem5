@@ -123,11 +123,12 @@ class ExecContext
     /** Vector Elem Interfaces. */
     /** @{ */
     /** Reads an element of a vector register. */
-    virtual RegVal readVecElemOperand(const StaticInst *si, int idx) const = 0;
+    virtual TheISA::VecElem readVecElemOperand(
+            const StaticInst *si, int idx) const = 0;
 
     /** Sets a vector register to a value. */
     virtual void setVecElemOperand(
-            const StaticInst *si, int idx, RegVal val) = 0;
+            const StaticInst *si, int idx, const TheISA::VecElem val) = 0;
     /** @} */
 
     /** Predicate registers interface. */

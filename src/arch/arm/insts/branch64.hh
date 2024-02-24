@@ -134,7 +134,8 @@ class BranchRetA64 : public BranchRegReg64
 {
   public:
     BranchRetA64(const char *mnem, ExtMachInst _machInst, OpClass __opClass) :
-        BranchRegReg64(mnem, _machInst, __opClass, INTREG_X30, INTREG_SPX)
+        BranchRegReg64(mnem, _machInst, __opClass, INTREG_X30,
+                       makeSP(INTREG_SPX))
     {}
 
     std::string generateDisassembly(
@@ -161,7 +162,7 @@ class BranchEretA64 : public ArmStaticInst
 
   public:
     BranchEretA64(const char *mnem, ExtMachInst _machInst, OpClass __opClass) :
-        ArmStaticInst(mnem, _machInst, __opClass), op1(INTREG_SPX)
+        ArmStaticInst(mnem, _machInst, __opClass), op1(makeSP(INTREG_SPX))
     {}
 
     std::string generateDisassembly(

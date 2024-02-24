@@ -42,8 +42,8 @@ class X86MMU(BaseMMU):
     type = 'X86MMU'
     cxx_class = 'gem5::X86ISA::MMU'
     cxx_header = 'arch/x86/mmu.hh'
-    itb = X86TLB(entry_type="instruction")
-    dtb = X86TLB(entry_type="data")
+    itb = X86TLB()
+    dtb = X86TLB()
 
     @classmethod
     def walkerPorts(cls):

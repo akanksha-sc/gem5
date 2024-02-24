@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2012, 2014, 2017-2019, 2021 ARM Limited
+ * Copyright (c) 2011-2012, 2014, 2017-2019 ARM Limited
  * Copyright (c) 2013 Advanced Micro Devices, Inc.
  * All rights reserved
  *
@@ -778,7 +778,7 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
     // This comming request can be either load, store or atomic.
     // Atomic request has a corresponding pointer to its atomic memory
     // operation
-    [[maybe_unused]] bool isAtomic = !isLoad && amo_op;
+    GEM5_VAR_USED bool isAtomic = !isLoad && amo_op;
 
     ThreadID tid = cpu->contextToThread(inst->contextId());
     auto cacheLineSize = cpu->cacheLineSize();
@@ -1374,16 +1374,6 @@ LSQ::HtmCmdRequest::HtmCmdRequest(LSQUnit* port, const DynInstPtr& inst,
     SingleDataRequest(port, inst, true, 0x0lu, 8, flags_,
         nullptr, nullptr, nullptr)
 {
-}
-
-void
-LSQ::HtmCmdRequest::initiateTranslation()
-{
-    // Special commands are implemented as loads to avoid significant
-    // changes to the cpu and memory interfaces
-    // The virtual and physical address uses a dummy value of 0x00
-    // Address translation does not really occur thus the code below
-
     assert(_requests.size() == 0);
 
     addRequest(_addr, _size, _byteEnable);
@@ -1400,23 +1390,34 @@ LSQ::HtmCmdRequest::initiateTranslation()
         _inst->memReqFlags = _requests.back()->getFlags();
         _inst->savedReq = this;
 
-        flags.set(Flag::TranslationStarted);
-        flags.set(Flag::TranslationFinished);
-
-        _inst->translationStarted(true);
-        _inst->translationCompleted(true);
-
-        setState(State::Request);
+        setState(State::Translation);
     } else {
-        panic("unexpected behaviour in initiateTranslation()");
+        panic("unexpected behaviour");
     }
+}
+
+void
+LSQ::HtmCmdRequest::initiateTranslation()
+{
+    // Transaction commands are implemented as loads to avoid significant
+    // changes to the cpu and memory interfaces
+    // The virtual and physical address uses a dummy value of 0x00
+    // Address translation does not really occur thus the code below
+
+    flags.set(Flag::TranslationStarted);
+    flags.set(Flag::TranslationFinished);
+
+    _inst->translationStarted(true);
+    _inst->translationCompleted(true);
+
+    setState(State::Request);
 }
 
 void
 LSQ::HtmCmdRequest::finish(const Fault &fault, const RequestPtr &req,
         gem5::ThreadContext* tc, BaseMMU::Mode mode)
 {
-    panic("unexpected behaviour - finish()");
+    panic("unexpected behaviour");
 }
 
 Fault

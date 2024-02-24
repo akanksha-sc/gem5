@@ -394,7 +394,7 @@ GicV2::writeDistributor(PacketPtr pkt)
     const ContextID ctx = pkt->req->contextId();
     const size_t data_sz = pkt->getSize();
 
-    [[maybe_unused]] uint32_t pkt_data;
+    GEM5_VAR_USED uint32_t pkt_data;
     switch (data_sz)
     {
       case 1:

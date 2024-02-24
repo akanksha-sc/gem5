@@ -84,8 +84,7 @@ class MediaOpBase : public X86MicroopBase
     }
 
   public:
-    uint8_t getSrcSize() const { return srcSize; }
-    uint8_t getDestSize() const { return destSize; }
+    static constexpr uint8_t dataSize = 0;
 };
 
 } // namespace X86ISA

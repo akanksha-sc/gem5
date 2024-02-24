@@ -518,10 +518,10 @@ let {{
                                implicitStack=True)
     defineMicroLoadOp('Ldst', 'Data = merge(Data, data, Mem, dataSize);',
                               'Data = Mem & mask(dataSize * 8);',
-                      'Request::READ_MODIFY_WRITE')
+                      '(StoreCheck << FlagShift)')
     defineMicroLoadOp('Ldstl', 'Data = merge(Data, data, Mem, dataSize);',
                                'Data = Mem & mask(dataSize * 8);',
-                      'Request::READ_MODIFY_WRITE | Request::LOCKED_RMW',
+                      '(StoreCheck << FlagShift) | Request::LOCKED_RMW',
                       nonSpec=True)
 
     defineMicroLoadOp('Ldfp', code='FpData_uqw = Mem', big=False,
@@ -599,10 +599,10 @@ let {{
     '''
 
     defineMicroLoadSplitOp('LdSplit', code,
-                           'Request::READ_MODIFY_WRITE')
+                           '(StoreCheck << FlagShift)')
 
     defineMicroLoadSplitOp('LdSplitl', code,
-                           'Request::READ_MODIFY_WRITE | Request::LOCKED_RMW',
+                           '(StoreCheck << FlagShift) | Request::LOCKED_RMW',
                            nonSpec=True)
 
     def defineMicroStoreOp(mnemonic, code, completeCode="", mem_flags="0",

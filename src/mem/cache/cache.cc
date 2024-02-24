@@ -165,9 +165,9 @@ Cache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
     if (pkt->req->isUncacheable()) {
         assert(pkt->isRequest());
 
-        gem5_assert(!(isReadOnly && pkt->isWrite()),
-                    "Should never see a write in a read-only cache %s\n",
-                    name());
+        chatty_assert(!(isReadOnly && pkt->isWrite()),
+                      "Should never see a write in a read-only cache %s\n",
+                      name());
 
         DPRINTF(Cache, "%s for %s\n", __func__, pkt->print());
 
@@ -452,7 +452,7 @@ Cache::recvTimingReq(PacketPtr pkt)
         // this express snoop travels towards the memory, and at
         // every crossbar it is snooped upwards thus reaching
         // every cache in the system
-        [[maybe_unused]] bool success = memSidePort.sendTimingReq(snoop_pkt);
+        GEM5_VAR_USED bool success = memSidePort.sendTimingReq(snoop_pkt);
         // express snoops always succeed
         assert(success);
 
@@ -995,7 +995,7 @@ Cache::handleSnoop(PacketPtr pkt, CacheBlk *blk, bool is_timing,
     // responds in atomic mode, so remember a few things about the
     // original packet up front
     bool invalidate = pkt->isInvalidate();
-    [[maybe_unused]] bool needs_writable = pkt->needsWritable();
+    GEM5_VAR_USED bool needs_writable = pkt->needsWritable();
 
     // at the moment we could get an uncacheable write which does not
     // have the invalidate flag, and we need a suitable way of dealing
@@ -1104,7 +1104,7 @@ Cache::handleSnoop(PacketPtr pkt, CacheBlk *blk, bool is_timing,
         // xbar.
         respond = blk->isSet(CacheBlk::DirtyBit) && pkt->needsResponse();
 
-        gem5_assert(!(isReadOnly && blk->isSet(CacheBlk::DirtyBit)),
+        chatty_assert(!(isReadOnly && blk->isSet(CacheBlk::DirtyBit)),
             "Should never have a dirty block in a read-only cache %s\n",
             name());
     }
@@ -1397,7 +1397,7 @@ Cache::sendMSHRQueuePacket(MSHR* mshr)
         // prefetchSquash first may result in the MSHR being
         // prematurely deallocated.
         if (snoop_pkt.cacheResponding()) {
-            [[maybe_unused]] auto r = outstandingSnoop.insert(snoop_pkt.req);
+            GEM5_VAR_USED auto r = outstandingSnoop.insert(snoop_pkt.req);
             assert(r.second);
 
             // if we are getting a snoop response with no sharers it

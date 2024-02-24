@@ -226,12 +226,12 @@ class PhysRegFile
     }
 
     /** Reads a vector element. */
-    RegVal
+    const TheISA::VecElem &
     readVecElem(PhysRegIdPtr phys_reg) const
     {
         assert(phys_reg->is(VecElemClass));
         auto ret = vectorRegFile[phys_reg->index()].as<TheISA::VecElem>();
-        RegVal val = ret[phys_reg->elemIndex()];
+        const TheISA::VecElem& val = ret[phys_reg->elemIndex()];
         DPRINTF(IEW, "RegFile: Access to element %d of vector register %i,"
                 " has data %#x\n", phys_reg->elemIndex(),
                 int(phys_reg->index()), val);
@@ -311,7 +311,7 @@ class PhysRegFile
 
     /** Sets a vector register to the given value. */
     void
-    setVecElem(PhysRegIdPtr phys_reg, RegVal val)
+    setVecElem(PhysRegIdPtr phys_reg, const TheISA::VecElem val)
     {
         assert(phys_reg->is(VecElemClass));
 
@@ -357,7 +357,7 @@ class PhysRegFile
      * Auxiliary function to transition from Full vector mode to Elem mode
      * and to initialise the rename map.
      */
-    IdRange getRegIds(RegClassType cls);
+    IdRange getRegIds(RegClass cls);
 
     /**
      * Get the true physical register id.

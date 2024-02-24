@@ -45,7 +45,6 @@
 #include "arch/arm/self_debug.hh"
 #include "arch/arm/system.hh"
 #include "arch/arm/tlbi_op.hh"
-#include "base/cprintf.hh"
 #include "cpu/base.hh"
 #include "cpu/checker/cpu.hh"
 #include "cpu/reg_class.hh"
@@ -65,16 +64,6 @@ namespace gem5
 namespace ArmISA
 {
 
-class MiscRegClassOps : public RegClassOps
-{
-  public:
-    std::string
-    regName(const RegId &id) const override
-    {
-        return miscRegName[id.index()];
-    }
-} miscRegClassOps;
-
 ISA::ISA(const Params &p) : BaseISA(p), system(NULL),
     _decoderFlavor(p.decoderFlavor), pmu(p.pmu), impdefAsNop(p.impdef_nop),
     afterStartup(false)
@@ -85,7 +74,7 @@ ISA::ISA(const Params &p) : BaseISA(p), system(NULL),
     _regClasses.emplace_back(NumVecRegs * TheISA::NumVecElemPerVecReg);
     _regClasses.emplace_back(NumVecPredRegs);
     _regClasses.emplace_back(NUM_CCREGS);
-    _regClasses.emplace_back(NUM_MISCREGS, miscRegClassOps);
+    _regClasses.emplace_back(NUM_MISCREGS);
 
     miscRegs[MISCREG_SCTLR_RST] = 0;
 
@@ -2087,46 +2076,46 @@ ISA::setMiscReg(int misc_reg, RegVal val)
             misc_reg = MISCREG_IFAR_S;
             break;
           case MISCREG_ATS1CPR:
-            addressTranslation(MMU::S1CTran, BaseMMU::Read, 0, val);
+            addressTranslation(TLB::S1CTran, BaseMMU::Read, 0, val);
             return;
           case MISCREG_ATS1CPW:
-            addressTranslation(MMU::S1CTran, BaseMMU::Write, 0, val);
+            addressTranslation(TLB::S1CTran, BaseMMU::Write, 0, val);
             return;
           case MISCREG_ATS1CUR:
-            addressTranslation(MMU::S1CTran, BaseMMU::Read,
-                MMU::UserMode, val);
+            addressTranslation(TLB::S1CTran, BaseMMU::Read,
+                TLB::UserMode, val);
             return;
           case MISCREG_ATS1CUW:
-            addressTranslation(MMU::S1CTran, BaseMMU::Write,
-                MMU::UserMode, val);
+            addressTranslation(TLB::S1CTran, BaseMMU::Write,
+                TLB::UserMode, val);
             return;
           case MISCREG_ATS12NSOPR:
             if (!haveSecurity)
                 panic("Security Extensions required for ATS12NSOPR");
-            addressTranslation(MMU::S1S2NsTran, BaseMMU::Read, 0, val);
+            addressTranslation(TLB::S1S2NsTran, BaseMMU::Read, 0, val);
             return;
           case MISCREG_ATS12NSOPW:
             if (!haveSecurity)
                 panic("Security Extensions required for ATS12NSOPW");
-            addressTranslation(MMU::S1S2NsTran, BaseMMU::Write, 0, val);
+            addressTranslation(TLB::S1S2NsTran, BaseMMU::Write, 0, val);
             return;
           case MISCREG_ATS12NSOUR:
             if (!haveSecurity)
                 panic("Security Extensions required for ATS12NSOUR");
-            addressTranslation(MMU::S1S2NsTran, BaseMMU::Read,
-                MMU::UserMode, val);
+            addressTranslation(TLB::S1S2NsTran, BaseMMU::Read,
+                TLB::UserMode, val);
             return;
           case MISCREG_ATS12NSOUW:
             if (!haveSecurity)
                 panic("Security Extensions required for ATS12NSOUW");
-            addressTranslation(MMU::S1S2NsTran, BaseMMU::Write,
-                MMU::UserMode, val);
+            addressTranslation(TLB::S1S2NsTran, BaseMMU::Write,
+                TLB::UserMode, val);
             return;
           case MISCREG_ATS1HR:
-            addressTranslation(MMU::HypMode, BaseMMU::Read, 0, val);
+            addressTranslation(TLB::HypMode, BaseMMU::Read, 0, val);
             return;
           case MISCREG_ATS1HW:
-            addressTranslation(MMU::HypMode, BaseMMU::Write, 0, val);
+            addressTranslation(TLB::HypMode, BaseMMU::Write, 0, val);
             return;
           case MISCREG_TTBCR:
             {
@@ -2263,44 +2252,44 @@ ISA::setMiscReg(int misc_reg, RegVal val)
             }
             break;
           case MISCREG_AT_S1E1R_Xt:
-            addressTranslation64(MMU::S1E1Tran, BaseMMU::Read, 0, val);
+            addressTranslation64(TLB::S1E1Tran, BaseMMU::Read, 0, val);
             return;
           case MISCREG_AT_S1E1W_Xt:
-            addressTranslation64(MMU::S1E1Tran, BaseMMU::Write, 0, val);
+            addressTranslation64(TLB::S1E1Tran, BaseMMU::Write, 0, val);
             return;
           case MISCREG_AT_S1E0R_Xt:
-            addressTranslation64(MMU::S1E0Tran, BaseMMU::Read,
-                MMU::UserMode, val);
+            addressTranslation64(TLB::S1E0Tran, BaseMMU::Read,
+                TLB::UserMode, val);
             return;
           case MISCREG_AT_S1E0W_Xt:
-            addressTranslation64(MMU::S1E0Tran, BaseMMU::Write,
-                MMU::UserMode, val);
+            addressTranslation64(TLB::S1E0Tran, BaseMMU::Write,
+                TLB::UserMode, val);
             return;
           case MISCREG_AT_S1E2R_Xt:
-            addressTranslation64(MMU::S1E2Tran, BaseMMU::Read, 0, val);
+            addressTranslation64(TLB::S1E2Tran, BaseMMU::Read, 0, val);
             return;
           case MISCREG_AT_S1E2W_Xt:
-            addressTranslation64(MMU::S1E2Tran, BaseMMU::Write, 0, val);
+            addressTranslation64(TLB::S1E2Tran, BaseMMU::Write, 0, val);
             return;
           case MISCREG_AT_S12E1R_Xt:
-            addressTranslation64(MMU::S12E1Tran, BaseMMU::Read, 0, val);
+            addressTranslation64(TLB::S12E1Tran, BaseMMU::Read, 0, val);
             return;
           case MISCREG_AT_S12E1W_Xt:
-            addressTranslation64(MMU::S12E1Tran, BaseMMU::Write, 0, val);
+            addressTranslation64(TLB::S12E1Tran, BaseMMU::Write, 0, val);
             return;
           case MISCREG_AT_S12E0R_Xt:
-            addressTranslation64(MMU::S12E0Tran, BaseMMU::Read,
-                MMU::UserMode, val);
+            addressTranslation64(TLB::S12E0Tran, BaseMMU::Read,
+                TLB::UserMode, val);
             return;
           case MISCREG_AT_S12E0W_Xt:
-            addressTranslation64(MMU::S12E0Tran, BaseMMU::Write,
-                MMU::UserMode, val);
+            addressTranslation64(TLB::S12E0Tran, BaseMMU::Write,
+                TLB::UserMode, val);
             return;
           case MISCREG_AT_S1E3R_Xt:
-            addressTranslation64(MMU::S1E3Tran, BaseMMU::Read, 0, val);
+            addressTranslation64(TLB::S1E3Tran, BaseMMU::Read, 0, val);
             return;
           case MISCREG_AT_S1E3W_Xt:
-            addressTranslation64(MMU::S1E3Tran, BaseMMU::Write, 0, val);
+            addressTranslation64(TLB::S1E3Tran, BaseMMU::Write, 0, val);
             return;
           case MISCREG_SPSR_EL3:
           case MISCREG_SPSR_EL2:
@@ -2426,7 +2415,7 @@ ISA::unserialize(CheckpointIn &cp)
 }
 
 void
-ISA::addressTranslation64(MMU::ArmTranslationType tran_type,
+ISA::addressTranslation64(TLB::ArmTranslationType tran_type,
     BaseMMU::Mode mode, Request::Flags flags, RegVal val)
 {
     // If we're in timing mode then doing the translation in
@@ -2477,7 +2466,7 @@ ISA::addressTranslation64(MMU::ArmTranslationType tran_type,
 }
 
 void
-ISA::addressTranslation(MMU::ArmTranslationType tran_type,
+ISA::addressTranslation(TLB::ArmTranslationType tran_type,
     BaseMMU::Mode mode, Request::Flags flags, RegVal val)
 {
     // If we're in timing mode then doing the translation in
@@ -2502,8 +2491,8 @@ ISA::addressTranslation(MMU::ArmTranslationType tran_type,
         HCR hcr = readMiscRegNoEffect(MISCREG_HCR);
 
         uint8_t max_paddr_bit = 0;
-        if (haveLPAE && (ttbcr.eae || tran_type & MMU::HypMode ||
-            ((tran_type & MMU::S1S2NsTran) && hcr.vm) )) {
+        if (haveLPAE && (ttbcr.eae || tran_type & TLB::HypMode ||
+            ((tran_type & TLB::S1S2NsTran) && hcr.vm) )) {
 
             max_paddr_bit = 39;
         } else {

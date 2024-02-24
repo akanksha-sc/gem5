@@ -54,7 +54,8 @@ template <class Key, class Value>
 class Trie
 {
   protected:
-    static_assert(std::is_integral_v<Key>, "Key has to be an integral type");
+    static_assert(std::is_integral<Key>::value,
+        "Key has to be an integral type");
 
     struct Node
     {

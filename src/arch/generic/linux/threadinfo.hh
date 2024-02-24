@@ -30,7 +30,6 @@
 #define __ARCH_GENERIC_LINUX_THREADINFO_HH__
 
 #include "cpu/thread_context.hh"
-#include "mem/translating_port_proxy.hh"
 #include "sim/system.hh"
 
 namespace gem5
@@ -61,7 +60,7 @@ class ThreadInfo
             return false;
         }
 
-        data = TranslatingPortProxy(tc).read<T>(it->address, byteOrder);
+        data = tc->getVirtProxy().read<T>(it->address, byteOrder);
 
         return true;
     }
@@ -95,7 +94,7 @@ class ThreadInfo
         if (!thread_info)
             thread_info = curThreadInfo();
 
-        return TranslatingPortProxy(tc).read<Addr>(thread_info + offset);
+        return tc->getVirtProxy().read<Addr>(thread_info + offset);
     }
 
     int32_t
@@ -105,7 +104,7 @@ class ThreadInfo
         if (!get_data("task_struct_pid", offset))
             return -1;
 
-        return TranslatingPortProxy(tc).read<int32_t>(task_struct + offset);
+        return tc->getVirtProxy().read<int32_t>(task_struct + offset);
     }
 
     int32_t
@@ -121,7 +120,7 @@ class ThreadInfo
         if (!get_data("task_struct_tgid", offset))
             return -1;
 
-        return TranslatingPortProxy(tc).read<int32_t>(task_struct + offset);
+        return tc->getVirtProxy().read<int32_t>(task_struct + offset);
     }
 
     int32_t
@@ -139,7 +138,7 @@ class ThreadInfo
 
         // start_time is actually of type timespec, but if we just
         // grab the first long, we'll get the seconds out of it
-        return TranslatingPortProxy(tc).read<int64_t>(task_struct + offset);
+        return tc->getVirtProxy().read<int64_t>(task_struct + offset);
     }
 
     int64_t
@@ -161,8 +160,7 @@ class ThreadInfo
             return "FailureIn_curTaskName";
 
         char buffer[size + 1];
-        TranslatingPortProxy(tc).readString(
-                buffer, task_struct + offset, size);
+        tc->getVirtProxy().readString(buffer, task_struct + offset, size);
 
         return buffer;
     }
@@ -180,7 +178,7 @@ class ThreadInfo
         if (!get_data("task_struct_mm", offset))
             return -1;
 
-        return TranslatingPortProxy(tc).read<int32_t>(task_struct + offset);
+        return tc->getVirtProxy().read<int32_t>(task_struct + offset);
     }
 
     int32_t

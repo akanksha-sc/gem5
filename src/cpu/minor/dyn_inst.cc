@@ -147,7 +147,14 @@ printRegName(std::ostream &os, const RegId& reg,
       case MiscRegClass:
         {
             RegIndex misc_reg = reg.index();
-            os << 'm' << misc_reg << '(' << reg_class.regName(reg) << ')';
+
+        /* This is an ugly test because not all archs. have miscRegName */
+#if THE_ISA == ARM_ISA
+            os << 'm' << misc_reg << '(' << TheISA::miscRegName[misc_reg] <<
+                ')';
+#else
+            os << 'n' << misc_reg;
+#endif
         }
         break;
       case FloatRegClass:

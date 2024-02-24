@@ -28,4 +28,4 @@
 
 Import('*')
 
-main.Append(ALL_ISAS=['arm'])
+all_isa_list.append('arm')

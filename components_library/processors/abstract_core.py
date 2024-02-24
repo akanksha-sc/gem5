@@ -25,11 +25,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from abc import ABCMeta, abstractmethod
-from typing import Optional
 from .cpu_types import CPUTypes
-from ..utils.requires import requires
 
-from m5.objects import BaseMMU, Port, SubSystem
+from m5.objects import Port, SubSystem
 
 
 class AbstractCore(SubSystem):
@@ -37,8 +35,6 @@ class AbstractCore(SubSystem):
 
     def __init__(self, cpu_type: CPUTypes):
         super(AbstractCore, self).__init__()
-        if cpu_type == CPUTypes.KVM:
-            requires(kvm_required=True)
         self._cpu_type = cpu_type
 
     def get_type(self) -> CPUTypes:
@@ -85,20 +81,6 @@ class AbstractCore(SubSystem):
 
     @abstractmethod
     def connect_interrupt(
-        self, interrupt_requestor: Optional[Port] = None,
-        interrupt_responce: Optional[Port] = None
+        self, interrupt_requestor: Port, interrupt_responce: Port
     ) -> None:
-        """ Connect the core interrupts to the interrupt controller
-
-        This function is usually called from the cache hierarchy since the
-        optional ports can be implemented as cache ports.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_mmu(self) -> BaseMMU:
-        """ Return the MMU for this core.
-
-        This is used in the board to setup system-specific MMU settings.
-        """
         raise NotImplementedError

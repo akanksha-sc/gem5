@@ -75,9 +75,10 @@ namespace gem5
 
 EmbeddedPython *EmbeddedPython::importer = NULL;
 PyObject *EmbeddedPython::importerModule = NULL;
-EmbeddedPython::EmbeddedPython(const char *abspath, const char *modpath,
-        const unsigned char *code, int zlen, int len)
-    : abspath(abspath), modpath(modpath), code(code), zlen(zlen), len(len)
+EmbeddedPython::EmbeddedPython(const char *filename, const char *abspath,
+    const char *modpath, const unsigned char *code, int zlen, int len)
+    : filename(filename), abspath(abspath), modpath(modpath), code(code),
+      zlen(zlen), len(len)
 {
     // if we've added the importer keep track of it because we need it
     // to bootstrap.
@@ -116,7 +117,7 @@ EmbeddedPython::addModule() const
 {
     PyObject *code = getCode();
     PyObject *result = PyObject_CallMethod(importerModule, PyCC("add_module"),
-        PyCC("ssO"), abspath, modpath, code);
+        PyCC("sssO"), filename, abspath, modpath, code);
     if (!result) {
         PyErr_Print();
         return false;
@@ -142,10 +143,12 @@ EmbeddedPython::initAll()
 
     // Load the rest of the embedded python files into the embedded
     // python importer
-    for (auto *embedded: getList()) {
-        if (!embedded->addModule())
+    std::list<EmbeddedPython *>::iterator i = getList().begin();
+    std::list<EmbeddedPython *>::iterator end = getList().end();
+    for (; i != end; ++i)
+        if (!(*i)->addModule())
             return 1;
-    }
+
     return 0;
 }
 
@@ -188,7 +191,11 @@ EmbeddedPyBind::getMap()
     return objs;
 }
 
+#if PY_MAJOR_VERSION >= 3
 PyObject *
+#else
+void
+#endif
 EmbeddedPyBind::initAll()
 {
     std::list<EmbeddedPyBind *> pending;
@@ -223,7 +230,9 @@ EmbeddedPyBind::initAll()
         }
     }
 
+#if PY_MAJOR_VERSION >= 3
     return m_m5.ptr();
+#endif
 }
 
 void
@@ -259,6 +268,7 @@ m5Main(int argc, char **_argv)
 #endif
 
 
+#if PY_MAJOR_VERSION >= 3
     typedef std::unique_ptr<wchar_t[], decltype(&PyMem_RawFree)> WArgUPtr;
     std::vector<WArgUPtr> v_argv;
     std::vector<wchar_t *> vp_argv;
@@ -270,6 +280,9 @@ m5Main(int argc, char **_argv)
     }
 
     wchar_t **argv = vp_argv.data();
+#else
+    char **argv = _argv;
+#endif
 
     PySys_SetArgv(argc, argv);
 

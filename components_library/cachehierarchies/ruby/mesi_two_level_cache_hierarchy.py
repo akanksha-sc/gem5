@@ -30,8 +30,7 @@ from ..abstract_two_level_cache_hierarchy import AbstractTwoLevelCacheHierarchy
 from ...coherence_protocol import CoherenceProtocol
 from ...isas import ISA
 from ...boards.abstract_board import AbstractBoard
-from ...runtime import get_runtime_isa
-from components_library.utils.requires import requires
+from ...runtime import get_runtime_coherence_protocol, get_runtime_isa
 
 from .topologies.simple_pt2pt import SimplePt2Pt
 from .caches.mesi_two_level.l1_cache import L1Cache
@@ -82,8 +81,14 @@ class MESITwoLevelCacheHierarchy(
         self._num_l2_banks = num_l2_banks
 
     def incorporate_cache(self, board: AbstractBoard) -> None:
-
-        requires(coherence_protocol_required=CoherenceProtocol.MESI_TWO_LEVEL)
+        if (
+            get_runtime_coherence_protocol()
+            != CoherenceProtocol.MESI_TWO_LEVEL
+        ):
+            raise EnvironmentError(
+                "The MESITwoLevelCacheHierarchy must be used with with the "
+                "MESI_Two_Level coherence protocol."
+            )
 
         cache_line_size = board.get_cache_line_size()
 

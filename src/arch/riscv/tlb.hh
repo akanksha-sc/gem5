@@ -75,9 +75,11 @@ class TLB : public BaseTLB
 
         statistics::Scalar readHits;
         statistics::Scalar readMisses;
+        statistics::Scalar read_acv;
         statistics::Scalar readAccesses;
         statistics::Scalar writeHits;
         statistics::Scalar writeMisses;
+        statistics::Scalar write_acv;
         statistics::Scalar writeAccesses;
 
         statistics::Formula hits;

@@ -31,6 +31,7 @@
 #include <string>
 #include <vector>
 
+#include "mem/port.hh"
 #include "sc_object.hh"
 #include "sc_process_handle.hh"
 #include "sc_sensitive.hh"
@@ -57,12 +58,8 @@ Process *newCThreadProcess(const char *name, ProcessFuncWrapper *func);
 
 } // namespace sc_gem5
 
-namespace gem5
-{
-
+// Gem5 prototype
 class Port;
-
-} // namespace gem5
 
 namespace sc_core
 {

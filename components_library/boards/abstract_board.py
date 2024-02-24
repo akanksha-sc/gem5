@@ -25,10 +25,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from abc import ABCMeta, abstractmethod
-
 from .mem_mode import MemMode
 
 from m5.objects import System, Port, IOXBar, ClockDomain
+
+from ..isas import ISA
+from ..coherence_protocol import CoherenceProtocol
 
 from typing import List
 
@@ -145,24 +147,6 @@ class AbstractBoard(System):
         raise NotImplementedError
 
     @abstractmethod
-    def has_coherent_io(self) -> bool:
-        """Determine whether the board needs coherent I/O
-
-        :returns: True if the board needs coherent I/O, false otherwise
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_mem_side_coherent_io_port(self):
-        """Get the memory-side coherent I/O port.
-        This abstract method must be implemented if has_coherent_io is true.
-
-        This returns a *port* (not a bus) that should be connected to a
-        CPU-side port for which coherent I/O (DMA) is issued.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
     def get_clock_domain(self) -> ClockDomain:
         """Get the clock domain.
 
@@ -180,22 +164,6 @@ class AbstractBoard(System):
         Set the memory mode of the board.
 
         :param mem_mode: The memory mode the board is to be set to.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def setup_memory_ranges(self) -> None:
-        """
-        Set the memory ranges for this board.
-
-        This is called by `connect_things`. It can query the board's memory
-        to determine the size and the set the memory ranges on the memory if
-        it needs to move the memory devices.
-
-        The simplest implementation just sets the board's memory range to be
-        the size of memory and memory's memory range to be the same as the
-        board. Full system implementations will likely need something more
-        complicated.
         """
         raise NotImplementedError
 

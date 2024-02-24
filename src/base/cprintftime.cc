@@ -36,6 +36,9 @@
 
 #include "base/cprintf.hh"
 
+namespace gem5
+{
+
 volatile int stop = false;
 
 void
@@ -62,31 +65,30 @@ main()
     do_test(10);
     while (!stop) {
         std::stringstream result;
-        gem5::ccprintf(result,
-                       "this is a %s of %d iterations %3.2f %p\n",
-                       "test", iterations, 51.934, &result);
+        ccprintf(result,
+                 "this is a %s of %d iterations %3.2f %p\n",
+                 "test", iterations, 51.934, &result);
 
         iterations += 1;
     }
 
-    gem5::cprintf(
-            "completed %d iterations of ccprintf in 10s, %f iterations/s\n",
+    cprintf("completed %d iterations of ccprintf in 10s, %f iterations/s\n",
             iterations, iterations / 10.0);
 
     do_test(10);
     while (!stop) {
         char result[1024];
-        int dummy;
         sprintf(result,
                  "this is a %s of %d iterations %3.2f %p\n",
-                 "test", iterations, 51.934, &dummy);
+                 "test", iterations, 51.934, &result);
 
         iterations += 1;
     }
 
-    gem5::cprintf(
-            "completed %d iterations of sprintf in 10s, %f iterations/s\n",
+    cprintf("completed %d iterations of sprintf in 10s, %f iterations/s\n",
             iterations, iterations / 10.0);
 
     return 0;
 }
+
+} // namespace gem5

@@ -30,12 +30,11 @@ from ..abstract_two_level_cache_hierarchy import AbstractTwoLevelCacheHierarchy
 from .caches.l1dcache import L1DCache
 from .caches.l1icache import L1ICache
 from .caches.l2cache import L2Cache
-from .caches.mmu_cache import MMUCache
 from ...boards.abstract_board import AbstractBoard
 from ...isas import ISA
 from ...runtime import get_runtime_isa
 
-from m5.objects import Cache, L2XBar, BaseXBar, SystemXBar, BadAddr, Port
+from m5.objects import L2XBar, BaseXBar, SystemXBar, BadAddr, Port
 
 from ...utils.override import *
 
@@ -137,19 +136,6 @@ class PrivateL1PrivateL2CacheHierarchy(
             L2Cache(size=self._l2_size)
             for i in range(board.get_processor().get_num_cores())
         ]
-        # ITLB Page walk caches
-        self.iptw_caches = [
-            MMUCache(size='8KiB')
-            for _ in range(board.get_processor().get_num_cores())
-        ]
-        # DTLB Page walk caches
-        self.dptw_caches = [
-            MMUCache(size='8KiB')
-            for _ in range(board.get_processor().get_num_cores())
-        ]
-
-        if board.has_coherent_io():
-            self._setup_io_cache(board)
 
         for i, cpu in enumerate(board.get_processor().get_cores()):
 
@@ -158,35 +144,16 @@ class PrivateL1PrivateL2CacheHierarchy(
 
             self.l1icaches[i].mem_side = self.l2buses[i].cpu_side_ports
             self.l1dcaches[i].mem_side = self.l2buses[i].cpu_side_ports
-            self.iptw_caches[i].mem_side = self.l2buses[i].cpu_side_ports
-            self.dptw_caches[i].mem_side = self.l2buses[i].cpu_side_ports
 
             self.l2buses[i].mem_side_ports = self.l2caches[i].cpu_side
 
             self.membus.cpu_side_ports = self.l2caches[i].mem_side
 
             cpu.connect_walker_ports(
-                self.iptw_caches[i].cpu_side, self.dptw_caches[i].cpu_side
+                self.membus.cpu_side_ports, self.membus.cpu_side_ports
             )
 
             if get_runtime_isa() == ISA.X86:
                 int_req_port = self.membus.mem_side_ports
                 int_resp_port = self.membus.cpu_side_ports
                 cpu.connect_interrupt(int_req_port, int_resp_port)
-            else:
-                cpu.connect_interrupt()
-
-    def _setup_io_cache(self, board: AbstractBoard) -> None:
-        """Create a cache for coherent I/O connections"""
-        self.iocache = Cache(
-            assoc=8,
-            tag_latency=50,
-            data_latency=50,
-            response_latency=50,
-            mshrs=20,
-            size="1kB",
-            tgts_per_mshr=12,
-            addr_ranges=board.mem_ranges,
-        )
-        self.iocache.mem_side = self.membus.cpu_side_ports
-        self.iocache.cpu_side = board.get_mem_side_coherent_io_port()

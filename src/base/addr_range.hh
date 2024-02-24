@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, 2017-2019, 2021 Arm Limited
+ * Copyright (c) 2012, 2014, 2017-2019 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -334,7 +334,7 @@ class AddrRange
     {
         if (interleaved()) {
             std::string str;
-            for (unsigned int i = 0; i < masks.size(); i++) {
+            for (int i = 0; i < masks.size(); i++) {
                 str += " ";
                 Addr mask = masks[i];
                 while (mask) {
@@ -443,7 +443,7 @@ class AddrRange
         bool in_range = a >= _start && a < _end;
         if (in_range) {
             auto sel = 0;
-            for (unsigned int i = 0; i < masks.size(); i++) {
+            for (int i = 0; i < masks.size(); i++) {
                 Addr masked = a & masks[i];
                 // The result of an xor operation is 1 if the number
                 // of bits set is odd or 0 othersize, thefore it
@@ -490,7 +490,7 @@ class AddrRange
 
         // Get the LSB set from each mask
         int masks_lsb[masks.size()];
-        for (unsigned int i = 0; i < masks.size(); i++) {
+        for (int i = 0; i < masks.size(); i++) {
             masks_lsb[i] = ctz64(masks[i]);
         }
 
@@ -498,7 +498,7 @@ class AddrRange
         // discard them one by one starting.
         std::sort(masks_lsb, masks_lsb + masks.size());
 
-        for (unsigned int i = 0; i < masks.size(); i++) {
+        for (int i = 0; i < masks.size(); i++) {
             const int intlv_bit = masks_lsb[i];
             if (intlv_bit > 0) {
                 // on every iteration we remove one bit from the input
@@ -528,13 +528,13 @@ class AddrRange
 
         // Get the LSB set from each mask
         int masks_lsb[masks.size()];
-        for (unsigned int i = 0; i < masks.size(); i++) {
+        for (int i = 0; i < masks.size(); i++) {
             masks_lsb[i] = ctz64(masks[i]);
         }
 
         // Add bits one-by-one from the LSB side.
         std::sort(masks_lsb, masks_lsb + masks.size());
-        for (unsigned int i = 0; i < masks.size(); i++) {
+        for (int i = 0; i < masks.size(); i++) {
             const int intlv_bit = masks_lsb[i];
             if (intlv_bit > 0) {
                 // on every iteration we add one bit from the input
@@ -547,7 +547,7 @@ class AddrRange
             }
         }
 
-        for (unsigned int i = 0; i < masks.size(); i++) {
+        for (int i = 0; i < masks.size(); i++) {
             const int lsb = ctz64(masks[i]);
             const Addr intlv_bit = bits(intlvMatch, i);
             // Calculate the mask ignoring the LSB
@@ -583,62 +583,6 @@ class AddrRange
         } else {
             return a - _start;
         }
-    }
-
-    /**
-     * Subtract a list of intervals from the range and return
-     * the resulting collection of ranges, so that the union
-     * of the two lists cover the original range
-     *
-     * The exclusion list can contain overlapping ranges
-     * Interleaving ranges are not supported and will fail the
-     * assertion.
-     *
-     * @param the input exclusion list
-     * @return the resulting collection of ranges
-     *
-     * @ingroup api_addr_range
-     */
-    std::vector<AddrRange>
-    exclude(const std::vector<AddrRange> &exclude_ranges)
-    {
-        assert(!interleaved());
-
-        auto sorted_ranges = exclude_ranges;
-        std::sort(sorted_ranges.begin(), sorted_ranges.end());
-
-        std::vector<AddrRange> ranges;
-
-        Addr next_start = start();
-        for (const auto &e : sorted_ranges) {
-            assert(!e.interleaved());
-            if (!intersects(e)) {
-                continue;
-            }
-
-            if (e.start() <= next_start) {
-                if (e.end() < end()) {
-                    if (next_start < e.end()) {
-                        next_start = e.end();
-                    }
-                } else {
-                    return ranges;
-                }
-            } else {
-                ranges.push_back(AddrRange(next_start, e.start()));
-                if (e.end() < end()) {
-                    next_start = e.end();
-                } else {
-                    return ranges;
-                }
-            }
-        }
-
-        if (next_start < end()) {
-            ranges.push_back(AddrRange(next_start, end()));
-        }
-
-        return ranges;
     }
 
     /**

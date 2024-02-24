@@ -142,7 +142,7 @@ Print::processFlag()
 
           case 'X':
             fmt.uppercase = true;
-            [[fallthrough]];
+            GEM5_FALLTHROUGH;
           case 'x':
             fmt.base = Format::Hex;
             fmt.format = Format::Integer;
@@ -164,7 +164,7 @@ Print::processFlag()
 
           case 'G':
             fmt.uppercase = true;
-            [[fallthrough]];
+            GEM5_FALLTHROUGH;
           case 'g':
             fmt.format = Format::Floating;
             fmt.floatFormat = Format::Best;
@@ -173,7 +173,7 @@ Print::processFlag()
 
           case 'E':
             fmt.uppercase = true;
-            [[fallthrough]];
+            GEM5_FALLTHROUGH;
           case 'e':
             fmt.format = Format::Floating;
             fmt.floatFormat = Format::Scientific;
@@ -220,7 +220,7 @@ Print::processFlag()
                 fmt.fillZero = true;
                 break;
             }
-            [[fallthrough]];
+            GEM5_FALLTHROUGH;
           case '1':
           case '2':
           case '3':

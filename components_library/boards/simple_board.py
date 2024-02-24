@@ -24,9 +24,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from components_library.resources.resource import AbstractResource
 from m5.objects import (
-    AddrRange,
     SrcClockDomain,
     VoltageDomain,
     Process,
@@ -76,6 +74,8 @@ class SimpleBoard(AbstractBoard):
         self.clk_domain.clock = clk_freq
         self.clk_domain.voltage_domain = VoltageDomain()
 
+        self.mem_ranges = memory.get_memory_ranges()
+
         self.exit_on_work_items = exit_on_work_items
 
     @overrides(AbstractBoard)
@@ -92,9 +92,6 @@ class SimpleBoard(AbstractBoard):
 
     @overrides(AbstractBoard)
     def connect_things(self) -> None:
-        # Before incorporating the memory, set up the memory ranges
-        self.setup_memory_ranges()
-
         # Incorporate the cache hierarchy for the motherboard.
         self.get_cache_hierarchy().incorporate_cache(self)
 
@@ -126,27 +123,7 @@ class SimpleBoard(AbstractBoard):
             "Use `has_dma_ports()` to check this."
         )
 
-    @overrides(AbstractBoard)
-    def has_coherent_io(self) -> bool:
-        return False
-
-    @overrides(AbstractBoard)
-    def get_mem_side_coherent_io_port(self) -> Port:
-        raise NotImplementedError(
-            "SimpleBoard does not have any I/O ports. Use has_coherent_io to "
-            "check this."
-        )
-
-    @overrides(AbstractBoard)
-    def setup_memory_ranges(self) -> None:
-        memory = self.get_memory()
-
-        # The simple board just has one memory range that is the size of the
-        # memory.
-        self.mem_ranges = [AddrRange(memory.get_size())]
-        memory.set_memory_range(self.mem_ranges)
-
-    def set_workload(self, binary: AbstractResource) -> None:
+    def set_workload(self, binary: str) -> None:
         """Set up the system to run a specific binary.
 
         **Limitations**
@@ -154,11 +131,11 @@ class SimpleBoard(AbstractBoard):
         * Dynamically linked executables are partially supported when the host
           ISA and the simulated ISA are the same.
 
-        :param binary: The resource encapsulating the binary to be run.
+        :param binary: The path on the *host* to the binary to run in gem5.
         """
 
-        self.workload = SEWorkload.init_compatible(binary.get_local_path())
+        self.workload = SEWorkload.init_compatible(binary)
 
         process = Process()
-        process.cmd = [binary.get_local_path()]
+        process.cmd = [binary]
         self.get_processor().get_cores()[0].set_workload(process)

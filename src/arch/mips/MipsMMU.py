@@ -42,5 +42,5 @@ class MipsMMU(BaseMMU):
     type = 'MipsMMU'
     cxx_class = 'gem5::MipsISA::MMU'
     cxx_header = 'arch/mips/mmu.hh'
-    itb = MipsTLB(entry_type="instruction")
-    dtb = MipsTLB(entry_type="data")
+    itb = MipsTLB()
+    dtb = MipsTLB()

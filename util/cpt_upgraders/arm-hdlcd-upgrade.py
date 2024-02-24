@@ -39,7 +39,7 @@ def upgrader(cpt):
     after they are loaded. Expect some timing differences."""
 
     import re
-    if cpt.get('root', 'isa', fallback='') != 'arm':
+    if cpt.get('root','isa') != 'arm':
         return
 
     option_names = {

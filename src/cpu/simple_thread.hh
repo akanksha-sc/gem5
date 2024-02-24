@@ -216,6 +216,14 @@ class SimpleThread : public ThreadState, public ThreadContext
 
     System *getSystemPtr() override { return system; }
 
+    PortProxy &getVirtProxy() override { return ThreadState::getVirtProxy(); }
+
+    void
+    initMemProxies(ThreadContext *tc) override
+    {
+        ThreadState::initMemProxies(tc);
+    }
+
     Process *getProcessPtr() override { return ThreadState::getProcessPtr(); }
     void setProcessPtr(Process *p) override { ThreadState::setProcessPtr(p); }
 
@@ -306,12 +314,13 @@ class SimpleThread : public ThreadState, public ThreadContext
         return regVal;
     }
 
-    RegVal
+    const TheISA::VecElem &
     readVecElem(const RegId &reg) const override
     {
         int flatIndex = isa->flattenVecElemIndex(reg.index());
         assert(flatIndex < vecRegs.size());
-        RegVal regVal = readVecElemFlat(flatIndex, reg.elemIndex());
+        const TheISA::VecElem& regVal =
+            readVecElemFlat(flatIndex, reg.elemIndex());
         DPRINTF(VecRegs, "Reading element %d of vector reg %d (%d) as"
                 " %#x.\n", reg.elemIndex(), reg.index(), flatIndex, regVal);
         return regVal;
@@ -388,7 +397,7 @@ class SimpleThread : public ThreadState, public ThreadContext
     }
 
     void
-    setVecElem(const RegId &reg, RegVal val) override
+    setVecElem(const RegId &reg, const TheISA::VecElem &val) override
     {
         int flatIndex = isa->flattenVecElemIndex(reg.index());
         assert(flatIndex < vecRegs.size());
@@ -519,7 +528,7 @@ class SimpleThread : public ThreadState, public ThreadContext
         vecRegs[reg] = val;
     }
 
-    RegVal
+    const TheISA::VecElem &
     readVecElemFlat(RegIndex reg, const ElemIndex &elemIndex) const override
     {
         return vecRegs[reg].as<TheISA::VecElem>()[elemIndex];
@@ -527,7 +536,7 @@ class SimpleThread : public ThreadState, public ThreadContext
 
     void
     setVecElemFlat(RegIndex reg, const ElemIndex &elemIndex,
-                   RegVal val) override
+                   const TheISA::VecElem &val) override
     {
         vecRegs[reg].as<TheISA::VecElem>()[elemIndex] = val;
     }

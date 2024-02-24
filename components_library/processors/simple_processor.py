@@ -28,12 +28,15 @@
 from components_library.utils.override import overrides
 from components_library.boards.mem_mode import MemMode
 from components_library.processors.simple_core import SimpleCore
+from m5.objects import KvmVM
 
 from m5.util import warn
 
 from .abstract_processor import AbstractProcessor
 from .cpu_types import CPUTypes
 from ..boards.abstract_board import AbstractBoard
+from ..coherence_protocol import is_ruby
+from ..runtime import get_runtime_coherence_protocol
 
 from typing import List
 
@@ -53,9 +56,13 @@ class SimpleProcessor(AbstractProcessor):
 
         self._cpu_type = cpu_type
         if self._cpu_type == CPUTypes.KVM:
-            from m5.objects import KvmVM
-
             self.kvm_vm = KvmVM()
+            # To get the KVM CPUs to run on different host CPUs
+            # Specify a different event queue for each CPU
+            for i, core in enumerate(self.cores):
+                for obj in core.get_simobject().descendants():
+                    obj.eventq_index = 0
+                core.get_simobject().eventq_index = i + 1
 
     def _create_cores(self, cpu_type: CPUTypes, num_cores: int):
         return [
@@ -73,7 +80,7 @@ class SimpleProcessor(AbstractProcessor):
         elif self._cpu_type == CPUTypes.KVM:
             board.set_mem_mode(MemMode.ATOMIC_NONCACHING)
         elif self._cpu_type == CPUTypes.ATOMIC:
-            if board.get_cache_hierarchy().is_ruby():
+            if is_ruby(get_runtime_coherence_protocol()):
                 warn(
                     "Using an atomic core with Ruby will result in "
                     "'atomic_noncaching' memory mode. This will skip caching "
@@ -83,11 +90,3 @@ class SimpleProcessor(AbstractProcessor):
                 board.set_mem_mode(MemMode.ATOMIC)
         else:
             raise NotImplementedError
-
-        if self._cpu_type == CPUTypes.KVM:
-            # To get the KVM CPUs to run on different host CPUs
-            # Specify a different event queue for each CPU
-            for i, core in enumerate(self.cores):
-                for obj in core.get_simobject().descendants():
-                    obj.eventq_index = 0
-                core.get_simobject().eventq_index = i + 1

@@ -107,6 +107,8 @@ AddOption('--default',
 AddOption('--ignore-style', action='store_true',
           help='Disable style checking hooks')
 AddOption('--gold-linker', action='store_true', help='Use the gold linker')
+AddOption('--lld-linker', action='store_true', help='Use the lld linker')
+AddOption('--mold-linker', action='store_true', help='Use the mold linker')
 AddOption('--no-compress-debug', action='store_true',
           help="Don't compress debug info in build files")
 AddOption('--with-lto', action='store_true',
@@ -130,16 +132,7 @@ from gem5_scons import error, warning, summarize_warnings, parse_build_path
 from gem5_scons import TempFileSpawn, EnvDefaults, MakeAction, MakeActionTool
 import gem5_scons
 from gem5_scons.builders import ConfigFile, AddLocalRPATH, SwitchingHeaders
-from gem5_scons.builders import Blob
-from gem5_scons.sources import TagImpliesTool
 from gem5_scons.util import compareVersions, readCommand
-
-# Disable warnings when targets can be built with multiple environments but
-# with the same actions. This can happen intentionally if, for instance, a
-# generated source file is used to build object files in different ways in
-# different environments, but generating the source file itself is exactly the
-# same. This can be re-enabled from the command line if desired.
-SetOption('warn', 'no-duplicate-environment')
 
 Export('MakeAction')
 
@@ -151,11 +144,11 @@ Export('MakeAction')
 
 main = Environment(tools=[
         'default', 'git', TempFileSpawn, EnvDefaults, MakeActionTool,
-        ConfigFile, AddLocalRPATH, SwitchingHeaders, TagImpliesTool, Blob
+        ConfigFile, AddLocalRPATH, SwitchingHeaders
     ])
 
-main.Tool(SCons.Tool.FindTool(['gcc', 'clang'], main))
-main.Tool(SCons.Tool.FindTool(['g++', 'clang++'], main))
+main.Tool(SCons.Tool.FindTool(['clang', 'gcc'], main))
+main.Tool(SCons.Tool.FindTool(['clang++', 'g++'], main))
 
 Export('main')
 
@@ -338,13 +331,10 @@ if main['GCC'] or main['CLANG']:
         conf.CheckLinkFlag('-Wl,--as-needed')
     if GetOption('gold_linker'):
         main.Append(LINKFLAGS='-fuse-ld=gold')
-
-    # Treat warnings as errors but white list some warnings that we
-    # want to allow (e.g., deprecation warnings).
-    main.Append(CCFLAGS=['-Werror',
-                         '-Wno-error=deprecated-declarations',
-                         '-Wno-error=deprecated',
-                        ])
+    elif GetOption('lld_linker'):
+        main.Append(LINKFLAGS='-fuse-ld=lld')
+    elif GetOption('mold_linker'):
+        main.Append(LINKFLAGS='-fuse-ld=mold')
 else:
     error('\n'.join((
           "Don't know what compiler options to use for your compiler.",
@@ -360,13 +350,9 @@ else:
           "src/SConscript to support that compiler.")))
 
 if main['GCC']:
-    if compareVersions(main['CXXVERSION'], "7") < 0:
-        error('gcc version 7 or newer required.\n'
+    if compareVersions(main['CXXVERSION'], "5") < 0:
+        error('gcc version 5 or newer required.\n'
               'Installed version:', main['CXXVERSION'])
-
-    with gem5_scons.Configure(main) as conf:
-        # This warning has a false positive in the systemc code in g++ 11.1.
-        conf.CheckCxxFlag('-Wno-free-nonheap-object')
 
     # Add the appropriate Link-Time Optimization (LTO) flags if `--with-lto` is
     # set.
@@ -421,13 +407,13 @@ if GetOption('with_asan'):
     sanitizers.append('address')
     suppressions_file = Dir('util').File('lsan-suppressions').get_abspath()
     suppressions_opt = 'suppressions=%s' % suppressions_file
-    suppressions_opts = ':'.join([suppressions_opt, 'print_suppressions=0'])
-    main['ENV']['LSAN_OPTIONS'] = suppressions_opts
+    main['ENV']['LSAN_OPTIONS'] = ':'.join([suppressions_opt,
+                                            'print_suppressions=0'])
     print()
     warning('To suppress false positive leaks, set the LSAN_OPTIONS '
             'environment variable to "%s" when running gem5' %
-            suppressions_opts)
-    warning('LSAN_OPTIONS=%s' % suppressions_opts)
+            suppressions_opt)
+    warning('LSAN_OPTIONS=suppressions=%s' % suppressions_opt)
     print()
 if sanitizers:
     sanitizers = ','.join(sanitizers)
@@ -518,6 +504,12 @@ if main['USE_PYTHON']:
         if not py_version:
             error("Can't find a working Python installation")
 
+    marshal_env = main.Clone()
+
+    # Bare minimum environment that only includes python
+    marshal_env.Append(CCFLAGS='$MARSHAL_CCFLAGS_EXTRA')
+    marshal_env.Append(LINKFLAGS='$MARSHAL_LDFLAGS_EXTRA')
+
     # Found a working Python installation. Check if it meets minimum
     # requirements.
     ver_string = '.'.join(map(str, py_version))
@@ -527,12 +519,6 @@ if main['USE_PYTHON']:
     elif py_version[0] > 3:
         warning('Embedded python library too new. '
                 'Python 3 expected, found %s.' % ver_string)
-
-marshal_env = main.Clone()
-
-# Bare minimum environment that only includes python
-marshal_env.Append(CCFLAGS='$MARSHAL_CCFLAGS_EXTRA')
-marshal_env.Append(LINKFLAGS='$MARSHAL_LDFLAGS_EXTRA')
 
 main['HAVE_PKG_CONFIG'] = main.Detect('pkg-config')
 
@@ -621,6 +607,9 @@ for root, dirs, files in os.walk(ext_dir):
         main.SConscript(os.path.join(root, 'SConscript'),
                         variant_dir=os.path.join(build_root, build_dir))
 
+gdb_xml_dir = os.path.join(ext_dir, 'gdb-xml')
+Export('gdb_xml_dir')
+
 
 ########################################################################
 #
@@ -706,7 +695,9 @@ Build variables for {dir}:
     env.Append(CCFLAGS='$CCFLAGS_EXTRA')
     env.Append(LINKFLAGS='$LDFLAGS_EXTRA')
 
-    exports=['env', 'marshal_env']
+    exports=['env']
+    if main['USE_PYTHON']:
+        exports.append('marshal_env')
 
     # The src/SConscript file sets up the build rules in 'env' according
     # to the configured variables.  It returns a list of environments,

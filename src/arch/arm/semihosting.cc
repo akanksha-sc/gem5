@@ -169,7 +169,7 @@ ArmSemihosting::ArmSemihosting(const ArmSemihostingParams &p)
 bool
 ArmSemihosting::call64(ThreadContext *tc, bool gem5_ops)
 {
-    RegVal op = tc->readIntReg(ArmISA::INTREG_X0) & mask(32);
+    RegVal op = tc->readIntReg(ArmISA::INTREG_X0 & mask(32));
     if (op > MaxStandardOp && !gem5_ops) {
         unrecognizedCall<Abi64>(
                 tc, "Gem5 semihosting op (0x%x) disabled from here.", op);
@@ -249,7 +249,6 @@ PortProxy &
 ArmSemihosting::portProxy(ThreadContext *tc)
 {
     static std::unique_ptr<PortProxy> port_proxy_s;
-    static std::unique_ptr<PortProxy> port_proxy_ns;
     static System *secure_sys = nullptr;
 
     if (ArmISA::isSecure(tc)) {
@@ -268,15 +267,7 @@ ArmSemihosting::portProxy(ThreadContext *tc)
         secure_sys = sys;
         return *port_proxy_s;
     } else {
-        if (!port_proxy_ns) {
-            if (FullSystem) {
-                port_proxy_ns.reset(new TranslatingPortProxy(tc));
-            } else {
-                port_proxy_ns.reset(new SETranslatingPortProxy(tc));
-            }
-        }
-
-        return *port_proxy_ns;
+        return tc->getVirtProxy();
     }
 }
 

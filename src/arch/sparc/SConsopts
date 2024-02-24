@@ -28,4 +28,4 @@
 
 Import('*')
 
-main.Append(ALL_ISAS=['sparc'])
+all_isa_list.append('sparc')

@@ -27,7 +27,6 @@
  */
 
 #include "arch/sparc/linux/se_workload.hh"
-#include "mem/se_translating_port_proxy.hh"
 #include "sim/syscall_desc.hh"
 #include "sim/syscall_emul.hh"
 
@@ -60,26 +59,25 @@ static SyscallReturn
 getresuidFunc(SyscallDesc *desc, ThreadContext *tc,
               VPtr<> ruid, VPtr<> euid, VPtr<> suid)
 {
-    SETranslatingPortProxy proxy(tc);
     const uint64_t id = htobe(100);
     // Handle the EFAULT case
     // Set the ruid
     if (ruid) {
         BufferArg ruidBuff(ruid, sizeof(uint64_t));
         memcpy(ruidBuff.bufferPtr(), &id, sizeof(uint64_t));
-        ruidBuff.copyOut(proxy);
+        ruidBuff.copyOut(tc->getVirtProxy());
     }
     // Set the euid
     if (euid) {
         BufferArg euidBuff(euid, sizeof(uint64_t));
         memcpy(euidBuff.bufferPtr(), &id, sizeof(uint64_t));
-        euidBuff.copyOut(proxy);
+        euidBuff.copyOut(tc->getVirtProxy());
     }
     // Set the suid
     if (suid) {
         BufferArg suidBuff(suid, sizeof(uint64_t));
         memcpy(suidBuff.bufferPtr(), &id, sizeof(uint64_t));
-        suidBuff.copyOut(proxy);
+        suidBuff.copyOut(tc->getVirtProxy());
     }
     return 0;
 }

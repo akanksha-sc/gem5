@@ -60,7 +60,7 @@ unit_test () {
 }
 
 # Ensure we have the latest docker images.
-docker pull gcr.io/gem5-test/ubuntu-20.04_all-dependencies-salam
+# docker pull gcr.io/gem5-test/ubuntu-20.04_all-dependencies-salam:latest
 
 # Try to build the ISA targets.
 build_target NULL

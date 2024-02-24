@@ -25,7 +25,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from components_library.resources.resource import AbstractResource
 from components_library.utils.override import overrides
 from components_library.boards.abstract_board import AbstractBoard
 from components_library.isas import ISA
@@ -50,20 +49,19 @@ from m5.objects import (
     CowDiskImage,
     RawDiskImage,
     BaseXBar,
-    Port,
 )
 
-from m5.util.convert import toMemorySize
+from m5.params import Port
 
 
 from .simple_board import SimpleBoard
 from ..processors.abstract_processor import AbstractProcessor
 from ..memory.abstract_memory_system import AbstractMemorySystem
 from ..cachehierarchies.abstract_cache_hierarchy import AbstractCacheHierarchy
-from ..utils.requires import requires
+from ..runtime import get_runtime_isa
 
 import os
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 
 
 class X86Board(SimpleBoard):
@@ -91,27 +89,30 @@ class X86Board(SimpleBoard):
             exit_on_work_items=exit_on_work_items,
         )
 
-        requires(isa_required=ISA.X86)
+        if get_runtime_isa() != ISA.X86:
+            raise EnvironmentError(
+                "X86Motherboard will only work with the X86 ISA."
+            )
+
+        # Add the address range for the IO
+        # TODO: This should definitely NOT be hardcoded to 3GB
+        self.mem_ranges = [
+            AddrRange(Addr("3GB")),  # All data
+            AddrRange(0xC0000000, size=0x100000),  # For I/0
+        ]
 
         self.pc = Pc()
 
         self.workload = X86FsLinux()
-
-        # North Bridge
-        self.iobus = IOXBar()
-
-    def _setup_io_devices(self):
-        """ Sets up the x86 IO devices.
-
-        Note: This is mostly copy-paste from prior X86 FS setups. Some of it
-        may not be documented and there may be bugs.
-        """
 
         # Constants similar to x86_traits.hh
         IO_address_space_base = 0x8000000000000000
         pci_config_address_space_base = 0xC000000000000000
         interrupts_address_space_base = 0xA000000000000000
         APIC_range_size = 1 << 12
+
+        # North Bridge
+        self.iobus = IOXBar()
 
         # Setup memory system specific settings.
         if self.get_cache_hierarchy().is_ruby():
@@ -151,6 +152,22 @@ class X86Board(SimpleBoard):
                 )
             ]
             self.pc.attachIO(self.get_io_bus())
+
+            self.iocache = Cache(
+                assoc=8,
+                tag_latency=50,
+                data_latency=50,
+                response_latency=50,
+                mshrs=20,
+                size="1kB",
+                tgts_per_mshr=12,
+                addr_ranges=self.mem_ranges,
+            )
+
+            self.iocache.cpu_side = self.get_io_bus().mem_side_ports
+            self.iocache.mem_side = (
+                self.get_cache_hierarchy().get_cpu_side_port()
+            )
 
         # Add in a Bios information structure.
         self.workload.smbios_table.structures = [X86SMBiosBiosInformation()]
@@ -250,32 +267,10 @@ class X86Board(SimpleBoard):
         self.workload.e820_table.entries = entries
 
     def connect_things(self) -> None:
-        # This board is a bit particular about the order that things are
-        # connected together.
-
-        # Before incorporating the memory or creating the I/O devices figure
-        # out the memory ranges.
-        self.setup_memory_ranges()
-
-        # Set up all of the I/O before we incorporate anything else.
-        self._setup_io_devices()
-
-        # Incorporate the cache hierarchy for the motherboard.
-        self.get_cache_hierarchy().incorporate_cache(self)
-
-        # Incorporate the processor into the motherboard.
-        self.get_processor().incorporate_processor(self)
-
-        # Incorporate the memory into the motherboard.
-        self.get_memory().incorporate_memory(self)
-
+        super().connect_things()
 
     def set_workload(
-        self,
-        kernel: AbstractResource,
-        disk_image: AbstractResource,
-        command: Optional[str] = None,
-        kernel_args: Optional[List[str]] = [],
+        self, kernel: str, disk_image: str, command: Optional[str] = None
     ):
         """Setup the full system files
 
@@ -289,17 +284,14 @@ class X86Board(SimpleBoard):
         * Only supports a Linux kernel
         * Disk must be configured correctly to use the command option
 
-        :param kernel: The compiled kernel binary resource
-        :param disk_image: A disk image resource containing the OS data. The
-            first partition should be the root partition.
+        :param kernel: The compiled kernel binary
+        :param disk_image: A disk image containing the OS data. The first
+            partition should be the root partition.
         :param command: The command(s) to run with bash once the OS is booted
-        :param kernel_args: Additional arguments to be passed to the kernel.
-        `earlyprintk=ttyS0 console=ttyS0 lpj=7999923 root=/dev/hda1` are
-        already passed. This parameter is used to pass additional arguments.
         """
 
         # Set the Linux kernel to use.
-        self.workload.object_file = kernel.get_local_path()
+        self.workload.object_file = kernel
 
         # Options specified on the kernel command line.
         self.workload.command_line = " ".join(
@@ -308,7 +300,7 @@ class X86Board(SimpleBoard):
                 "console=ttyS0",
                 "lpj=7999923",
                 "root=/dev/hda1",
-            ] + kernel_args
+            ]
         )
 
         # Create the Disk image SimObject.
@@ -317,7 +309,7 @@ class X86Board(SimpleBoard):
         ide_disk.image = CowDiskImage(
             child=RawDiskImage(read_only=True), read_only=False
         )
-        ide_disk.image.child.image_file = disk_image.get_local_path()
+        ide_disk.image.child.image_file = disk_image
 
         # Attach the SimObject to the system.
         self.pc.south_bridge.ide.disks = [ide_disk]
@@ -348,29 +340,3 @@ class X86Board(SimpleBoard):
     @overrides(AbstractBoard)
     def get_dma_ports(self) -> Sequence[Port]:
         return [self.pc.south_bridge.ide.dma, self.iobus.mem_side_ports]
-
-    @overrides(AbstractBoard)
-    def has_coherent_io(self) -> bool:
-        return True
-
-    @overrides(AbstractBoard)
-    def get_mem_side_coherent_io_port(self) -> Port:
-        return self.iobus.mem_side_ports
-
-    @overrides(AbstractBoard)
-    def setup_memory_ranges(self):
-        memory = self.get_memory()
-
-        if memory.get_size() > toMemorySize("3GB"):
-            raise Exception(
-                "X86Board currently only supports memory sizes up "
-                "to 3GB because of the I/O hole."
-            )
-        data_range = AddrRange(memory.get_size())
-        memory.set_memory_range([data_range])
-
-        # Add the address range for the IO
-        self.mem_ranges = [
-            data_range,  # All data
-            AddrRange(0xC0000000, size=0x100000),  # For I/0
-        ]
