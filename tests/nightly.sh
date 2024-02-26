@@ -46,7 +46,7 @@ build_target () {
     # SCons is not perfect, and occasionally does not catch a necessary
     # compilation: https://gem5.atlassian.net/browse/GEM5-753
     docker run -u $UID:$GID --volume "${gem5_root}":"${gem5_root}" -w \
-        "${gem5_root}" --rm gcr.io/gem5-test/ubuntu-20.04_all-dependencies \
+        "${gem5_root}" --rm gcr.io/gem5-test/ubuntu-20.04_all-dependencies-salam \
             bash -c "scons build/${isa}/gem5.opt -j${threads} \
                 || (rm -rf build && scons build/${isa}/gem5.opt -j${threads})"
 }
@@ -55,12 +55,12 @@ unit_test () {
     build=$1
 
     docker run -u $UID:$GID --volume "${gem5_root}":"${gem5_root}" -w \
-        "${gem5_root}" --rm gcr.io/gem5-test/ubuntu-20.04_all-dependencies \
+        "${gem5_root}" --rm gcr.io/gem5-test/ubuntu-20.04_all-dependencies-salam \
             scons build/NULL/unittests.${build} -j${threads}
 }
 
 # Ensure we have the latest docker images.
-docker pull gcr.io/gem5-test/ubuntu-20.04_all-dependencies
+# docker pull gcr.io/gem5-test/ubuntu-20.04_all-dependencies-salam:latest
 
 # Try to build the ISA targets.
 build_target NULL
@@ -79,5 +79,5 @@ unit_test prof
 
 # Run the gem5 long tests.
 docker run -u $UID:$GID --volume "${gem5_root}":"${gem5_root}" -w \
-    "${gem5_root}"/tests --rm gcr.io/gem5-test/ubuntu-20.04_all-dependencies \
+    "${gem5_root}"/tests --rm gcr.io/gem5-test/ubuntu-20.04_all-dependencies-salam \
         ./main.py run --length long -j${threads} -t${threads}

@@ -2,6 +2,12 @@ steps:
     - name: 'gcr.io/cloud-builders/docker'
       args: ['build',
             '-t',
+            'gcr.io/$PROJECT_ID/ubuntu-20.04_all-dependencies-salam:latest',
+            'util/dockerfiles/ubuntu-20.04_all-dependencies-salam']
+
+    - name: 'gcr.io/cloud-builders/docker'
+      args: ['build',
+            '-t',
             'gcr.io/$PROJECT_ID/ubuntu-20.04_all-dependencies:latest',
             'util/dockerfiles/ubuntu-20.04_all-dependencies']
 
