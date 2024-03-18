@@ -78,7 +78,7 @@ Linux::openSpecialFile(std::string path, Process *process,
     if (matched) {
         FILE *f = tmpfile();
         int fd = fileno(f);
-        [[maybe_unused]] size_t ret = fwrite(data.c_str(), 1, data.size(), f);
+        GEM5_VAR_USED size_t ret = fwrite(data.c_str(), 1, data.size(), f);
         assert(ret == data.size());
         rewind(f);
         return fd;

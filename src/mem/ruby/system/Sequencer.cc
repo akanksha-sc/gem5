@@ -725,7 +725,14 @@ Sequencer::makeRequest(PacketPtr pkt)
             } else if (pkt->req->isInstFetch()) {
                 primary_type = secondary_type = RubyRequestType_IFETCH;
             } else {
-                if (pkt->req->isReadModifyWrite()) {
+                bool storeCheck = false;
+                // only X86 need the store check
+                if (system->getArch() == Arch::X86ISA) {
+                    uint32_t flags = pkt->req->getFlags();
+                    storeCheck = flags &
+                        (X86ISA::StoreCheck << X86ISA::FlagShift);
+                }
+                if (storeCheck) {
                     primary_type = RubyRequestType_RMW_Read;
                     secondary_type = RubyRequestType_ST;
                 } else {

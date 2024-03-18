@@ -49,6 +49,41 @@
 
 
 /*
+ * Attributes that become standard in later versions of c++.
+ */
+
+// Use GEM5_FALLTHROUGH to mark when you're intentionally falling through from
+// one case to another in a switch statement.
+#if __has_cpp_attribute(fallthrough) // Standard in c++17.
+#  define GEM5_FALLTHROUGH [[fallthrough]]
+#else
+// Not supported, so it's not necessary to avoid warnings.
+#  define GEM5_FALLTHROUGH
+#endif
+
+// When the return value of a function should not be discarded, mark it with
+// GEM5_NO_DISCARD.
+#if __has_cpp_attribute(nodiscard) // Standard in c++17, with message in c++20.
+#  define GEM5_NO_DISCARD [[nodiscard]]
+#else
+// Not supported, but it's optional so we can just omit it.
+#  define GEM5_NO_DISCARD
+#endif
+
+// When a variable may purposefully not be used, for instance if it's only used
+// in debug statements which might be disabled, mark it with GEM5_VAR_USED.
+#if __has_cpp_attribute(maybe_unused) // Standard in c++17.
+#  define GEM5_VAR_USED [[maybe_unused]]
+#elif defined(__GNUC__)
+// gcc and clang support a custom attribute which is essentially the same
+// thing.
+#  define GEM5_VAR_USED [[gnu::unused]]
+#else
+#  error "Don't know what to do for your compiler."
+#endif
+
+
+/*
  * Compiler specific features.
  */
 
@@ -80,13 +115,26 @@
 #  define GEM5_LIKELY(cond) __builtin_expect(!!(cond), 1)
 #  define GEM5_UNLIKELY(cond) __builtin_expect(!!(cond), 0)
 
+// Mark a c++ declaration as deprecated, with a message explaining what to do
+// to update to a non-deprecated alternative.
+#  define GEM5_DEPRECATED(message) [[gnu::deprecated(message)]]
+// Mark a C++ emum value as deprecated, with a message explaining what to do
+// to update to a non-deprecated alternative. This wraps GEM5_DEPRECATED but
+// is guarded by a preprocessor if directive to ensure it is not included
+// when compiled in GCC < 6, as deprecation of enum values was introduced in
+// GCC 6. All supported clang compilers allow enum value deprecation.
+#  if defined(__clang__) || __GNUC__ >= 6
+#    define GEM5_DEPRECATED_ENUM_VAL(message) GEM5_DEPRECATED(message)
+#  else
+#    define GEM5_DEPRECATED_ENUM_VAL(message)
+#  endif
 // Mark an expression-like macro as deprecated by wrapping it in some code
 // which declares and uses a deprecated variable with the same name as the
 // macro. The wrapping macro evaluates to the same thing as the original macro.
 // The definition must be an c++ expression and not a statement because of how
 // the original macro is wrapped.
 #  define GEM5_DEPRECATED_MACRO(name, definition, message) \
-     ([](){[[deprecated(message)]] int name{}; return name;}(), (definition))
+     ([](){GEM5_DEPRECATED(message) int name{}; return name;}(), (definition))
 // This version is for macros which are statement-like, which frequently use
 // "do {} while (0)" to make their syntax look more like normal c++ statements.
 #  define GEM5_DEPRECATED_MACRO_STMT(name, definition, message) \
@@ -97,7 +145,7 @@
 // This macro should be used *after* the new class has been defined.
 #  define GEM5_DEPRECATED_CLASS(old_class, new_class) \
     using old_class \
-        [[deprecated("Please use the new class name: '" #new_class "'")]] = \
+        GEM5_DEPRECATED("Please use the new class name: '" #new_class "'") = \
         new_class
 
 // These macros should be used when namespaces are deprecated in favor of
@@ -108,8 +156,8 @@
 #  if HAVE_DEPRECATED_NAMESPACE
 #    define GEM5_DEPRECATED_NAMESPACE(old_namespace, new_namespace) \
        namespace new_namespace {} \
-       namespace [[deprecated("Please use the new namespace: '" \
-         #new_namespace "'")]] old_namespace { \
+       namespace GEM5_DEPRECATED("Please use the new namespace: '" \
+         #new_namespace "'") old_namespace { \
          using namespace new_namespace; \
        }
 #  else
@@ -125,7 +173,7 @@
 // as are the arguments to the comma operator, which evaluates to the last
 // value. This is compiler specific because it uses variadic macros.
 #define GEM5_FOR_EACH_IN_PACK(...) \
-do { [[maybe_unused]] int i[] = { 0, ((void)(__VA_ARGS__), 0)... }; } while (0)
+do { GEM5_VAR_USED int i[] = { 0, ((void)(__VA_ARGS__), 0)... }; } while (0)
 
 #else
 #  error "Don't know what to do for your compiler."
@@ -156,21 +204,5 @@ do { [[maybe_unused]] int i[] = { 0, ((void)(__VA_ARGS__), 0)... }; } while (0)
 #define M5_UNLIKELY(x) GEM5_UNLIKELY(x)
 #define M5_FOR_EACH_IN_PACK(...) GEM5_FOR_EACH_IN_PACK(__VA_ARGS__)
 #define M5_CLASS_VAR_USED GEM5_CLASS_VAR_USED
-
-// Deprecated attributes which warn.
-#define GEM5_FALLTHROUGH GEM5_DEPRECATED_MACRO_STMT(GEM5_FALLTHROUGH,,\
-        "Please use the [[fallthrough]] attribute directly."); [[fallthrough]]
-#define GEM5_DEPRECATED(message) \
-     [[deprecated(message " The GEM5_DEPRECATED macro is also deprecated, "\
-             "please use the [[deprecated()]] attribute directly.")]]
-#define GEM5_DEPRECATED_ENUM_VAL(message) \
-     [[deprecated(message " The GEM5_DEPRECATED_ENUM_VAL macro is also "\
-             "deprecated, please use the [[deprecated()]] attribute "\
-             "directly.")]]
-
-// Deprecated attributes which can't be made to warn without possibly breaking
-// existing code.
-#define GEM5_NO_DISCARD [[nodiscard]]
-#define GEM5_VAR_USED [[maybe_unused]]
 
 #endif // __BASE_COMPILER_HH__

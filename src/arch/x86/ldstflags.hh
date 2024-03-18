@@ -50,12 +50,13 @@ namespace gem5
  */
 namespace X86ISA
 {
-    [[maybe_unused]] const Request::FlagsType SegmentFlagMask = mask(4);
+    GEM5_VAR_USED const Request::FlagsType SegmentFlagMask = mask(4);
     const int FlagShift = 4;
     enum FlagBit
     {
         CPL0FlagBit = 1,
         AddrSizeFlagBit = 2,
+        StoreCheck = 4
     };
 } // namespace X86ISA
 } // namespace gem5

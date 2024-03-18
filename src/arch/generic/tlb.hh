@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021 Arm Limited
+ * Copyright (c) 2011 ARM Limited
  * All rights reserved.
  *
  * The license below extends only to copyright in the software and shall
@@ -41,13 +41,9 @@
 #ifndef __ARCH_GENERIC_TLB_HH__
 #define __ARCH_GENERIC_TLB_HH__
 
-#include <type_traits>
-
 #include "arch/generic/mmu.hh"
 #include "base/logging.hh"
-#include "enums/TypeTLB.hh"
 #include "mem/request.hh"
-#include "params/BaseTLB.hh"
 #include "sim/sim_object.hh"
 
 namespace gem5
@@ -58,13 +54,7 @@ class ThreadContext;
 class BaseTLB : public SimObject
 {
   protected:
-    BaseTLB(const BaseTLBParams &p)
-      : SimObject(p), _type(p.entry_type), _nextLevel(p.next_level)
-    {}
-
-    TypeTLB _type;
-
-    BaseTLB *_nextLevel;
+    BaseTLB(const Params &p) : SimObject(p) {}
 
   public:
     virtual void demapPage(Addr vaddr, uint64_t asn) = 0;
@@ -121,26 +111,7 @@ class BaseTLB : public SimObject
     virtual Port* getTableWalkerPort() { return NULL; }
 
     void memInvalidate() { flushAll(); }
-
-    TypeTLB type() const { return _type; }
-
-    BaseTLB* nextLevel() const { return _nextLevel; }
 };
-
-/** Implementing the "&" bitwise operator for TypeTLB allows us to handle
- * TypeTLB::unified efficiently. For example if I want to check if a TLB
- * is storing instruction entries I can do this with:
- *
- * tlb->type() & TypeTLB::instruction
- *
- * which will cover both TypeTLB::instruction and TypeTLB::unified TLBs
- */
-inline auto
-operator&(TypeTLB lhs, TypeTLB rhs)
-{
-    using T = std::underlying_type_t<TypeTLB>;
-    return static_cast<T>(lhs) & static_cast<T>(rhs);
-}
 
 } // namespace gem5
 

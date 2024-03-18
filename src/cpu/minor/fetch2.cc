@@ -436,21 +436,24 @@ Fetch2::evaluate()
                         line_in->lineWidth, output_index, fetch_info.inputIndex,
                         fetch_info.pc, *dyn_inst);
 
-                    /*
-                     * In SE mode, it's possible to branch to a microop when
-                     * replaying faults such as page faults (or simply
-                     * intra-microcode branches in X86).  Unfortunately,
-                     * as Minor has micro-op decomposition in a separate
-                     * pipeline stage from instruction decomposition, the
-                     * following advancePC (which may follow a branch with
-                     * microPC() != 0) *must* see a fresh macroop.
+#if THE_ISA == X86_ISA || THE_ISA == ARM_ISA
+                    /* In SE mode, it's possible to branch to a microop when
+                     *  replaying faults such as page faults (or simply
+                     *  intra-microcode branches in X86).  Unfortunately,
+                     *  as Minor has micro-op decomposition in a separate
+                     *  pipeline stage from instruction decomposition, the
+                     *  following advancePC (which may follow a branch with
+                     *  microPC() != 0) *must* see a fresh macroop.  This
+                     *  kludge should be improved with an addition to PCState
+                     *  but I offer it in this form for the moment
                      *
                      * X86 can branch within microops so we need to deal with
                      * the case that, after a branch, the first un-advanced PC
                      * may be pointing to a microop other than 0.  Once
-                     * advanced, however, the microop number *must* be 0
-                     */
-                    fetch_info.pc.uReset();
+                     * advanced, however, the microop number *must* be 0 */
+                    fetch_info.pc.upc(0);
+                    fetch_info.pc.nupc(1);
+#endif
 
                     /* Advance PC for the next instruction */
                     decoded_inst->advancePC(fetch_info.pc);

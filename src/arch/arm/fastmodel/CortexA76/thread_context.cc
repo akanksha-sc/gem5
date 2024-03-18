@@ -67,8 +67,15 @@ CortexA76TC::translateAddress(Addr &paddr, Addr vaddr)
         Iris::PhysicalMemorySecureMsn : Iris::PhysicalMemoryNonSecureMsn;
 
     // Figure out what memory spaces match the canonical numbers we need.
-    iris::MemorySpaceId in = getMemorySpaceId(in_msn);
-    iris::MemorySpaceId out = getMemorySpaceId(out_msn);
+    iris::MemorySpaceId in = iris::IRIS_UINT64_MAX;
+    iris::MemorySpaceId out = iris::IRIS_UINT64_MAX;
+
+    for (auto &space: memorySpaces) {
+        if (space.canonicalMsn == in_msn)
+            in = space.spaceId;
+        else if (space.canonicalMsn == out_msn)
+            out = space.spaceId;
+    }
 
     panic_if(in == iris::IRIS_UINT64_MAX || out == iris::IRIS_UINT64_MAX,
             "Canonical IRIS memory space numbers not found.");
@@ -181,13 +188,14 @@ const std::vector<iris::MemorySpaceId> &
 CortexA76TC::getBpSpaceIds() const
 {
     if (bpSpaceIds.empty()) {
-        std::vector<Iris::CanonicalMsn> msns{
-            Iris::SecureMonitorMsn, Iris::GuestMsn, Iris::NsHypMsn,
-            Iris::HypAppMsn};
-        for (auto &msn : msns) {
-            auto id = getMemorySpaceId(msn);
-            if (id != iris::IRIS_UINT64_MAX)
-                bpSpaceIds.push_back(id);
+        for (auto &space: memorySpaces) {
+            auto cmsn = space.canonicalMsn;
+            if (cmsn == Iris::SecureMonitorMsn ||
+                    cmsn == Iris::GuestMsn ||
+                    cmsn == Iris::NsHypMsn ||
+                    cmsn == Iris::HypAppMsn) {
+                bpSpaceIds.push_back(space.spaceId);
+            }
         }
         panic_if(bpSpaceIds.empty(),
                 "Unable to find address space(s) for breakpoints.");
@@ -522,7 +530,7 @@ Iris::ThreadContext::IdxNameMap CortexA76TC::miscRegIdxNameMap({
         { ArmISA::MISCREG_CNTV_CVAL, "CNTV_CVAL" },
         { ArmISA::MISCREG_CNTVOFF, "CNTVOFF" },
         { ArmISA::MISCREG_CNTHP_CVAL, "CNTHP_CVAL" },
-        // ArmISA::MISCREG_CPUMERRSR?
+        { ArmISA::MISCREG_CPUMERRSR, "CPUMERRSR" },
         { ArmISA::MISCREG_L2MERRSR, "L2MERRSR" },
 
         // AArch64 registers (Op0=2)
@@ -806,7 +814,7 @@ Iris::ThreadContext::IdxNameMap CortexA76TC::miscRegIdxNameMap({
         // ArmISA::MISCREG_L2ACTLR_EL1?
         { ArmISA::MISCREG_CPUACTLR_EL1, "CPUACTLR_EL1" },
         { ArmISA::MISCREG_CPUECTLR_EL1, "CPUECTLR_EL1" },
-        // ArmISA::MISCREG_CPUMERRSR_EL1?
+        { ArmISA::MISCREG_CPUMERRSR_EL1, "CPUMERRSR_EL1" },
         { ArmISA::MISCREG_L2MERRSR_EL1, "L2MERRSR_EL1" },
         // ArmISA::MISCREG_CBAR_EL1?
         { ArmISA::MISCREG_CONTEXTIDR_EL2, "CONTEXTIDR_EL2" },

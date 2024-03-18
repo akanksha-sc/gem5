@@ -162,7 +162,7 @@ class TarmacTracerRecord : public TarmacBaseRecord
         /** True if register entry is valid */
         bool regValid;
         /** Register class */
-        RegClassType regClass;
+        RegClass regClass;
         /** Register arch number */
         RegIndex regRel;
         /** Register name to be printed */

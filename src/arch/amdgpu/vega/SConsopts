@@ -33,4 +33,4 @@
 
 Import('*')
 
-main.Append(ALL_GPU_ISAS=['vega'])
+all_gpu_isa_list.append('vega')

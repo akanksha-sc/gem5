@@ -95,8 +95,8 @@ enum Type
 } // namespace auxv
 
 #define GEM5_DEPRECATE_AT(NAME, name) M5_AT_##NAME \
-    [[deprecated("Replace M5_AT_" #NAME " with gem5::auxv::" #name)]] = \
-    gem5::auxv::name
+    GEM5_DEPRECATED_ENUM_VAL(\
+        "Replace M5_AT_" #NAME " with gem5::auxv::" #name) = gem5::auxv::name
 
 enum AuxiliaryVectorType
 {
@@ -119,8 +119,8 @@ enum AuxiliaryVectorType
     GEM5_DEPRECATE_AT(HWCAP, Hwcap),
     GEM5_DEPRECATE_AT(CLKTCK, Clktck),
     GEM5_DEPRECATE_AT(SECURE, Secure),
-    M5_BASE_PLATFORM [[deprecated(
-            "Replace M5_BASE_PLATFORM with gem5::auxv::BasePlatform")]] =
+    M5_BASE_PLATFORM GEM5_DEPRECATED_ENUM_VAL(
+            "Replace M5_BASE_PLATFORM with gem5::auxv::BasePlatform") =
         gem5::auxv::BasePlatform,
     GEM5_DEPRECATE_AT(RANDOM, Random),
     GEM5_DEPRECATE_AT(HWCAP2, Hwcap2),
@@ -131,8 +131,8 @@ enum AuxiliaryVectorType
 #undef GEM5_DEPRECATE_AT
 
 template <class IntType>
-using AuxVector [[deprecated(
-        "The AuxVector template is now in the gem5::auxv namespace.")]] =
+using AuxVector GEM5_DEPRECATED(
+        "The AuxVector template is now in the gem5::auxv namespace.") =
         gem5::auxv::AuxVector<IntType>;
 
 } // namespace gem5

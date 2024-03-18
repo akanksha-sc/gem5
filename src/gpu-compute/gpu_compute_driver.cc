@@ -47,10 +47,7 @@
 #include "gpu-compute/gpu_command_processor.hh"
 #include "gpu-compute/shader.hh"
 #include "mem/port_proxy.hh"
-#include "mem/se_translating_port_proxy.hh"
-#include "mem/translating_port_proxy.hh"
 #include "params/GPUComputeDriver.hh"
-#include "sim/full_system.hh"
 #include "sim/process.hh"
 #include "sim/se_workload.hh"
 #include "sim/syscall_emul_buf.hh"
@@ -225,9 +222,7 @@ GPUComputeDriver::DriverWakeupEvent::process()
 int
 GPUComputeDriver::ioctl(ThreadContext *tc, unsigned req, Addr ioc_buf)
 {
-    TranslatingPortProxy fs_proxy(tc);
-    SETranslatingPortProxy se_proxy(tc);
-    PortProxy &virt_proxy = FullSystem ? fs_proxy : se_proxy;
+    auto &virt_proxy = tc->getVirtProxy();
     auto process = tc->getProcessPtr();
     auto mem_state = process->memState;
 
@@ -729,7 +724,7 @@ GPUComputeDriver::ioctl(ThreadContext *tc, unsigned req, Addr ioc_buf)
 
             assert(isdGPU || gfxVersion == GfxVersion::gfx902);
             assert((args->va_addr % TheISA::PageBytes) == 0);
-            [[maybe_unused]] Addr mmap_offset = 0;
+            GEM5_VAR_USED Addr mmap_offset = 0;
 
             Request::CacheCoherenceFlags mtype = defaultMtype;
             Addr pa_addr = 0;
@@ -838,7 +833,7 @@ GPUComputeDriver::ioctl(ThreadContext *tc, unsigned req, Addr ioc_buf)
             // of the region.
             //
             // This is a simplified version of regular system VMAs, but for
-            // GPUVM space (none of the clobber/remap nonsense we find in real
+            // GPUVM space (non of the clobber/remap nonsense we find in real
             // OS managed memory).
             allocateGpuVma(mtype, args->va_addr, args->size);
 

@@ -39,6 +39,7 @@
 
 #include <functional>
 
+#include "arch/locked_mem.hh"
 #include "cpu/minor/cpu.hh"
 #include "cpu/minor/exec_context.hh"
 #include "cpu/minor/fetch1.hh"

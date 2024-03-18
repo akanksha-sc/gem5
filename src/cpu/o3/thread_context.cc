@@ -51,6 +51,12 @@ namespace gem5
 namespace o3
 {
 
+PortProxy&
+ThreadContext::getVirtProxy()
+{
+    return thread->getVirtProxy();
+}
+
 void
 ThreadContext::takeOverFrom(gem5::ThreadContext *old_context)
 {
@@ -176,7 +182,7 @@ ThreadContext::getWritableVecRegFlat(RegIndex reg_id)
     return cpu->getWritableArchVecReg(reg_id, thread->threadId());
 }
 
-RegVal
+const TheISA::VecElem&
 ThreadContext::readVecElemFlat(RegIndex idx, const ElemIndex& elemIndex) const
 {
     return cpu->readArchVecElem(idx, elemIndex, thread->threadId());
@@ -227,7 +233,7 @@ ThreadContext::setVecRegFlat(
 
 void
 ThreadContext::setVecElemFlat(RegIndex idx,
-        const ElemIndex& elemIndex, RegVal val)
+        const ElemIndex& elemIndex, const TheISA::VecElem& val)
 {
     cpu->setArchVecElem(idx, elemIndex, val, thread->threadId());
     conditionalSquash();

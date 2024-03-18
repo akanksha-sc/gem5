@@ -28,4 +28,4 @@
 
 Import('*')
 
-main.Append(ALL_ISAS=['x86'])
+all_isa_list.append('x86')

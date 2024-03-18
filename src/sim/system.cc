@@ -55,7 +55,7 @@
 #include "cpu/kvm/base.hh"
 #include "cpu/kvm/vm.hh"
 #endif
-#if !IS_NULL_ISA
+#if THE_ISA != NULL_ISA
 #include "cpu/base.hh"
 #endif
 #include "cpu/thread_context.hh"
@@ -78,7 +78,7 @@ std::vector<System *> System::systemList;
 void
 System::Threads::Thread::resume()
 {
-#   if !IS_NULL_ISA
+#   if THE_ISA != NULL_ISA
     DPRINTFS(Quiesce, context->getCpuPtr(), "activating\n");
     context->activate();
 #   endif
@@ -134,7 +134,7 @@ System::Threads::replace(ThreadContext *tc, ContextID id)
 {
     auto &t = thread(id);
     panic_if(!t.context, "Can't replace a context which doesn't exist.");
-#   if !IS_NULL_ISA
+#   if THE_ISA != NULL_ISA
     if (t.resumeEvent->scheduled()) {
         Tick when = t.resumeEvent->when();
         t.context->getCpuPtr()->deschedule(t.resumeEvent);
@@ -172,8 +172,8 @@ void
 System::Threads::quiesce(ContextID id)
 {
     auto &t = thread(id);
-#   if !IS_NULL_ISA
-    [[maybe_unused]] BaseCPU *cpu = t.context->getCpuPtr();
+#   if THE_ISA != NULL_ISA
+    GEM5_VAR_USED BaseCPU *cpu = t.context->getCpuPtr();
     DPRINTFS(Quiesce, cpu, "quiesce()\n");
 #   endif
     t.quiesce();
@@ -182,7 +182,7 @@ System::Threads::quiesce(ContextID id)
 void
 System::Threads::quiesceTick(ContextID id, Tick when)
 {
-#   if !IS_NULL_ISA
+#   if THE_ISA != NULL_ISA
     auto &t = thread(id);
     BaseCPU *cpu = t.context->getCpuPtr();
 
@@ -236,7 +236,7 @@ System::System(const Params &p)
     }
 
     // Get the generic system requestor IDs
-    [[maybe_unused]] RequestorID tmp_id;
+    GEM5_VAR_USED RequestorID tmp_id;
     tmp_id = getRequestorId(this, "writebacks");
     assert(tmp_id == Request::wbRequestorId);
     tmp_id = getRequestorId(this, "functional");
@@ -409,7 +409,7 @@ System::unserialize(CheckpointIn &cp)
                 !when || !t.resumeEvent) {
             continue;
         }
-#       if !IS_NULL_ISA
+#       if THE_ISA != NULL_ISA
         t.context->getCpuPtr()->schedule(t.resumeEvent, when);
 #       endif
     }

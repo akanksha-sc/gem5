@@ -267,12 +267,40 @@ class AddrRange
      *
      * @ingroup api_addr_range
      */
-    AddrRange(std::vector<AddrRange> ranges)
-        : AddrRange(Dummy{}, ranges.begin(), ranges.end())
-    {}
-    AddrRange(std::list<AddrRange> ranges)
-        : AddrRange(Dummy{}, ranges.begin(), ranges.end())
-    {}
+    AddrRange(const std::vector<AddrRange>& ranges)
+        : _start(1), _end(0), intlvMatch(0)
+    {
+        if (!ranges.empty()) {
+            // get the values from the first one and check the others
+            _start = ranges.front()._start;
+            _end = ranges.front()._end;
+            masks = ranges.front().masks;
+            intlvMatch = ranges.front().intlvMatch;
+        }
+        // either merge if got all ranges or keep this equal to the single
+        // interleaved range
+        if (ranges.size() > 1) {
+
+            if (ranges.size() != (1ULL << masks.size()))
+                fatal("Got %d ranges spanning %d interleaving bits\n",
+                      ranges.size(), masks.size());
+
+            uint8_t match = 0;
+            for (const auto& r : ranges) {
+                if (!mergesWith(r))
+                    fatal("Can only merge ranges with the same start, end "
+                          "and interleaving bits, %s %s\n", to_string(),
+                          r.to_string());
+
+                if (r.intlvMatch != match)
+                    fatal("Expected interleave match %d but got %d when "
+                          "merging\n", match, r.intlvMatch);
+                ++match;
+            }
+            masks.clear();
+            intlvMatch = 0;
+        }
+    }
 
     /**
      * Determine if the range is interleaved or not.
@@ -290,8 +318,7 @@ class AddrRange
      *
      * @ingroup api_addr_range
      */
-    uint64_t
-    granularity() const
+    uint64_t granularity() const
     {
         if (interleaved()) {
             auto combined_mask = 0;
@@ -513,8 +540,7 @@ class AddrRange
      *
      * @ingroup api_addr_range
      */
-    inline Addr
-    removeIntlvBits(Addr a) const
+    inline Addr removeIntlvBits(Addr a) const
     {
         // Directly return the address if the range is not interleaved
         // to prevent undefined behavior.
@@ -552,8 +578,7 @@ class AddrRange
      *
      * @ingroup api_addr_range
      */
-    inline Addr
-    addIntlvBits(Addr a) const
+    inline Addr addIntlvBits(Addr a) const
     {
         // Directly return the address if the range is not interleaved
         // to prevent undefined behavior.
@@ -607,8 +632,7 @@ class AddrRange
      *
      * @ingroup api_addr_range
      */
-    Addr
-    getOffset(const Addr& a) const
+    Addr getOffset(const Addr& a) const
     {
         bool in_range = a >= _start && a < _end;
         if (!in_range) {
@@ -635,15 +659,15 @@ class AddrRange
      *
      * @ingroup api_addr_range
      */
-    AddrRangeList
-    exclude(const AddrRangeList &exclude_ranges) const
+    std::vector<AddrRange>
+    exclude(const std::vector<AddrRange> &exclude_ranges)
     {
         assert(!interleaved());
 
         auto sorted_ranges = exclude_ranges;
-        sorted_ranges.sort();
+        std::sort(sorted_ranges.begin(), sorted_ranges.end());
 
-        std::list<AddrRange> ranges;
+        std::vector<AddrRange> ranges;
 
         Addr next_start = start();
         for (const auto &e : sorted_ranges) {
@@ -677,12 +701,6 @@ class AddrRange
         return ranges;
     }
 
-    AddrRangeList
-    exclude(const AddrRange &excluded_range) const
-    {
-        return exclude(AddrRangeList{excluded_range});
-    }
-
     /**
      * Less-than operator used to turn an STL map into a binary search
      * tree of non-overlapping address ranges.
@@ -692,8 +710,7 @@ class AddrRange
      *
      * @ingroup api_addr_range
      */
-    bool
-    operator<(const AddrRange& r) const
+    bool operator<(const AddrRange& r) const
     {
         if (_start != r._start) {
             return _start < r._start;
@@ -713,8 +730,7 @@ class AddrRange
     /**
      * @ingroup api_addr_range
      */
-    bool
-    operator==(const AddrRange& r) const
+    bool operator==(const AddrRange& r) const
     {
         if (_start != r._start)    return false;
         if (_end != r._end)      return false;
@@ -727,95 +743,39 @@ class AddrRange
     /**
      * @ingroup api_addr_range
      */
-    bool
-    operator!=(const AddrRange& r) const
+    bool operator!=(const AddrRange& r) const
     {
         return !(*this == r);
     }
 };
 
-static inline AddrRangeList
-operator-(const AddrRange &range, const AddrRangeList &to_exclude)
-{
-    return range.exclude(to_exclude);
-}
-
-static inline AddrRangeList
-operator-(const AddrRange &range, const AddrRange &to_exclude)
-{
-    return range.exclude(to_exclude);
-}
-
-static inline AddrRangeList
-exclude(const AddrRangeList &base, AddrRangeList to_exclude)
-{
-    to_exclude.sort();
-
-    AddrRangeList ret;
-    for (const auto &range: base)
-        ret.splice(ret.end(), range.exclude(to_exclude));
-
-    return ret;
-}
-
-static inline AddrRangeList
-exclude(const AddrRangeList &base, const AddrRange &to_exclude)
-{
-    return exclude(base, AddrRangeList{to_exclude});
-}
-
-static inline AddrRangeList
-operator-(const AddrRangeList &base, const AddrRangeList &to_exclude)
-{
-    return exclude(base, to_exclude);
-}
-
-static inline AddrRangeList
-operator-=(AddrRangeList &base, const AddrRangeList &to_exclude)
-{
-    base = base - to_exclude;
-    return base;
-}
-
-static inline AddrRangeList
-operator-(const AddrRangeList &base, const AddrRange &to_exclude)
-{
-    return exclude(base, to_exclude);
-}
-
-static inline AddrRangeList
-operator-=(AddrRangeList &base, const AddrRange &to_exclude)
-{
-    base = base - to_exclude;
-    return base;
-}
+/**
+ * Convenience typedef for a collection of address ranges
+ *
+ * @ingroup api_addr_range
+ */
+typedef std::list<AddrRange> AddrRangeList;
 
 /**
  * @ingroup api_addr_range
  */
 inline AddrRange
 RangeEx(Addr start, Addr end)
-{
-    return AddrRange(start, end);
-}
+{ return AddrRange(start, end); }
 
 /**
  * @ingroup api_addr_range
  */
 inline AddrRange
 RangeIn(Addr start, Addr end)
-{
-    return AddrRange(start, end + 1);
-}
+{ return AddrRange(start, end + 1); }
 
 /**
  * @ingroup api_addr_range
  */
 inline AddrRange
 RangeSize(Addr start, Addr size)
-{
-    return AddrRange(start, start + size);
-}
+{ return AddrRange(start, start + size); }
 
 } // namespace gem5
 

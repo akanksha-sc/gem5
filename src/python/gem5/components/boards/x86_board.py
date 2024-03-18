@@ -152,6 +152,22 @@ class X86Board(SimpleBoard):
             ]
             self.pc.attachIO(self.get_io_bus())
 
+            self.iocache = Cache(
+                assoc=8,
+                tag_latency=50,
+                data_latency=50,
+                response_latency=50,
+                mshrs=20,
+                size="1kB",
+                tgts_per_mshr=12,
+                addr_ranges=self.mem_ranges,
+            )
+
+            self.iocache.cpu_side = self.get_io_bus().mem_side_ports
+            self.iocache.mem_side = (
+                self.get_cache_hierarchy().get_cpu_side_port()
+            )
+
         # Add in a Bios information structure.
         self.workload.smbios_table.structures = [X86SMBiosBiosInformation()]
 

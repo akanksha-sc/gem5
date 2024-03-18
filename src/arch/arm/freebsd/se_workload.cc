@@ -42,7 +42,6 @@
 #include "base/loader/object_file.hh"
 #include "base/trace.hh"
 #include "cpu/thread_context.hh"
-#include "mem/se_translating_port_proxy.hh"
 #include "sim/syscall_emul.hh"
 
 namespace gem5
@@ -95,20 +94,18 @@ sysctlFunc(SyscallDesc *desc, ThreadContext *tc, VPtr<> namep, size_t nameLen,
 {
     uint64_t ret;
 
-    SETranslatingPortProxy proxy(tc);
-
     BufferArg buf(namep, sizeof(size_t));
     BufferArg buf2(oldp, sizeof(size_t));
     BufferArg buf3(oldlenp, sizeof(size_t));
     BufferArg buf4(newp, sizeof(size_t));
 
-    buf.copyIn(proxy);
-    buf2.copyIn(proxy);
-    buf3.copyIn(proxy);
+    buf.copyIn(tc->getVirtProxy());
+    buf2.copyIn(tc->getVirtProxy());
+    buf3.copyIn(tc->getVirtProxy());
 
     void *hnewp = NULL;
     if (newp) {
-        buf4.copyIn(proxy);
+        buf4.copyIn(tc->getVirtProxy());
         hnewp = (void *)buf4.bufferPtr();
     }
 
@@ -118,11 +115,11 @@ sysctlFunc(SyscallDesc *desc, ThreadContext *tc, VPtr<> namep, size_t nameLen,
 
     ret = sysctl((int *)hnamep, nameLen, holdp, holdlenp, hnewp, newlen);
 
-    buf.copyOut(proxy);
-    buf2.copyOut(proxy);
-    buf3.copyOut(proxy);
+    buf.copyOut(tc->getVirtProxy());
+    buf2.copyOut(tc->getVirtProxy());
+    buf3.copyOut(tc->getVirtProxy());
     if (newp)
-        buf4.copyOut(proxy);
+        buf4.copyOut(tc->getVirtProxy());
 
     return (ret);
 }

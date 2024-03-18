@@ -889,12 +889,12 @@ namespace Gcn3ISA
                 for (int lane = 0; lane < NumVecElemPerVecReg; ++lane) {
                     if (gpuDynInst->exec_mask[lane]) {
                         Addr vaddr = gpuDynInst->addr[lane];
-                        auto amo_op =
+                        AtomicOpFunctor* amo_op =
                             gpuDynInst->makeAtomicOpFunctor<T>(
                                 &(reinterpret_cast<T*>(
                                     gpuDynInst->a_data))[lane],
                                 &(reinterpret_cast<T*>(
-                                    gpuDynInst->x_data))[lane]);
+                                    gpuDynInst->x_data))[lane]).get();
 
                         T tmp = wf->ldsChunk->read<T>(vaddr);
                         (*amo_op)(reinterpret_cast<uint8_t *>(&tmp));

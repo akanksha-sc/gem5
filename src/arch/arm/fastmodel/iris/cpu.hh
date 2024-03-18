@@ -100,6 +100,8 @@ class BaseCPU : public gem5::BaseCPU
         evs_base_cpu->setClkPeriod(clockPeriod());
     }
 
+    void init() override;
+
     void serializeThread(CheckpointOut &cp, ThreadID tid) const override;
 };
 

@@ -232,23 +232,26 @@ replaceBits(T& val, unsigned bit, B bit_val)
  * @ingroup api_bitfield
  */
 template <class T>
-std::enable_if_t<std::is_integral_v<T>, T>
+std::enable_if_t<std::is_integral<T>::value && sizeof(T) != 1, T>
 reverseBits(T val, size_t size=sizeof(T))
 {
     assert(size <= sizeof(T));
 
-    if constexpr (sizeof(T) == 1) {
-        return reverseBitsLookUpTable[val];
-    } else {
-        T output = {};
-
-        for (size_t byte = 0; byte < size; byte++) {
-            output = (output << 8) | reverseBitsLookUpTable[val & mask(8)];
-            val >>= 8;
-        }
-
-        return output;
+    T output = {};
+    for (size_t byte = 0; byte < size; byte++) {
+        output = (output << 8) | reverseBitsLookUpTable[val & mask(8)];
+        val >>= 8;
     }
+
+    return output;
+}
+
+template <class T>
+std::enable_if_t<std::is_integral<T>::value && sizeof(T) == 1, T>
+reverseBits(T val, size_t size=sizeof(T))
+{
+    assert(size == 1);
+    return reverseBitsLookUpTable[val];
 }
 
 /**

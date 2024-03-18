@@ -25,6 +25,7 @@ images=("gcc-version-11"
         # "minimum dependencies" and "all dependencies" docker images.
         "ubuntu-18.04_all-dependencies"
         "ubuntu-20.04_all-dependencies"
+        "ubuntu-20.04_all-dependencies-salam"
         "ubuntu-20.04_min-dependencies"
        )
 

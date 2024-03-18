@@ -25,12 +25,18 @@
 
 Import('*')
 
+# Define the universe of supported ISAs
+all_isa_list = []
+Export('all_isa_list')
+
+all_gpu_isa_list = []
+Export('all_gpu_isa_list')
+
 def add_isa_lists():
     sticky_vars.AddVariables(
-        EnumVariable('TARGET_ISA', 'Target ISA', 'null',
-            sorted(set(main.Split('${ALL_ISAS}')))),
+        EnumVariable('TARGET_ISA', 'Target ISA', 'null', sorted(all_isa_list)),
         EnumVariable('TARGET_GPU_ISA', 'Target GPU ISA', 'gcn3',
-            sorted(set(main.Split('${ALL_GPU_ISAS}')))),
+            sorted(all_gpu_isa_list)),
         )
 AfterSConsopts(add_isa_lists)
 

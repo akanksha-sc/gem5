@@ -40,6 +40,7 @@
 
 #include <cstdint>
 
+#include "arch/generic/types.hh"
 #include "arch/generic/vec_pred_reg.hh"
 #include "arch/generic/vec_reg.hh"
 

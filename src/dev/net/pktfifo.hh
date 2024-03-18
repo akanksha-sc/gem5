@@ -64,8 +64,7 @@ struct PacketFifoEntry
     {
     }
 
-    void
-    clear()
+    void clear()
     {
         packet = NULL;
         number = 0;
@@ -121,8 +120,7 @@ class PacketFifo
 
     EthPacketPtr front() { return fifo.begin()->packet; }
 
-    bool
-    push(EthPacketPtr ptr)
+    bool push(EthPacketPtr ptr)
     {
         assert(ptr->length);
         assert(_reserved <= ptr->length);
@@ -139,8 +137,7 @@ class PacketFifo
         return true;
     }
 
-    void
-    pop()
+    void pop()
     {
         if (empty())
             return;
@@ -152,8 +149,7 @@ class PacketFifo
         fifo.pop_front();
     }
 
-    void
-    clear()
+    void clear()
     {
         for (iterator i = begin(); i != end(); ++i)
             i->clear();
@@ -162,8 +158,7 @@ class PacketFifo
         _reserved = 0;
     }
 
-    void
-    remove(iterator i)
+    void remove(iterator i)
     {
         if (i != fifo.begin()) {
             iterator prev = i;
@@ -182,16 +177,14 @@ class PacketFifo
 
     bool copyout(void *dest, unsigned offset, unsigned len);
 
-    int
-    countPacketsBefore(const_iterator i) const
+    int countPacketsBefore(const_iterator i) const
     {
         if (i == fifo.end())
             return 0;
         return i->number - fifo.begin()->number;
     }
 
-    int
-    countPacketsAfter(const_iterator i) const
+    int countPacketsAfter(const_iterator i) const
     {
         auto end = fifo.end();
         if (i == end)
@@ -199,8 +192,7 @@ class PacketFifo
         return (--end)->number - i->number;
     }
 
-    void
-    check() const
+    void check() const
     {
         unsigned total = 0;
         for (auto i = begin(); i != end(); ++i)

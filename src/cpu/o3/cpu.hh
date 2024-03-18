@@ -49,6 +49,7 @@
 #include <set>
 #include <vector>
 
+#include "arch/generic/types.hh"
 #include "arch/pcstate.hh"
 #include "base/statistics.hh"
 #include "config/the_isa.hh"
@@ -644,6 +645,20 @@ class CPU : public BaseCPU
     {
         return iew.ldstQueue.pushRequest(inst, isLoad, data, size, addr,
                 flags, res, std::move(amo_op), byte_enable);
+    }
+
+    /** CPU read function, forwards read to LSQ. */
+    Fault
+    read(LSQRequest* req, int load_idx)
+    {
+        return iew.ldstQueue.read(req, load_idx);
+    }
+
+    /** CPU write function, forwards write to LSQ. */
+    Fault
+    write(LSQRequest* req, uint8_t *data, int store_idx)
+    {
+        return iew.ldstQueue.write(req, data, store_idx);
     }
 
     /** Used by the fetch unit to get a hold of the instruction port. */

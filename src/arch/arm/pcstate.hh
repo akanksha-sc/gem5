@@ -41,7 +41,7 @@
 #ifndef __ARCH_ARM_PCSTATE_HH__
 #define __ARCH_ARM_PCSTATE_HH__
 
-#include "arch/generic/pcstate.hh"
+#include "arch/generic/types.hh"
 #include "base/bitunion.hh"
 #include "base/types.hh"
 #include "debug/Decoder.hh"

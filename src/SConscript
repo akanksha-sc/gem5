@@ -37,9 +37,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import array
 import bisect
 import collections
 import distutils.spawn
+import functools
+import imp
 import importlib
 import importlib.abc
 import importlib.machinery
@@ -48,11 +51,15 @@ import os
 import os.path
 import re
 import sys
+import zlib
+
+from os.path import basename, dirname, exists, isdir, isfile, join as joinpath
 
 import SCons
 
 from gem5_scons import Transform, warning, error, ToValue, FromValue
 from gem5_scons.sources import *
+from gem5_scons.util import bytesToCppArray
 
 Export(SourceFilter.factories)
 
@@ -72,15 +79,328 @@ def GdbXml(xml_id, symbol):
     cc, hh = env.Blob(symbol, xml_id)
     Source(cc)
 
+########################################################################
+# Code for adding source files of various types
+#
+# When specifying a source file of some type, a set of tags can be
+# specified for that file.
+
+def tag_implies(env, tag, tag_list):
+    '''
+    Associates a tag X to a list of tags which are implied by X.
+
+    For example, assume:
+    - Each file <X>.cc is tagged with the tag "Tag <X>".
+    - B.cc refers to symbols from A.cc
+    - C.cc refers to symbols from B.cc
+    - D.cc refers to symbols from A.cc and C.cc
+
+    Then:
+    - "Tag A" is implied by "Tag B"
+    - "Tag B" is implied by "Tag C"
+    - "Tag A" is transitively implied by "Tag C" (from "Tag B")
+    - "Tag A" and "Tag C" are implied by "Tag D"
+    - "Tag B" is transitively implied by "Tag D" (from "Tag C")
+    - "Tag A" is transitively implied by "Tag D" (from transitive "Tag B")
+
+    All of these implications are simply declared as:
+        env.TagImplies("Tag B", "Tag A")
+        env.TagImplies("Tag C", "Tag B")
+        env.TagImplies("Tag D", ["Tag A", "Tag C"])
+
+    So that any use of a tag will automatically include its transitive tags
+    after being resolved.
+    '''
+
+    env.SetDefault(_tag_implies={})
+    implications = env['_tag_implies']
+
+    if isinstance(tag_list, str):
+        tag_list = frozenset([tag_list])
+    if not isinstance(tag_list, frozenset):
+        tag_list = frozenset(tag_list)
+    if tag in implications:
+        implications[tag] |= tag_list
+    else:
+        implications[tag] = tag_list
+
+    # Check if any of the tags on which the new tag depends on already
+    # has a list of implications. If so, add the list to the new tag's
+    # implications
+    for t in tag_list:
+        if t in implications:
+            implications[tag] |= implications[t]
+
+    # Check if another tag depends on this tag. If so, add this tag's
+    # implications to that tag.
+    for t,implied in implications.items():
+        if tag in implied:
+            implications[t] |= implications[tag]
+
+env.AddMethod(tag_implies, 'TagImplies')
+
+def resolve_tags(env, tags):
+    '''
+    Returns the complete set of tags implied (dependencies) by the
+    supplied tags.
+    '''
+
+    implications = env.SetDefault(_tag_implies={})
+    implications = env['_tag_implies']
+
+    if isinstance(tags, str):
+        tags = frozenset([tags])
+    if not isinstance(tags, frozenset):
+        tags = frozenset(tags)
+
+    tags = tags.copy()
+    for tag in tags:
+        if tag in implications:
+            tags |= implications[tag]
+    return tags
+
+class SourceFilter(object):
+    def __init__(self, predicate):
+        self.predicate = predicate
+
+    def __or__(self, other):
+        return SourceFilter(lambda env, tags: self.predicate(env, tags) or
+                                              other.predicate(env, tags))
+
+    def __and__(self, other):
+        return SourceFilter(lambda env, tags: self.predicate(env, tags) and
+                                              other.predicate(env, tags))
+
+def with_tags_that(predicate):
+    '''Return a list of sources with tags that satisfy a predicate.'''
+    return SourceFilter(predicate)
+
+def with_any_tags(*tags):
+    '''Return a list of sources with any of the supplied tags.'''
+    return SourceFilter(lambda env, stags: \
+        len(resolve_tags(env, tags) & stags) > 0)
+
+def with_all_tags(*tags):
+    '''Return a list of sources with all of the supplied tags.'''
+    return SourceFilter(lambda env, stags: resolve_tags(env, tags) <= stags)
+
+def with_tag(tag):
+    '''Return a list of sources with the supplied tag.'''
+    return with_any_tags(*[tag])
+
+def without_tags(*tags):
+    '''Return a list of sources without any of the supplied tags.'''
+    return SourceFilter(lambda env, stags: \
+        len(resolve_tags(env, tags) & stags) == 0)
+
+def without_tag(tag):
+    '''Return a list of sources without the supplied tag.'''
+    return without_tags(*[tag])
+
+source_filter_factories = {
+    'with_tags_that': with_tags_that,
+    'with_any_tags': with_any_tags,
+    'with_all_tags': with_all_tags,
+    'with_tag': with_tag,
+    'without_tags': without_tags,
+    'without_tag': without_tag,
+}
+
+Export(source_filter_factories)
+
+class SourceList(list):
+    def apply_filter(self, env, f):
+        def match(source):
+            return f.predicate(env, source.tags)
+        return SourceList(filter(match, self))
+
+    def __getattr__(self, name):
+        func = source_filter_factories.get(name, None)
+        if not func:
+            raise AttributeError
+
+        @functools.wraps(func)
+        def wrapper(env, *args, **kwargs):
+            return self.apply_filter(env, func(*args, **kwargs))
+        return wrapper
+
+class SourceMeta(type):
+    '''Meta class for source files that keeps track of all files of a
+    particular type.'''
+    def __init__(cls, name, bases, dict):
+        super(SourceMeta, cls).__init__(name, bases, dict)
+        cls.all = SourceList()
+
+class SourceFile(object, metaclass=SourceMeta):
+    '''Base object that encapsulates the notion of a source file.
+    This includes, the source node, target node, various manipulations
+    of those.  A source file also specifies a set of tags which
+    describing arbitrary properties of the source file.'''
+
+    static_objs = {}
+    shared_objs = {}
+
+    def __init__(self, source, tags=None, add_tags=None, append=None):
+        if tags is None:
+            tags='gem5 lib'
+        if isinstance(tags, str):
+            tags = set([tags])
+        if not isinstance(tags, set):
+            tags = set(tags)
+        self.tags = tags
+
+        if add_tags:
+            if isinstance(add_tags, str):
+                add_tags = set([add_tags])
+            if not isinstance(add_tags, set):
+                add_tags = set(add_tags)
+            self.tags |= add_tags
+
+        self.append = append
+
+        tnode = source
+        if not isinstance(source, SCons.Node.FS.File):
+            tnode = File(source)
+
+        self.tnode = tnode
+        self.snode = tnode.srcnode()
+
+        for base in type(self).__mro__:
+            if issubclass(base, SourceFile):
+                base.all.append(self)
+
+    def static(self, env):
+        key = (self.tnode, env['OBJSUFFIX'])
+        if self.append:
+            env = env.Clone()
+            env.Append(**self.append)
+        if not key in self.static_objs:
+            self.static_objs[key] = env.StaticObject(self.tnode)
+        return self.static_objs[key]
+
+    def shared(self, env):
+        key = (self.tnode, env['OBJSUFFIX'])
+        if self.append:
+            env = env.Clone()
+            env.Append(**self.append)
+        if not key in self.shared_objs:
+            self.shared_objs[key] = env.SharedObject(self.tnode)
+        return self.shared_objs[key]
+
+    @property
+    def filename(self):
+        return str(self.tnode)
+
+    @property
+    def dirname(self):
+        return dirname(self.filename)
+
+    @property
+    def basename(self):
+        return basename(self.filename)
+
+    @property
+    def extname(self):
+        index = self.basename.rfind('.')
+        if index <= 0:
+            # dot files aren't extensions
+            return self.basename, None
+
+        return self.basename[:index], self.basename[index+1:]
+
+    def __lt__(self, other): return self.filename < other.filename
+    def __le__(self, other): return self.filename <= other.filename
+    def __gt__(self, other): return self.filename > other.filename
+    def __ge__(self, other): return self.filename >= other.filename
+    def __eq__(self, other): return self.filename == other.filename
+    def __ne__(self, other): return self.filename != other.filename
+
+def blobToCpp(data, symbol, cpp_code, hpp_code=None, namespace=None):
+    '''
+    Convert bytes data into C++ .cpp and .hh uint8_t byte array
+    code containing that binary data.
+
+    :param data: binary data to be converted to C++
+    :param symbol: name of the symbol
+    :param cpp_code: append the generated cpp_code to this object
+    :param hpp_code: append the generated hpp_code to this object
+                     If None, ignore it. Otherwise, also include it
+                     in the .cpp file.
+    :param namespace: namespace to put the symbol into. If None,
+                      don't put the symbols into any namespace.
+    '''
+    symbol_len_declaration = 'const std::size_t {}_len'.format(symbol)
+    symbol_declaration = 'const std::uint8_t {}[]'.format(symbol)
+    if hpp_code is not None:
+        cpp_code('''\
+#include "blobs/{}.hh"
+'''.format(symbol))
+        hpp_code('''\
+#include <cstddef>
+#include <cstdint>
+''')
+        if namespace is not None:
+            hpp_code('namespace {} {{'.format(namespace))
+        hpp_code('extern ' + symbol_len_declaration + ';')
+        hpp_code('extern ' + symbol_declaration + ';')
+        if namespace is not None:
+            hpp_code('}')
+    if namespace is not None:
+        cpp_code('namespace {} {{'.format(namespace))
+    if hpp_code is not None:
+        cpp_code(symbol_len_declaration + ' = {};'.format(len(data)))
+    cpp_code(symbol_declaration + ' = {')
+    cpp_code.indent()
+    step = 16
+    for i in range(0, len(data), step):
+        x = array.array('B', data[i:i+step])
+        cpp_code(''.join('%d,' % d for d in x))
+    cpp_code.dedent()
+    cpp_code('};')
+    if namespace is not None:
+        cpp_code('}')
+
+def Blob(blob_path, symbol):
+    '''
+    Embed an arbitrary blob into the gem5 executable,
+    and make it accessible to C++ as a byte array.
+    '''
+    blob_path = os.path.abspath(blob_path)
+    blob_out_dir = os.path.join(env['BUILDDIR'], 'blobs')
+    path_noext = joinpath(blob_out_dir, symbol)
+    cpp_path = path_noext + '.cc'
+    hpp_path = path_noext + '.hh'
+    def embedBlob(target, source, env):
+        with open(str(source[0]), 'rb') as f:
+            data = f.read()
+        cpp_code = code_formatter()
+        hpp_code = code_formatter()
+        blobToCpp(data, symbol, cpp_code, hpp_code, namespace='Blobs')
+        cpp_path = str(target[0])
+        hpp_path = str(target[1])
+        cpp_dir = os.path.split(cpp_path)[0]
+        if not os.path.exists(cpp_dir):
+            os.makedirs(cpp_dir)
+        cpp_code.write(cpp_path)
+        hpp_code.write(hpp_path)
+    env.Command([cpp_path, hpp_path], blob_path,
+                MakeAction(embedBlob, Transform("EMBED BLOB")))
+    Source(cpp_path)
+
+def GdbXml(xml_id, symbol):
+    Blob(joinpath(gdb_xml_dir, xml_id), symbol)
+
 class Source(SourceFile):
     pass
 
 build_tools = Dir('#build_tools')
 
+
 # Build a small helper that runs Python code using the same version of Python
 # as gem5. This is in an unorthodox location to avoid building it for every
 # variant.
 gem5py_env = gem5py_env.Clone()
+py_marshal = gem5py_env.Program('marshal', 'python/marshal.cc')[0]
 gem5py = gem5py_env.Program('gem5py', 'python/gem5py.cc')[0]
 gem5py_env['GEM5PY'] = gem5py
 # Inject build_tools into PYTHONPATH for when we run gem5py.
@@ -88,9 +408,68 @@ pythonpath = gem5py_env['ENV'].get('PYTHONPATH', '').split(':')
 pythonpath.append(build_tools.abspath)
 gem5py_env['ENV']['PYTHONPATH'] = ':'.join(pythonpath)
 
+# Embed python files.  All .py files that have been indicated by a
+# PySource() call in a SConscript need to be embedded into the M5
+# library.  To do that, we compile the file to byte code, marshal the
+# byte code, compress it, and then generate a c++ file that
+# inserts the result into an array.
+def embedPyFile(target, source, env):
+    def c_str(string):
+        if string is None:
+            return "0"
+        return '"%s"' % string
+
+    '''Action function to compile a .py into a code object, marshal it,
+    compress it, and stick it into an asm file so the code appears as
+    just bytes with a label in the data section. The action takes two
+    sources:
+
+    source[0]: Binary used to marshal Python sources
+    source[1]: Python script to marshal
+    '''
+
+    import subprocess
+
+    marshalled = subprocess.check_output(
+            [source[0].abspath, str(source[1])], env=env['ENV'])
+
+    compressed = zlib.compress(marshalled)
+    data = compressed
+    pysource = PySource.tnodes[source[1]]
+
+    code = code_formatter()
+    code('''\
+#include "sim/init.hh"
+
+namespace gem5
+{
+namespace
+{
+
+''')
+    bytesToCppArray(code, 'embedded_module_data', data)
+    # The name of the EmbeddedPython object doesn't matter since it's in an
+    # anonymous namespace, and it's constructor takes care of installing it
+    # into a global list.
+    code('''
+EmbeddedPython embedded_module_info(
+    ${{c_str(pysource.abspath)}},
+    ${{c_str(pysource.modpath)}},
+    embedded_module_data,
+    ${{len(data)}},
+    ${{len(marshalled)}});
+
+} // anonymous namespace
+} // namespace gem5
+''')
+    code.write(str(target[0]))
+
 class PySource(SourceFile):
     '''Add a python source file to the named package'''
+    invalid_sym_char = re.compile('[^A-z0-9_]')
     modules = {}
+    tnodes = {}
+    symnames = {}
 
     def __init__(self, package, source, tags=None, add_tags=None):
         '''specify the python package, the source file, and any tags'''
@@ -109,15 +488,23 @@ class PySource(SourceFile):
             modpath += [ modname ]
         modpath = '.'.join(modpath)
 
+        arcpath = path + [ self.basename ]
         abspath = self.snode.abspath
         if not os.path.exists(abspath):
             abspath = self.tnode.abspath
 
+        self.package = package
         self.modname = modname
         self.modpath = modpath
+        self.arcname = joinpath(*arcpath)
         self.abspath = abspath
+        self.compiled = File(self.filename + 'c')
+        self.cpp = File(self.filename + '.cc')
+        self.symname = PySource.invalid_sym_char.sub('_', modpath)
 
         PySource.modules[modpath] = self
+        PySource.tnodes[self.tnode] = self
+        PySource.symnames[self.symname] = self
 
         cpp = File(self.filename + '.cc')
 
@@ -329,6 +716,8 @@ class GTest(Executable):
             srcs_and_filts = srcs_and_filts + (with_tag('gtest lib'),)
         super(GTest, self).__init__(*srcs_and_filts)
 
+        self.skip_lib = kwargs.pop('skip_lib', False)
+
     @classmethod
     def declare_all(cls, env):
         env = env.Clone()
@@ -336,11 +725,19 @@ class GTest(Executable):
         env['SHOBJSUFFIX'] = '.t' + env['SHOBJSUFFIX'][1:]
         env.Append(LIBS=env['GTEST_LIBS'])
         env.Append(CPPFLAGS=env['GTEST_CPPFLAGS'])
+        env['GTEST_LIB_SOURCES'] = Source.all.with_tag(env, 'gtest lib')
         env['GTEST_OUT_DIR'] = \
             Dir(env['BUILDDIR']).Dir('unittests.${ENV_LABEL}')
         return super(GTest, cls).declare_all(env)
 
     def declare(self, env):
+        sources = list(self.sources)
+        if not self.skip_lib:
+            sources += env['GTEST_LIB_SOURCES']
+        for f in self.filters:
+            sources += Source.all.apply_filter(env, f)
+        objs = self.srcs_to_objs(env, sources)
+
         binary, stripped = super(GTest, self).declare(env)
 
         out_dir = env['GTEST_OUT_DIR']
@@ -352,6 +749,7 @@ class GTest(Executable):
 
 
 # Children should have access
+Export('Blob')
 Export('GdbXml')
 Export('Source')
 Export('PySource')
@@ -441,6 +839,19 @@ def CompoundFlag(name, flags, desc=None):
 def DebugFormatFlag(name, desc=None):
     DebugFlag(name, desc, True)
 
+# Create a compound debug flag that encapsulates all flags: "All". This
+# flag should not be used within C++ code - it is a compound meta flag
+def _createAllDebugFlag():
+    simple_flags = []
+    for name,flag in sorted(debug_flags.items()):
+        n, compound, desc, fmt = flag
+        assert n == name
+        if not compound and not fmt:
+            simple_flags.append(n)
+
+    CompoundFlag("All", simple_flags,
+        "Controls all debug flags. It should not be used within C++ code.")
+
 Export('DebugFlag')
 Export('CompoundFlag')
 Export('DebugFormatFlag')
@@ -514,6 +925,7 @@ def makeTheISA(source, target, env):
 
 #define IS_NULL_ISA ${{is_null_isa}}
 #define TheISA ${{namespace(target_isa)}}
+#define THE_ISA_STR "${{target_isa}}"
 
 #endif // __CONFIG_THE_ISA_HH__''')
 
@@ -611,6 +1023,7 @@ class M5MetaPathFinder(importlib.abc.MetaPathFinder):
 
 import m5.SimObject
 import m5.params
+from code_formatter import code_formatter
 
 m5.SimObject.clear()
 m5.params.clear()
@@ -634,6 +1047,14 @@ sys.meta_path.remove(importer)
 sim_objects = m5.SimObject.allClasses
 all_enums = m5.params.allEnums
 
+for name,obj in sorted(sim_objects.items()):
+    for param in obj._params.local.values():
+        # load the ptype attribute now because it depends on the
+        # current version of SimObject.allClasses, but when scons
+        # actually uses the value, all versions of
+        # SimObject.allClasses will have been loaded
+        param.ptype
+
 ########################################################################
 #
 # calculate extra dependencies
@@ -650,12 +1071,15 @@ depends.sort(key = lambda x: x.name)
 # Generate Python file containing a dict specifying the current
 # buildEnv flags.
 def makeDefinesPyFile(target, source, env):
+    build_env = source[0].get_contents().decode('utf-8')
+
     code = code_formatter()
-    code("buildEnv = $0", FromValue(source[0]))
+    code("buildEnv = dict($build_env)")
     code.write(target[0].abspath)
 
+defines_info = Value(build_env)
 # Generate a file with all of the compile options in it
-env.Command('python/m5/defines.py', ToValue(dict(build_env)),
+env.Command('python/m5/defines.py', defines_info,
             MakeAction(makeDefinesPyFile, Transform("DEFINES", 0)))
 PySource('m5', 'python/m5/defines.py')
 
@@ -847,9 +1271,13 @@ for name,simobj in sorted(sim_objects.items()):
 # Handle debug flags
 #
 def makeDebugFlagCC(target, source, env):
-    assert(len(target) == 1)
+    assert(len(target) == 1 and len(source) == 1)
 
     code = code_formatter()
+
+    # delay definition of CompoundFlags until after all the definition
+    # of all constituent SimpleFlags
+    comp_code = code_formatter()
 
     # file header
     code('''
@@ -862,6 +1290,7 @@ namespace gem5
 GEM5_DEPRECATED_NAMESPACE(Debug, debug);
 namespace debug
 {
+
 ''')
 
     all_flags = env.get('DEBUG_FLAGS', [])
@@ -908,6 +1337,67 @@ env.Command('sim/tags.cc', None,
             MakeAction('util/cpt_upgrader.py --get-cc-file > $TARGET',
                        Transform("VER TAGS")))
 env.AlwaysBuild(tags)
+
+# Embed python files.  All .py files that have been indicated by a
+# PySource() call in a SConscript need to be embedded into the M5
+# library.  To do that, we compile the file to byte code, marshal the
+# byte code, compress it, and then generate a c++ file that
+# inserts the result into an array.
+def embedPyFile(target, source, env):
+    def c_str(string):
+        if string is None:
+            return "0"
+        return '"%s"' % string
+
+    '''Action function to compile a .py into a code object, marshal it,
+    compress it, and stick it into an asm file so the code appears as
+    just bytes with a label in the data section. The action takes two
+    sources:
+
+    source[0]: Binary used to marshal Python sources
+    source[1]: Python script to marshal
+    '''
+
+    import subprocess
+
+    marshalled = subprocess.check_output(
+            [source[0].abspath, str(source[1])], env=env['ENV'])
+
+    compressed = zlib.compress(marshalled)
+    data = compressed
+    pysource = PySource.tnodes[source[1]]
+    sym = pysource.symname
+
+    code = code_formatter()
+    code('''\
+#include "sim/init.hh"
+
+namespace gem5
+{
+namespace
+{
+
+''')
+    blobToCpp(data, 'data_' + sym, code)
+    code('''\
+
+
+EmbeddedPython embedded_${sym}(
+    ${{c_str(pysource.arcname)}},
+    ${{c_str(pysource.abspath)}},
+    ${{c_str(pysource.modpath)}},
+    data_${sym},
+    ${{len(data)}},
+    ${{len(marshalled)}});
+
+} // anonymous namespace
+} // namespace gem5
+''')
+    code.write(str(target[0]))
+
+if main['USE_PYTHON']:
+    for source in PySource.all:
+        Source(source.cpp, tags=source.tags, add_tags='python')
 
 ########################################################################
 #

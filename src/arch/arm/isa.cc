@@ -106,16 +106,34 @@ ISA::ISA(const Params &p) : BaseISA(p), system(NULL),
     // Cache system-level properties
     if (FullSystem && system) {
         highestELIs64 = system->highestELIs64();
+        haveSecurity = system->haveSecurity();
+        haveLPAE = system->haveLPAE();
+        haveCrypto = system->haveCrypto();
+        haveVirtualization = system->haveVirtualization();
         haveLargeAsid64 = system->haveLargeAsid64();
         physAddrRange = system->physAddrRange();
+        haveSVE = system->haveSVE();
+        haveVHE = system->haveVHE();
+        havePAN = system->havePAN();
+        haveSecEL2 = system->haveSecEL2();
         sveVL = system->sveVL();
+        haveLSE = system->haveLSE();
+        haveTME = system->haveTME();
 
         release = system->releaseFS();
     } else {
         highestELIs64 = true; // ArmSystem::highestELIs64 does the same
+        haveSecurity = haveLPAE = haveVirtualization = false;
+        haveCrypto = true;
         haveLargeAsid64 = false;
         physAddrRange = 32;  // dummy value
+        haveSVE = true;
+        haveVHE = false;
+        havePAN = false;
+        haveSecEL2 = true;
         sveVL = p.sve_vl_se;
+        haveLSE = true;
+        haveTME = true;
 
         release = p.release_se;
     }
@@ -425,7 +443,9 @@ ISA::initID64(const ArmISAParams &p)
     miscRegs[MISCREG_ID_AA64PFR0_EL1] = insertBits(
         miscRegs[MISCREG_ID_AA64PFR0_EL1], 39, 36,
         release->has(ArmExtension::FEAT_SEL2) ? 0x1 : 0x0);
-
+  miscRegs[MISCREG_ID_AA64ISAR0_EL1] = insertBits(
+        miscRegs[MISCREG_ID_AA64ISAR0_EL1], 39, 36,
+        haveSecEL2 ? 0x1 : 0x0);
     // Large ASID support
     miscRegs[MISCREG_ID_AA64MMFR0_EL1] = insertBits(
         miscRegs[MISCREG_ID_AA64MMFR0_EL1], 7, 4,
@@ -966,6 +986,10 @@ ISA::setMiscReg(int misc_reg, RegVal val)
         CPSR cpsr = val;
         if (cpsr.pan != old_cpsr.pan || cpsr.il != old_cpsr.il) {
             getMMUPtr(tc)->invalidateMiscReg();
+        }
+
+        if (cpsr.pan != old_cpsr.pan) {
+            getMMUPtr(tc)->invalidateMiscReg(MMU::D_TLBS);
         }
 
         DPRINTF(Arm, "Updating CPSR from %#x to %#x f:%d i:%d a:%d mode:%#x\n",
@@ -2425,6 +2449,16 @@ ISA::setMiscReg(int misc_reg, RegVal val)
           case MISCREG_AT_S1E3W_Xt:
             addressTranslation64(MMU::S1E3Tran, BaseMMU::Write, 0, val);
             return;
+          case MISCREG_SPSR_EL3:
+          case MISCREG_SPSR_EL2:
+          case MISCREG_SPSR_EL1:
+            {
+                RegVal spsr_mask = havePAN ?
+                    ~(0x2 << 22) : ~(0x3 << 22);
+
+                newVal = val & spsr_mask;
+                break;
+            }
           case MISCREG_L2CTLR:
             warn("miscreg L2CTLR (%s) written with %#x. ignored...\n",
                  miscRegName[misc_reg], uint32_t(val));
@@ -2448,6 +2482,7 @@ ISA::setMiscReg(int misc_reg, RegVal val)
         }
         setMiscRegNoEffect(misc_reg, newVal);
     }
+    # setMiscRegNoEffect(misc_reg, newVal);
 }
 
 BaseISADevice &

@@ -101,7 +101,7 @@ AMDGPUDevice::getAddrRanges() const
 Tick
 AMDGPUDevice::readConfig(PacketPtr pkt)
 {
-    [[maybe_unused]] int offset = pkt->getAddr() & PCI_CONFIG_SIZE;
+    GEM5_VAR_USED int offset = pkt->getAddr() & PCI_CONFIG_SIZE;
     DPRINTF(AMDGPUDevice, "Read Config: from offset: %#x size: %#x "
             "data: %#x\n", offset, pkt->getSize(), config.data[offset]);
 
@@ -129,7 +129,7 @@ AMDGPUDevice::readConfig(PacketPtr pkt)
 Tick
 AMDGPUDevice::writeConfig(PacketPtr pkt)
 {
-    [[maybe_unused]] int offset = pkt->getAddr() & PCI_CONFIG_SIZE;
+    GEM5_VAR_USED int offset = pkt->getAddr() & PCI_CONFIG_SIZE;
     DPRINTF(AMDGPUDevice, "Write Config: from offset: %#x size: %#x "
             "data: %#x\n", offset, pkt->getSize(),
             pkt->getUintX(ByteOrder::little));

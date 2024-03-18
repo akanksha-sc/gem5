@@ -864,12 +864,15 @@ class AddrRange(ParamValue):
         return AddrRange(int(self.start), int(self.end),
                          self.masks, int(self.intlvMatch))
 
+<<<<<<< HEAD
     def exclude(self, ranges):
         pybind_exclude = list([ r.getValue() for r in ranges ])
         pybind_include = self.getValue().exclude(pybind_exclude)
 
         return list([ AddrRange(r.start(), r.end()) for r in pybind_include ])
 
+=======
+>>>>>>> merge-v21.1.0.2
 # Boolean parameter type.  Python doesn't let you subclass bool, since
 # it doesn't want to let you create multiple instances of True and
 # False.  Thus this is a little more complicated than String.

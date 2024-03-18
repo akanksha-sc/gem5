@@ -32,7 +32,6 @@
 
 #include "arch/arm/fastmodel/amba_ports.hh"
 #include "arch/arm/fastmodel/common/signal_receiver.hh"
-#include "arch/arm/fastmodel/common/signal_sender.hh"
 #include "arch/arm/fastmodel/iris/cpu.hh"
 #include "arch/arm/fastmodel/protocol/exported_clock_rate_control.hh"
 #include "arch/arm/fastmodel/protocol/signal_interrupt.hh"
@@ -103,10 +102,6 @@ class ScxEvsCortexR52 : public Types::Base, public Iris::BaseCpuEvs
         AmbaInitiator llpp;
         AmbaInitiator flash;
         AmbaInitiator amba;
-
-        SignalSender core_reset;
-        SignalSender poweron_reset;
-        SignalSender halt;
     };
 
     std::vector<std::unique_ptr<CorePins>> corePins;
@@ -118,10 +113,6 @@ class ScxEvsCortexR52 : public Types::Base, public Iris::BaseCpuEvs
     CortexR52Cluster *gem5CpuCluster;
 
     const Params &params;
-
-    AmbaTarget ext_slave;
-
-    SignalSender top_reset;
 
   public:
     ScxEvsCortexR52(const Params &p) : ScxEvsCortexR52(p.name.c_str(), p) {}

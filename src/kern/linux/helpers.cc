@@ -40,7 +40,6 @@
 #include "base/compiler.hh"
 #include "cpu/thread_context.hh"
 #include "mem/port_proxy.hh"
-#include "mem/translating_port_proxy.hh"
 #include "sim/byteswap.hh"
 #include "sim/system.hh"
 
@@ -98,7 +97,7 @@ linux::dumpDmesg(ThreadContext *tc, std::ostream &os)
     System *system = tc->getSystemPtr();
     const ByteOrder bo = system->getGuestByteOrder();
     const auto &symtab = system->workload->symtab(tc);
-    TranslatingPortProxy proxy(tc);
+    PortProxy &proxy = tc->getVirtProxy();
 
     auto lb = symtab.find("__log_buf");
     auto lb_len = symtab.find("log_buf_len");

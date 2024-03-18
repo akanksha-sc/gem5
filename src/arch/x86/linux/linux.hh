@@ -81,7 +81,8 @@ namespace guest_abi
 
 template <typename ABI>
 struct Result<ABI, SyscallReturn,
-    typename std::enable_if_t<std::is_base_of_v<X86Linux::SyscallABI, ABI>>>
+    typename std::enable_if_t<std::is_base_of<
+        X86Linux::SyscallABI, ABI>::value>>
 {
     static void
     store(ThreadContext *tc, const SyscallReturn &ret)

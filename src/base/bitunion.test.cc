@@ -264,9 +264,9 @@ TEST_F(BitUnionData, Templating)
     EndBitUnion(Dummy32);
 
     bool is64;
-    is64 = std::is_same_v<BitUnionBaseType<Dummy64>, uint64_t>;
+    is64 = std::is_same<BitUnionBaseType<Dummy64>, uint64_t>::value;
     EXPECT_TRUE(is64);
-    is64 = std::is_same_v<BitUnionBaseType<Dummy32>, uint64_t>;
+    is64 = std::is_same<BitUnionBaseType<Dummy32>, uint64_t>::value;
     EXPECT_FALSE(is64);
 }
 

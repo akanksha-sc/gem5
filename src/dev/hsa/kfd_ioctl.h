@@ -24,6 +24,7 @@
 #define KFD_IOCTL_H_INCLUDED
 
 #include <cstdint>
+#include <drm/drm.h>
 #include <linux/ioctl.h>
 #include <linux/types.h>
 

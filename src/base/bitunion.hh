@@ -56,7 +56,8 @@ namespace gem5
 template<class Base>
 class BitfieldTypeImpl : public Base
 {
-    static_assert(std::is_empty_v<Base>, "Bitfield base class must be empty.");
+    static_assert(std::is_empty<Base>::value,
+                  "Bitfield base class must be empty.");
 
   private:
 

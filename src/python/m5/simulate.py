@@ -50,7 +50,6 @@ from . import stats
 from . import SimObject
 from . import ticks
 from . import objects
-from . import params
 from m5.util.dot_writer import do_dot, do_dvfs_dot
 from m5.util.dot_writer_ruby import do_ruby_dot
 
@@ -59,6 +58,12 @@ from .util import attrdict
 
 # define a MaxTick parameter, unsigned 64 bit
 MaxTick = 2**64 - 1
+
+_memory_modes = {
+    "atomic" : objects.params.atomic,
+    "timing" : objects.params.timing,
+    "atomic_noncaching" : objects.params.atomic_noncaching,
+    }
 
 _drain_manager = _m5.drain.DrainManager.instance()
 
@@ -287,9 +292,8 @@ def switchCpus(system, cpuList, verbose=True):
             raise RuntimeError(
                 "Old CPU (%s) does not support CPU handover." % (old_cpu,))
 
-    MemoryMode = params.allEnums["MemoryMode"]
     try:
-        memory_mode = MemoryMode(memory_mode_name).getValue()
+        memory_mode = _memory_modes[memory_mode_name]
     except KeyError:
         raise RuntimeError("Invalid memory mode (%s)" % memory_mode_name)
 
@@ -305,7 +309,7 @@ def switchCpus(system, cpuList, verbose=True):
         # Flush the memory system if we are switching to a memory mode
         # that disables caches. This typically happens when switching to a
         # hardware virtualized CPU.
-        if memory_mode == MemoryMode("atomic_noncaching").getValue():
+        if memory_mode == objects.params.atomic_noncaching:
             memWriteback(system)
             memInvalidate(system)
 

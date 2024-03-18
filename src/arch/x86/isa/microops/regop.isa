@@ -50,7 +50,7 @@ def template MicroRegOpExecute {{
         %(op_decl)s;
         %(op_rd)s;
 
-        [[maybe_unused]] RegVal result;
+        GEM5_VAR_USED RegVal result;
 
         if (%(cond_check)s) {
             %(code)s;
@@ -1400,7 +1400,7 @@ let {{
             '''
 
     # Microops for manipulating segmentation registers
-    class SegOp(RegOp):
+    class SegOp(CondRegOp):
         abstract = True
         operand_types = (SegDestOp, FoldedSrc1Op)
         def __init__(self, dest, src1, flags=None, dataSize="env.dataSize"):
@@ -1504,7 +1504,7 @@ let {{
                     fault = std::make_shared<GeneralProtection>(selector);
                     break;
                 }
-                [[fallthrough]];
+                GEM5_FALLTHROUGH;
               case SegIntGateCheck:
                 // Make sure the gate's the right type.
                 if ((m5reg.mode == LongMode && (desc.type & 0xe) != 0xe) ||

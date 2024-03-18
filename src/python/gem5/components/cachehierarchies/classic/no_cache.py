@@ -30,7 +30,7 @@ from ...boards.abstract_board import AbstractBoard
 from ....isas import ISA
 from ....runtime import get_runtime_isa
 
-from m5.objects import Bridge, BaseXBar, SystemXBar, BadAddr, Port
+from m5.objects import BaseXBar, SystemXBar, BadAddr, Port
 
 from typing import Optional
 
@@ -98,9 +98,6 @@ class NoCache(AbstractClassicCacheHierarchy):
     @overrides(AbstractCacheHierarchy)
     def incorporate_cache(self, board: AbstractBoard) -> None:
 
-        if board.has_coherent_io():
-            self._setup_coherent_io_bridge(board)
-
         for core in board.get_processor().get_cores():
 
             core.connect_icache(self.membus.cpu_side_ports)
@@ -113,17 +110,9 @@ class NoCache(AbstractClassicCacheHierarchy):
                 int_req_port = self.membus.mem_side_ports
                 int_resp_port = self.membus.cpu_side_ports
                 core.connect_interrupt(int_req_port, int_resp_port)
-            else:
-                core.connect_interrupt()
 
         # Set up the system port for functional access from the simulator.
         board.connect_system_port(self.membus.cpu_side_ports)
 
         for cntr in board.get_memory().get_memory_controllers():
             cntr.port = self.membus.mem_side_ports
-
-    def _setup_coherent_io_bridge(self, board: AbstractBoard) -> None:
-        """Create a bridge from I/O back to membus"""
-        self.iobridge = Bridge(delay="10ns", ranges=board.mem_ranges)
-        self.iobridge.mem_side_port = self.membus.cpu_side_ports
-        self.iobridge.cpu_side_port = board.get_mem_side_coherent_io_port()

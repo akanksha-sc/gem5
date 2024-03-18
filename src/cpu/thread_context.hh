@@ -147,7 +147,17 @@ class ThreadContext : public PCEventScope
 
     virtual System *getSystemPtr() = 0;
 
+    virtual PortProxy &getVirtProxy() = 0;
+
     virtual void sendFunctional(PacketPtr pkt);
+
+    /**
+     * Initialise the physical and virtual port proxies and tie them to
+     * the data port of the CPU.
+     *
+     * tc ThreadContext for the virtual-to-physical translation
+     */
+    virtual void initMemProxies(ThreadContext *tc) = 0;
 
     virtual Process *getProcessPtr() = 0;
 
@@ -200,7 +210,7 @@ class ThreadContext : public PCEventScope
         readVecReg(const RegId& reg) const = 0;
     virtual TheISA::VecRegContainer& getWritableVecReg(const RegId& reg) = 0;
 
-    virtual RegVal readVecElem(const RegId& reg) const = 0;
+    virtual const TheISA::VecElem& readVecElem(const RegId& reg) const = 0;
 
     virtual const TheISA::VecPredRegContainer& readVecPredReg(
             const RegId& reg) const = 0;
@@ -216,7 +226,7 @@ class ThreadContext : public PCEventScope
     virtual void setVecReg(const RegId& reg,
             const TheISA::VecRegContainer& val) = 0;
 
-    virtual void setVecElem(const RegId& reg, RegVal val) = 0;
+    virtual void setVecElem(const RegId& reg, const TheISA::VecElem& val) = 0;
 
     virtual void setVecPredReg(const RegId& reg,
             const TheISA::VecPredRegContainer& val) = 0;
@@ -291,10 +301,10 @@ class ThreadContext : public PCEventScope
     virtual void setVecRegFlat(RegIndex idx,
             const TheISA::VecRegContainer& val) = 0;
 
-    virtual RegVal readVecElemFlat(RegIndex idx,
+    virtual const TheISA::VecElem& readVecElemFlat(RegIndex idx,
             const ElemIndex& elem_idx) const = 0;
     virtual void setVecElemFlat(RegIndex idx, const ElemIndex& elem_idx,
-            RegVal val) = 0;
+            const TheISA::VecElem& val) = 0;
 
     virtual const TheISA::VecPredRegContainer &
         readVecPredRegFlat(RegIndex idx) const = 0;

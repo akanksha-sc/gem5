@@ -59,6 +59,8 @@ using namespace ArmISA;
 MMU::MMU(const ArmMMUParams &p)
   : BaseMMU(p),
     itbStage2(p.stage2_itb), dtbStage2(p.stage2_dtb),
+    iport(p.itb_walker, p.sys->getRequestorId(p.itb_walker)),
+    dport(p.dtb_walker, p.sys->getRequestorId(p.dtb_walker)),
     itbWalker(p.itb_walker), dtbWalker(p.dtb_walker),
     itbStage2Walker(p.stage2_itb_walker),
     dtbStage2Walker(p.stage2_dtb_walker),

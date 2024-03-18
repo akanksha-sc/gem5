@@ -1,6 +1,6 @@
 # Add the ARM CONTEXTIDR_EL2 miscreg.
 def upgrader(cpt):
-    if cpt.get('root', 'isa', fallback='') == 'arm':
+    if cpt.get('root','isa') == 'arm':
         for sec in cpt.sections():
             import re
             # Search for all ISA sections

@@ -127,7 +127,7 @@ HSAPacketProcessor::write(Packet *pkt)
     assert(pkt->getAddr() >= pioAddr && pkt->getAddr() < pioAddr + pioSize);
 
     // TODO: How to get pid??
-    [[maybe_unused]] Addr daddr = pkt->getAddr() - pioAddr;
+    GEM5_VAR_USED Addr daddr = pkt->getAddr() - pioAddr;
 
     DPRINTF(HSAPacketProcessor,
           "%s: write of size %d to reg-offset %d (0x%x)\n",
@@ -212,7 +212,7 @@ HSAPacketProcessor::cmdQueueCmdDma(HSAPacketProcessor *hsaPP, int pid,
     dma_series_ctx *series_ctx, void *dest_4debug)
 {
     uint32_t rl_idx = series_ctx->rl_idx;
-    [[maybe_unused]] AQLRingBuffer *aqlRingBuffer =
+    GEM5_VAR_USED AQLRingBuffer *aqlRingBuffer =
         hsaPP->regdQList[rl_idx]->qCntxt.aqlBuf;
     HSAQueueDescriptor* qDesc =
         hsaPP->regdQList[rl_idx]->qCntxt.qDesc;
@@ -559,8 +559,7 @@ HSAPacketProcessor::getCommandsFromHost(int pid, uint32_t rl_idx)
 void
 HSAPacketProcessor::displayQueueDescriptor(int pid, uint32_t rl_idx)
 {
-    [[maybe_unused]] HSAQueueDescriptor* qDesc =
-        regdQList[rl_idx]->qCntxt.qDesc;
+    GEM5_VAR_USED HSAQueueDescriptor* qDesc = regdQList[rl_idx]->qCntxt.qDesc;
     DPRINTF(HSAPacketProcessor,
             "%s: pid[%d], basePointer[0x%lx], dBPointer[0x%lx], "
             "writeIndex[0x%x], readIndex[0x%x], size(bytes)[0x%x]\n",

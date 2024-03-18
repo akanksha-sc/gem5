@@ -50,6 +50,7 @@
 
 #include "arch/generic/debugfaults.hh"
 #include "arch/generic/vec_reg.hh"
+#include "arch/locked_mem.hh"
 #include "base/circular_queue.hh"
 #include "config/the_isa.hh"
 #include "cpu/base.hh"

@@ -42,7 +42,6 @@ namespace fastmodel
 class CortexR52TC : public Iris::ThreadContext
 {
   protected:
-    static IdxNameMap miscRegIdxNameMap;
     static IdxNameMap intReg32IdxNameMap;
     static IdxNameMap ccRegIdxNameMap;
     static std::vector<iris::MemorySpaceId> bpSpaceIds;
@@ -75,19 +74,15 @@ class CortexR52TC : public Iris::ThreadContext
     // just return dummy values on reads and throw away writes, throw an
     // error, or some combination of the two.
     RegVal
-    readMiscRegNoEffect(RegIndex idx) const override
+    readMiscRegNoEffect(RegIndex) const override
     {
-        panic_if(miscRegIdxNameMap.find(idx) == miscRegIdxNameMap.end(),
-                "No mapping for index %#x.", idx);
-        return Iris::ThreadContext::readMiscRegNoEffect(idx);
+        panic("%s not implemented.", __FUNCTION__);
     }
 
     void
-    setMiscRegNoEffect(RegIndex idx, const RegVal val) override
+    setMiscRegNoEffect(RegIndex, const RegVal) override
     {
-        panic_if(miscRegIdxNameMap.find(idx) == miscRegIdxNameMap.end(),
-                "No mapping for index %#x.", idx);
-        Iris::ThreadContext::setMiscRegNoEffect(idx, val);
+        panic("%s not implemented.", __FUNCTION__);
     }
 
     // Like the Misc regs, not currently supported and a little complicated.

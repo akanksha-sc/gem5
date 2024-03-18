@@ -107,6 +107,8 @@ AddOption('--default',
 AddOption('--ignore-style', action='store_true',
           help='Disable style checking hooks')
 AddOption('--gold-linker', action='store_true', help='Use the gold linker')
+AddOption('--lld-linker', action='store_true', help='Use the lld linker')
+AddOption('--mold-linker', action='store_true', help='Use the mold linker')
 AddOption('--no-compress-debug', action='store_true',
           help="Don't compress debug info in build files")
 AddOption('--with-lto', action='store_true',
@@ -250,6 +252,8 @@ global_vars.AddVariables(
     ('GEM5PY_CCFLAGS_EXTRA', 'Extra C and C++ gem5py compiler flags', ''),
     ('GEM5PY_LDFLAGS_EXTRA', 'Extra marshal gem5py flags', ''),
     ('LDFLAGS_EXTRA', 'Extra linker flags', ''),
+    ('MARSHAL_CCFLAGS_EXTRA', 'Extra C and C++ marshal compiler flags', ''),
+    ('MARSHAL_LDFLAGS_EXTRA', 'Extra marshal linker flags', ''),
     ('PYTHON_CONFIG', 'Python config binary to use',
      [ 'python3-config', 'python-config']
     ),
@@ -343,6 +347,10 @@ if main['GCC'] or main['CLANG']:
         conf.CheckLinkFlag('-Wl,--as-needed')
     if GetOption('gold_linker'):
         main.Append(LINKFLAGS='-fuse-ld=gold')
+    elif GetOption('lld_linker'):
+        main.Append(LINKFLAGS='-fuse-ld=lld')
+    elif GetOption('mold_linker'):
+        main.Append(LINKFLAGS='-fuse-ld=mold')
 
     # Treat warnings as errors but white list some warnings that we
     # want to allow (e.g., deprecation warnings).
@@ -533,9 +541,14 @@ if main['USE_PYTHON']:
         warning('Embedded python library too new. '
                 'Python 3 expected, found %s.' % ver_string)
 
-gem5py_env = main.Clone()
+marshal_env = main.Clone()
 
 # Bare minimum environment that only includes python
+marshal_env.Append(CCFLAGS='$MARSHAL_CCFLAGS_EXTRA')
+marshal_env.Append(LINKFLAGS='$MARSHAL_LDFLAGS_EXTRA')
+
+# Append the settings from marshal_env to combined gem5py_env
+gem5py_env = marshal_env.Clone()
 gem5py_env.Append(CCFLAGS=['${GEM5PY_CCFLAGS_EXTRA}'])
 gem5py_env.Append(LINKFLAGS=['${GEM5PY_LDFLAGS_EXTRA}'])
 
@@ -625,6 +638,9 @@ for root, dirs, files in os.walk(ext_dir):
         ext_build_dirs.append(build_dir)
         main.SConscript(os.path.join(root, 'SConscript'),
                         variant_dir=os.path.join(build_root, build_dir))
+
+gdb_xml_dir = os.path.join(ext_dir, 'gdb-xml')
+Export('gdb_xml_dir')
 
 
 ########################################################################

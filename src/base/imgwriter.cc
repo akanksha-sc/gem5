@@ -60,7 +60,7 @@ createImgWriter(enums::ImageFormat type, const FrameBuffer *fb)
         // gem5 will try PNG first, and it will fallback to BMP if not
         // available.
 
-        [[fallthrough]];
+        GEM5_FALLTHROUGH;
 #if HAVE_PNG
       case enums::Png:
         return std::unique_ptr<PngWriter>(new PngWriter(fb));

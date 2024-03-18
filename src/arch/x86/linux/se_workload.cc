@@ -48,7 +48,6 @@
 #include "base/trace.hh"
 #include "cpu/thread_context.hh"
 #include "kern/linux/linux.hh"
-#include "mem/se_translating_port_proxy.hh"
 #include "sim/process.hh"
 #include "sim/syscall_desc.hh"
 #include "sim/syscall_emul.hh"
@@ -153,7 +152,7 @@ EmuLinux::pageFault(ThreadContext *tc)
 {
     Process *p = tc->getProcessPtr();
     if (!p->fixupFault(tc->readMiscReg(MISCREG_CR2))) {
-        SETranslatingPortProxy proxy(tc);
+        PortProxy &proxy = tc->getVirtProxy();
         // at this point we should have 6 values on the interrupt stack
         int size = 6;
         uint64_t is[size];

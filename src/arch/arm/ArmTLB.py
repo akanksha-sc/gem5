@@ -51,3 +51,9 @@ class ArmTLB(BaseTLB):
 class ArmStage2TLB(ArmTLB):
     size = 32
     is_stage2 = True
+
+class ArmITB(ArmTLB):
+    pass
+
+class ArmDTB(ArmTLB):
+    pass

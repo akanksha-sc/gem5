@@ -109,7 +109,11 @@ void
 BaseKvmCPU::init()
 {
     BaseCPU::init();
-    fatal_if(numThreads != 1, "KVM: Multithreading not supported");
+
+    if (numThreads != 1)
+        fatal("KVM: Multithreading not supported");
+
+    tc->initMemProxies(tc);
 }
 
 void
@@ -337,7 +341,7 @@ BaseKvmCPU::drain()
             deschedule(tickEvent);
         _status = Idle;
 
-        [[fallthrough]];
+        GEM5_FALLTHROUGH;
       case Idle:
         // Idle, no need to drain
         assert(!tickEvent.scheduled());

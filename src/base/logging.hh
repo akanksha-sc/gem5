@@ -43,7 +43,6 @@
 
 #include <cassert>
 #include <sstream>
-#include <tuple>
 #include <utility>
 
 #include "base/compiler.hh"
@@ -283,51 +282,31 @@ class Logger
     } while (0)
 /** @} */ // end of api_logger
 
-#ifdef NDEBUG
-#define NDEBUG_DEFINED 1
-#else
-#define NDEBUG_DEFINED 0
-#endif
-
-template <typename ...Args>
-inline std::string
-_assertMsg(const std::string &format, Args... args)
-{
-    return std::string(": ") + csprintf(format, args...);
-}
-
-inline const char *
-_assertMsg()
-{
-    return "";
-}
-
 /**
- * The assert macro will function like a normal assert, but will use panic
- * instead of straight abort(). This allows to perform some cleaning up in
- * ExitLogger::exit() before calling abort(). This macro will not check its
- * condition in fast builds, but it must still be valid code.
+ * The chatty assert macro will function like a normal assert, but will allow
+ * the specification of additional, helpful material to aid debugging why the
+ * assertion actually failed.  Like the normal assertion, the chatty_assert
+ * will not be active in fast builds.
  *
- * @param cond Condition that is checked; if false -> panic
+ * @param cond Condition that is checked; if false -> assert
  * @param ...  Printf-based format string with arguments, extends printout.
  *
- * \def gem5_assert(cond, ...)
+ * \def chatty_assert(cond, ...)
  *
  * @ingroup api_logger
  */
-#define gem5_assert(cond, ...) \
-    do { \
-        if (GEM5_UNLIKELY(!NDEBUG_DEFINED && !static_cast<bool>(cond))) { \
-            panic("assert(" #cond ") failed%s", _assertMsg(__VA_ARGS__)); \
-        } \
+#ifdef NDEBUG
+#define chatty_assert(cond, ...)
+#else //!NDEBUG
+#define chatty_assert(cond, ...)                                        \
+    do {                                                                \
+        if (GEM5_UNLIKELY(!(cond)))                                       \
+            panic("assert(" # cond ") failed: %s", \
+                ::gem5::csprintf(__VA_ARGS__)); \
     } while (0)
+#endif // NDEBUG
 /** @} */ // end of api_logger
 
-#define chatty_assert(...) \
-    do { \
-        gem5_assert(__VA_ARGS__); \
-        GEM5_DEPRECATED_MACRO(chatty_assert, {}, "Please use gem5_assert()"); \
-    } while(0)
-
 } // namespace gem5
+
 #endif // __BASE_LOGGING_HH__

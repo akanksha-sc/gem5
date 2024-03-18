@@ -41,6 +41,7 @@
 #include <iostream>
 
 namespace py = pybind11;
+using namespace pybind11::literals;
 
 /*
  * This wrapper program runs python scripts using the python interpretter which

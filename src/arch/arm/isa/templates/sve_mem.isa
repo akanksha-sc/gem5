@@ -157,7 +157,7 @@ def template SveContigLoadExecute {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
         unsigned eCount =
             ArmStaticInst::getCurSveVecLen<RegElemType>(xc->tcBase());
 
@@ -192,7 +192,7 @@ def template SveContigLoadInitiateAcc {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
         unsigned eCount =
             ArmStaticInst::getCurSveVecLen<RegElemType>(xc->tcBase());
 
@@ -217,7 +217,7 @@ def template SveContigLoadCompleteAcc {{
     %(class_name)s%(tpl_args)s::completeAcc(PacketPtr pkt,
             ExecContext *xc, Trace::InstRecord *traceData) const
     {
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
         unsigned eCount =
             ArmStaticInst::getCurSveVecLen<RegElemType>(xc->tcBase());
 
@@ -247,7 +247,7 @@ def template SveContigStoreExecute {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
         unsigned eCount =
             ArmStaticInst::getCurSveVecLen<RegElemType>(xc->tcBase());
 
@@ -285,7 +285,7 @@ def template SveContigStoreInitiateAcc {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
         unsigned eCount =
             ArmStaticInst::getCurSveVecLen<RegElemType>(xc->tcBase());
 
@@ -329,7 +329,7 @@ def template SveLoadAndReplExecute {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
         unsigned eCount =
             ArmStaticInst::getCurSveVecLen<RegElemType>(xc->tcBase());
 
@@ -361,7 +361,7 @@ def template SveLoadAndReplInitiateAcc {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
 
         %(op_src_decl)s;
         %(op_rd)s;
@@ -386,7 +386,7 @@ def template SveLoadAndReplCompleteAcc {{
             ExecContext *xc, Trace::InstRecord *traceData) const
     {
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
         unsigned eCount =
             ArmStaticInst::getCurSveVecLen<RegElemType>(xc->tcBase());
 
@@ -438,7 +438,7 @@ def template SveIndexedMemVIMicroopDeclare {{
             dest(_dest), gp(_gp), base(_base), imm(_imm),
             elemIndex(_elemIndex), numElems(_numElems),
             firstFault(_firstFault),
-            memAccessFlags(ArmISA::MMU::AllowUnaligned)
+            memAccessFlags(ArmISA::TLB::AllowUnaligned)
         {
             %(set_reg_idx_arr)s;
             %(constructor)s;
@@ -526,7 +526,7 @@ def template SveIndexedMemSVMicroopDeclare {{
             offsetIs32(_offsetIs32), offsetIsSigned(_offsetIsSigned),
             offsetIsScaled(_offsetIsScaled), elemIndex(_elemIndex),
             numElems(_numElems), firstFault(_firstFault),
-            memAccessFlags(ArmISA::MMU::AllowUnaligned)
+            memAccessFlags(ArmISA::TLB::AllowUnaligned)
         {
             %(set_reg_idx_arr)s;
             %(constructor)s;
@@ -585,7 +585,7 @@ def template SveGatherLoadMicroopExecute {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
 
         %(op_decl)s;
         %(op_rd)s;
@@ -634,7 +634,7 @@ def template SveGatherLoadMicroopInitiateAcc {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
 
         %(op_src_decl)s;
         %(op_rd)s;
@@ -675,7 +675,7 @@ def template SveGatherLoadMicroopCompleteAcc {{
     %(class_name)s%(tpl_args)s::completeAcc(PacketPtr pkt,
             ExecContext *xc, Trace::InstRecord *traceData) const
     {
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
 
         %(op_decl)s;
         %(op_rd)s;
@@ -702,7 +702,7 @@ def template SveScatterStoreMicroopExecute {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
 
         %(op_decl)s;
         %(op_rd)s;
@@ -733,7 +733,7 @@ def template SveScatterStoreMicroopInitiateAcc {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
 
         %(op_decl)s;
         %(op_rd)s;
@@ -806,7 +806,7 @@ def template SveFirstFaultWritebackMicroopExecute {{
     %(class_name)s%(tpl_args)s::execute(ExecContext *xc,
             Trace::InstRecord *traceData) const
     {
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
 
         %(op_decl)s;
         %(op_rd)s;
@@ -890,7 +890,7 @@ def template SveStructMemSIMicroopDeclare {{
         typedef _Element Element;
         typedef _Element TPElem;
 
-        RegIndex dest;
+        IntRegIndex dest;
         IntRegIndex gp;
         IntRegIndex base;
         int64_t imm;
@@ -904,12 +904,12 @@ def template SveStructMemSIMicroopDeclare {{
 
       public:
         %(class_name)s(const char* mnem, ExtMachInst machInst,
-                RegIndex _dest, IntRegIndex _gp, IntRegIndex _base,
+                IntRegIndex _dest, IntRegIndex _gp, IntRegIndex _base,
                 int64_t _imm, uint8_t _numRegs, int _regIndex) :
             %(base_class)s(mnem, machInst, %(op_class)s),
             dest(_dest), gp(_gp), base(_base), imm(_imm),
             numRegs(_numRegs), regIndex(_regIndex),
-            memAccessFlags(ArmISA::MMU::AllowUnaligned)
+            memAccessFlags(ArmISA::TLB::AllowUnaligned)
         {
             %(set_reg_idx_arr)s;
             %(constructor)s;
@@ -989,7 +989,7 @@ def template SveStructLoadExecute {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
         unsigned eCount =
             ArmStaticInst::getCurSveVecLen<Element>(xc->tcBase());
 
@@ -1023,7 +1023,7 @@ def template SveStructLoadInitiateAcc {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
         unsigned eCount =
             ArmStaticInst::getCurSveVecLen<Element>(xc->tcBase());
 
@@ -1049,7 +1049,7 @@ def template SveStructLoadCompleteAcc {{
             ExecContext *xc, Trace::InstRecord *traceData) const
     {
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
         unsigned eCount =
             ArmStaticInst::getCurSveVecLen<Element>(xc->tcBase());
 
@@ -1082,7 +1082,7 @@ def template SveStructStoreExecute {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
         unsigned eCount =
             ArmStaticInst::getCurSveVecLen<Element>(xc->tcBase());
 
@@ -1120,7 +1120,7 @@ def template SveStructStoreInitiateAcc {{
     {
         Addr EA;
         Fault fault = NoFault;
-        [[maybe_unused]] bool aarch64 = true;
+        GEM5_VAR_USED bool aarch64 = true;
         unsigned eCount =
             ArmStaticInst::getCurSveVecLen<Element>(xc->tcBase());
 
@@ -1167,7 +1167,7 @@ def template SveStructMemSSMicroopDeclare {{
         typedef _Element Element;
         typedef _Element TPElem;
 
-        RegIndex dest;
+        IntRegIndex dest;
         IntRegIndex gp;
         IntRegIndex base;
         IntRegIndex offset;
@@ -1181,12 +1181,12 @@ def template SveStructMemSSMicroopDeclare {{
 
       public:
         %(class_name)s(const char* mnem, ExtMachInst machInst,
-                RegIndex _dest, IntRegIndex _gp, IntRegIndex _base,
+                IntRegIndex _dest, IntRegIndex _gp, IntRegIndex _base,
                 IntRegIndex _offset, uint8_t _numRegs, int _regIndex) :
             %(base_class)s(mnem, machInst, %(op_class)s),
             dest(_dest), gp(_gp), base(_base), offset(_offset),
             numRegs(_numRegs), regIndex(_regIndex),
-            memAccessFlags(ArmISA::MMU::AllowUnaligned)
+            memAccessFlags(ArmISA::TLB::AllowUnaligned)
         {
             %(set_reg_idx_arr)s;
             %(constructor)s;

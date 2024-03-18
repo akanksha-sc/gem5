@@ -29,7 +29,7 @@
 #ifndef __ARCH_MIPS_PCSTATE_HH__
 #define __ARCH_MIPS_PCSTATE_HH__
 
-#include "arch/generic/pcstate.hh"
+#include "arch/generic/types.hh"
 
 namespace gem5
 {
