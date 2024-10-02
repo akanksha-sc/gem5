@@ -1,37 +1,50 @@
 Import('*')
 
-if env['TARGET_ISA'] == 'arm':
+if env['CONF']['USE_ARM_ISA']:
 
     #Example
     #SimObject('IOAcc.py')
 
     #CommInterface
-    SimObject('CommInterface.py')
-    SimObject('ScratchpadMemory.py')
-    SimObject('NoncoherentDma.py')
-    SimObject('StreamDma.py')
-    SimObject('AccCluster.py')
-    SimObject('StreamBuffer.py')
-    SimObject('RegisterBank.py')
+    SimObject('CommInterface.py', sim_objects=['CommInterface'])
+    SimObject('ScratchpadMemory.py', sim_objects=['ScratchpadMemory'])
+    SimObject('NoncoherentDma.py', sim_objects=['NoncoherentDma'])
+    SimObject('StreamDma.py', sim_objects=['StreamDma'])
+    SimObject('AccCluster.py', sim_objects=['AccCluster'])
+    SimObject('StreamBuffer.py', sim_objects=['StreamBuffer'])
+    SimObject('RegisterBank.py', sim_objects=['RegisterBank'])
 
     #LLVMInterface
-    SimObject('ComputeUnit.py')
-    SimObject('LLVMInterface.py')
-    
+    SimObject('ComputeUnit.py', sim_objects=['ComputeUnit'])
+    SimObject('LLVMInterface.py', sim_objects=['LLVMInterface'])
+
     #HWInterface
-    SimObject('CycleCounts.py')
-    SimObject('FunctionalUnits.py')
-    SimObject('HWInterface.py')
-    SimObject('HWStatistics.py')
-    SimObject('InstConfig.py')
-    SimObject('InstOpCodes.py')
-    SimObject('SALAMPowerModel.py')
-    SimObject('SimulatorConfig.py')
+    SimObject('CycleCounts.py', sim_objects=['CycleCounts'])
+    SimObject('FunctionalUnits.py', sim_objects=[
+        'FunctionalUnits', 'BitRegister', 'DoubleMultiplier',
+        'BitwiseOperations', 'DoubleAdder', 'FloatDivider',
+        'BitShifter', 'IntegerMultiplier', 'IntegerAdder',
+        'DoubleDivider', 'FloatAdder', 'FloatMultiplier'])
+    SimObject('HWInterface.py', sim_objects=['HWInterface'])
+    SimObject('HWStatistics.py', sim_objects=['HWStatistics'])
+    SimObject('InstConfig.py', sim_objects=[
+        'InstConfig', 'Add', 'Addrspacecast', 'Alloca', 'AndInst',
+        'Ashr', 'Bitcast', 'Br', 'Call', 'Fadd', 'Fcmp', 'Fdiv',
+        'Fence', 'Fmul', 'Fpext', 'Fptosi', 'Fptoui', 'Fptrunc',
+        'Frem', 'Fsub', 'Gep', 'Icmp', 'Indirectbr', 'Inttoptr',
+        'Invoke', 'Landingpad', 'Load', 'Lshr', 'Mul', 'OrInst',
+        'Phi', 'Ptrtoint', 'Resume', 'Ret', 'Sdiv', 'Select',
+        'Sext', 'Shl', 'Srem', 'Store', 'Sub', 'SwitchInst',
+        'Trunc', 'Udiv', 'Uitofp', 'Unreachable', 'Urem', 'Vaarg',
+        'XorInst', 'Zext'])
+    SimObject('InstOpCodes.py', sim_objects=['InstOpCodes'])
+    SimObject('SALAMPowerModel.py', sim_objects=['SALAMPowerModel'])
+    SimObject('SimulatorConfig.py', sim_objects=['SimulatorConfig'])
 
     #Functional Units
     #SimObject('Adder.py')
 
-    # 
+    #
     Source('comm_interface.cc')
     Source('compute_unit.cc')
     Source('llvm_interface.cc')
@@ -43,7 +56,7 @@ if env['TARGET_ISA'] == 'arm':
     Source('stream_port.cc')
     Source('scratchpad_memory.cc')
     Source('register_bank.cc')
-    
+
     #
     Source('LLVMRead/src/value.cc')
     Source('LLVMRead/src/function.cc')
@@ -60,7 +73,7 @@ if env['TARGET_ISA'] == 'arm':
     # END OF GENERATED FILES
 
     Source('HWModeling/src/cycle_counts.cc')
-    #Source('HWModeling/src/cacti_wrapper.cc') 
+    #Source('HWModeling/src/cacti_wrapper.cc')
     Source('HWModeling/src/functional_units.cc')
     Source('HWModeling/src/hw_interface.cc')
     Source('HWModeling/src/hw_statistics.cc')

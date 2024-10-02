@@ -71,6 +71,7 @@ import atexit
 import itertools
 import os
 import sys
+import subprocess
 
 from os import mkdir, remove, environ, listdir
 from os.path import abspath, dirname, expanduser
@@ -418,6 +419,28 @@ main.Append(CPPPATH=[Dir('ext')])
 main.Prepend(CPPPATH=Dir('include'))
 if not GetOption('duplicate_sources'):
     main.Prepend(CPPPATH=Dir('src'))
+
+# Configure llvm compilation flags and linking
+llvm_config = 'llvm-config'
+
+main.Append(CPPFLAGS=Split(subprocess.check_output(
+    [llvm_config, '--cppflags']).decode()))
+
+main.Append(LIBPATH=Split(subprocess.check_output(
+    [llvm_config, '--libdir']).decode()))
+
+main.Append(LIBS=Split(subprocess.check_output(
+    [llvm_config, '--libs', 'all']).decode()))
+
+main.Append(CPPPATH=Split(subprocess.check_output(
+    [llvm_config, '--includedir']).decode()))
+
+main.Append(CPPDEFINES=[
+    'LLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING=1'
+])
+
+main.Append(RPATH=Split(subprocess.check_output(
+    [llvm_config, '--libdir']).decode()))
 
 
 ########################################################################

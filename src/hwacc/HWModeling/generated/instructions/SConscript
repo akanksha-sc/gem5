@@ -1,5 +1,5 @@
 Import('*')
-if env['TARGET_ISA'] == 'arm':
+if env['CONF']['USE_ARM_ISA']:
 
     Source('add.cc')
     Source('addrspacecast.cc')
