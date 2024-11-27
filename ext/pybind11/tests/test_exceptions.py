@@ -99,7 +99,9 @@ def ignore_pytest_unraisable_warning(f):
 
 
 # TODO: find out why this fails on PyPy, https://foss.heptapod.net/pypy/pypy/-/issues/3583
-@pytest.mark.xfail(env.PYPY, reason="Failure on PyPy 3.8 (7.3.7)", strict=False)
+@pytest.mark.xfail(
+    env.PYPY, reason="Failure on PyPy 3.8 (7.3.7)", strict=False
+)
 @ignore_pytest_unraisable_warning
 def test_python_alreadyset_in_destructor(monkeypatch, capsys):
     hooked = False
@@ -126,7 +128,9 @@ def test_python_alreadyset_in_destructor(monkeypatch, capsys):
         assert triggered is True
 
     _, captured_stderr = capsys.readouterr()
-    assert captured_stderr.startswith("Exception ignored in: 'already_set demo'")
+    assert captured_stderr.startswith(
+        "Exception ignored in: 'already_set demo'"
+    )
     assert captured_stderr.rstrip().endswith("KeyError: 'bar'")
 
 
@@ -145,7 +149,10 @@ def test_custom(msg):
     # Can we translate to standard Python exceptions?
     with pytest.raises(RuntimeError) as excinfo:
         m.throws2()
-    assert msg(excinfo.value) == "this error should go to a standard Python exception"
+    assert (
+        msg(excinfo.value)
+        == "this error should go to a standard Python exception"
+    )
 
     # Can we handle unknown exceptions?
     with pytest.raises(RuntimeError) as excinfo:
@@ -161,7 +168,8 @@ def test_custom(msg):
     with pytest.raises(RuntimeError) as excinfo:
         m.throws_logic_error()
     assert (
-        msg(excinfo.value) == "this error should fall through to the standard handler"
+        msg(excinfo.value)
+        == "this error should fall through to the standard handler"
     )
 
     # OverFlow error translation.
@@ -171,7 +179,9 @@ def test_custom(msg):
     # Can we handle a helper-declared exception?
     with pytest.raises(m.MyException5) as excinfo:
         m.throws5()
-    assert msg(excinfo.value) == "this is a helper-defined translated exception"
+    assert (
+        msg(excinfo.value) == "this is a helper-defined translated exception"
+    )
 
     # Exception subclassing:
     with pytest.raises(m.MyException5) as excinfo:
@@ -187,8 +197,12 @@ def test_custom(msg):
         try:
             m.throws5()
         except m.MyException5_1 as err:
-            raise RuntimeError("Exception error: caught child from parent") from err
-    assert msg(excinfo.value) == "this is a helper-defined translated exception"
+            raise RuntimeError(
+                "Exception error: caught child from parent"
+            ) from err
+    assert (
+        msg(excinfo.value) == "this is a helper-defined translated exception"
+    )
 
 
 def test_nested_throws(capture):
@@ -238,7 +252,9 @@ def test_nested_throws(capture):
     # Python -> C++ -> Python -> C++
     with pytest.raises(m.MyException5) as excinfo:
         m.try_catch(m.MyException, pycatch, m.MyException, m.throws5)
-    assert str(excinfo.value) == "this is a helper-defined translated exception"
+    assert (
+        str(excinfo.value) == "this is a helper-defined translated exception"
+    )
 
 
 def test_throw_nested_exception():
@@ -318,7 +334,9 @@ def test_error_already_set_what_with_happy_exceptions(
     assert what == expected_what
 
 
-@pytest.mark.skipif("env.PYPY", reason="PyErr_NormalizeException Segmentation fault")
+@pytest.mark.skipif(
+    "env.PYPY", reason="PyErr_NormalizeException Segmentation fault"
+)
 def test_flaky_exception_failure_point_init():
     with pytest.raises(RuntimeError) as excinfo:
         m.error_already_set_what(FlakyException, ("failure_point_init",))

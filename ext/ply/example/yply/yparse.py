@@ -4,6 +4,7 @@
 # Date  : October 2, 2006
 
 import ylex
+
 tokens = ylex.tokens
 
 from ply import *
@@ -15,12 +16,12 @@ emit_code = 1
 
 
 def p_yacc(p):
-    '''yacc : defsection rulesection'''
+    """yacc : defsection rulesection"""
 
 
 def p_defsection(p):
-    '''defsection : definitions SECTION
-                  | SECTION'''
+    """defsection : definitions SECTION
+    | SECTION"""
     p.lexer.lastsection = 1
     print("tokens = ", repr(tokenlist))
     print()
@@ -31,56 +32,56 @@ def p_defsection(p):
 
 
 def p_rulesection(p):
-    '''rulesection : rules SECTION'''
+    """rulesection : rules SECTION"""
 
     print("# -------------- RULES END ----------------")
     print_code(p[2], 0)
 
 
 def p_definitions(p):
-    '''definitions : definitions definition
-                   | definition'''
+    """definitions : definitions definition
+    | definition"""
 
 
 def p_definition_literal(p):
-    '''definition : LITERAL'''
+    """definition : LITERAL"""
     print_code(p[1], 0)
 
 
 def p_definition_start(p):
-    '''definition : START ID'''
+    """definition : START ID"""
     print("start = '%s'" % p[2])
 
 
 def p_definition_token(p):
-    '''definition : toktype opttype idlist optsemi '''
+    """definition : toktype opttype idlist optsemi"""
     for i in p[3]:
         if i[0] not in "'\"":
             tokenlist.append(i)
-    if p[1] == '%left':
-        preclist.append(('left',) + tuple(p[3]))
-    elif p[1] == '%right':
-        preclist.append(('right',) + tuple(p[3]))
-    elif p[1] == '%nonassoc':
-        preclist.append(('nonassoc',) + tuple(p[3]))
+    if p[1] == "%left":
+        preclist.append(("left",) + tuple(p[3]))
+    elif p[1] == "%right":
+        preclist.append(("right",) + tuple(p[3]))
+    elif p[1] == "%nonassoc":
+        preclist.append(("nonassoc",) + tuple(p[3]))
 
 
 def p_toktype(p):
-    '''toktype : TOKEN
-               | LEFT
-               | RIGHT
-               | NONASSOC'''
+    """toktype : TOKEN
+    | LEFT
+    | RIGHT
+    | NONASSOC"""
     p[0] = p[1]
 
 
 def p_opttype(p):
-    '''opttype : '<' ID '>'
-               | empty'''
+    """opttype : '<' ID '>'
+    | empty"""
 
 
 def p_idlist(p):
-    '''idlist  : idlist optcomma tokenid
-               | tokenid'''
+    """idlist  : idlist optcomma tokenid
+    | tokenid"""
     if len(p) == 2:
         p[0] = [p[1]]
     else:
@@ -89,41 +90,41 @@ def p_idlist(p):
 
 
 def p_tokenid(p):
-    '''tokenid : ID 
-               | ID NUMBER
-               | QLITERAL
-               | QLITERAL NUMBER'''
+    """tokenid : ID
+    | ID NUMBER
+    | QLITERAL
+    | QLITERAL NUMBER"""
     p[0] = p[1]
 
 
 def p_optsemi(p):
-    '''optsemi : ';'
-               | empty'''
+    """optsemi : ';'
+    | empty"""
 
 
 def p_optcomma(p):
-    '''optcomma : ','
-                | empty'''
+    """optcomma : ','
+    | empty"""
 
 
 def p_definition_type(p):
-    '''definition : TYPE '<' ID '>' namelist optsemi'''
+    """definition : TYPE '<' ID '>' namelist optsemi"""
     # type declarations are ignored
 
 
 def p_namelist(p):
-    '''namelist : namelist optcomma ID
-                | ID'''
+    """namelist : namelist optcomma ID
+    | ID"""
 
 
 def p_definition_union(p):
-    '''definition : UNION CODE optsemi'''
+    """definition : UNION CODE optsemi"""
     # Union declarations are ignored
 
 
 def p_rules(p):
-    '''rules   : rules rule
-               | rule'''
+    """rules   : rules rule
+    | rule"""
     if len(p) == 2:
         rule = p[1]
     else:
@@ -131,7 +132,7 @@ def p_rules(p):
 
     # Print out a Python equivalent of this rule
 
-    embedded = []      # Embedded actions (a mess)
+    embedded = []  # Embedded actions (a mess)
     embed_count = 0
 
     rulename = rule[0]
@@ -143,7 +144,7 @@ def p_rules(p):
         prodcode = ""
         for i in range(len(r)):
             item = r[i]
-            if item[0] == '{':    # A code block
+            if item[0] == "{":  # A code block
                 if i == len(r) - 1:
                     prodcode = item
                     break
@@ -169,32 +170,32 @@ def p_rules(p):
 
 
 def p_rule(p):
-    '''rule : ID ':' rulelist ';' '''
+    """rule : ID ':' rulelist ';'"""
     p[0] = (p[1], [p[3]])
 
 
 def p_rule2(p):
-    '''rule : ID ':' rulelist morerules ';' '''
+    """rule : ID ':' rulelist morerules ';'"""
     p[4].insert(0, p[3])
     p[0] = (p[1], p[4])
 
 
 def p_rule_empty(p):
-    '''rule : ID ':' ';' '''
+    """rule : ID ':' ';'"""
     p[0] = (p[1], [[]])
 
 
 def p_rule_empty2(p):
-    '''rule : ID ':' morerules ';' '''
+    """rule : ID ':' morerules ';'"""
 
     p[3].insert(0, [])
     p[0] = (p[1], p[3])
 
 
 def p_morerules(p):
-    '''morerules : morerules '|' rulelist
-                 | '|' rulelist
-                 | '|'  '''
+    """morerules : morerules '|' rulelist
+    | '|' rulelist
+    | '|'"""
 
     if len(p) == 2:
         p[0] = [[]]
@@ -204,12 +205,13 @@ def p_morerules(p):
         p[0] = p[1]
         p[0].append(p[3])
 
+
 #   print("morerules", len(p), p[0])
 
 
 def p_rulelist(p):
-    '''rulelist : rulelist ruleitem
-                | ruleitem'''
+    """rulelist : rulelist ruleitem
+    | ruleitem"""
 
     if len(p) == 2:
         p[0] = [p[1]]
@@ -219,19 +221,20 @@ def p_rulelist(p):
 
 
 def p_ruleitem(p):
-    '''ruleitem : ID
-                | QLITERAL
-                | CODE
-                | PREC'''
+    """ruleitem : ID
+    | QLITERAL
+    | CODE
+    | PREC"""
     p[0] = p[1]
 
 
 def p_empty(p):
-    '''empty : '''
+    """empty :"""
 
 
 def p_error(p):
     pass
+
 
 yacc.yacc(debug=0)
 

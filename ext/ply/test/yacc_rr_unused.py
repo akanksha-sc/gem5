@@ -6,25 +6,28 @@
 # -----------------------------------------------------------------------------
 import sys
 
-if ".." not in sys.path: sys.path.insert(0,"..")
+if ".." not in sys.path:
+    sys.path.insert(0, "..")
 import ply.yacc as yacc
 
-tokens = ('A', 'B', 'C')
+tokens = ("A", "B", "C")
+
 
 def p_grammar(p):
-   '''
-   rule1 : rule2 B
-         | rule2 C
+    """
+    rule1 : rule2 B
+          | rule2 C
 
-   rule2 : rule3 B
-         | rule4
-         | rule5
+    rule2 : rule3 B
+          | rule4
+          | rule5
 
-   rule3 : A
+    rule3 : A
 
-   rule4 : A
+    rule4 : A
 
-   rule5 : A
-   '''
+    rule5 : A
+    """
+
 
 yacc.yacc()

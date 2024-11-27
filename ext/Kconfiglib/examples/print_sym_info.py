@@ -39,7 +39,9 @@ from kconfiglib import Kconfig, TRI_TO_STR
 
 
 if len(sys.argv) < 3:
-    sys.exit('Pass symbol name (without "CONFIG_" prefix) with SCRIPT_ARG=<name>')
+    sys.exit(
+        'Pass symbol name (without "CONFIG_" prefix) with SCRIPT_ARG=<name>'
+    )
 
 kconf = Kconfig(sys.argv[1])
 sym = kconf.syms[sys.argv[2]]
@@ -47,8 +49,10 @@ sym = kconf.syms[sys.argv[2]]
 print(sym)
 print("value = " + sym.str_value)
 print("visibility = " + TRI_TO_STR[sym.visibility])
-print("currently assignable values: " +
-      ", ".join([TRI_TO_STR[v] for v in sym.assignable]))
+print(
+    "currently assignable values: "
+    + ", ".join([TRI_TO_STR[v] for v in sym.assignable])
+)
 
 for node in sym.nodes:
     print("defined at {}:{}".format(node.filename, node.linenr))

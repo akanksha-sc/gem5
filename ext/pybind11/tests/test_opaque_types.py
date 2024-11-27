@@ -21,13 +21,18 @@ def test_string_list():
 
     cvp.stringList = lst
     cvp.stringList.push_back("Element 3")
-    assert m.print_opaque_list(cvp.stringList) == "Opaque list: [Element 1, Element 3]"
+    assert (
+        m.print_opaque_list(cvp.stringList)
+        == "Opaque list: [Element 1, Element 3]"
+    )
 
 
 def test_pointers(msg):
     living_before = ConstructorStats.get(UserType).alive()
     assert m.get_void_ptr_value(m.return_void_ptr()) == 0x1234
-    assert m.get_void_ptr_value(UserType())  # Should also work for other C++ types
+    assert m.get_void_ptr_value(
+        UserType()
+    )  # Should also work for other C++ types
     assert ConstructorStats.get(UserType).alive() == living_before
 
     with pytest.raises(TypeError) as excinfo:

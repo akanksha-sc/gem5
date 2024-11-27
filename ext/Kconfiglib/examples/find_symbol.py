@@ -80,7 +80,9 @@ import kconfiglib
 
 
 if len(sys.argv) < 3:
-    sys.exit('Pass symbol name (without "CONFIG_" prefix) with SCRIPT_ARG=<name>')
+    sys.exit(
+        'Pass symbol name (without "CONFIG_" prefix) with SCRIPT_ARG=<name>'
+    )
 
 kconf = kconfiglib.Kconfig(sys.argv[1])
 sym_name = sys.argv[2]
@@ -88,25 +90,37 @@ if sym_name not in kconf.syms:
     print("No symbol {} exists in the configuration".format(sym_name))
     sys.exit(0)
 
-referencing = [node for node in kconf.node_iter()
-               if kconf.syms[sym_name] in node.referenced]
+referencing = [
+    node
+    for node in kconf.node_iter()
+    if kconf.syms[sym_name] in node.referenced
+]
 if not referencing:
     print("No references to {} found".format(sym_name))
     sys.exit(0)
 
-print("Found {} locations that reference {}:\n"
-      .format(len(referencing), sym_name))
+print(
+    "Found {} locations that reference {}:\n".format(
+        len(referencing), sym_name
+    )
+)
 
 for i, node in enumerate(referencing, 1):
-    print("========== Location {} ({}:{}) ==========\n\n{}"
-          .format(i, node.filename, node.linenr, node))
+    print(
+        "========== Location {} ({}:{}) ==========\n\n{}".format(
+            i, node.filename, node.linenr, node
+        )
+    )
 
     # Print the parents of the menu node too
 
     node = node.parent
     parent_i = 1
     while node is not kconf.top_node:
-        print("---------- Parent {} ({}:{})  ----------\n\n{}"
-              .format(parent_i, node.filename, node.linenr, node))
+        print(
+            "---------- Parent {} ({}:{})  ----------\n\n{}".format(
+                parent_i, node.filename, node.linenr, node
+            )
+        )
         node = node.parent
         parent_i += 1

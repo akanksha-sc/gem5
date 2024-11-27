@@ -66,14 +66,13 @@ with lower case letters and numbers.  Size 2 kB.  Addresses are limited to
 1 kB.
 """
 
-
 import random
 import string
 
 
 class transaction:
-    """ contains read_not_write, address, length, byte_enable,
-      bus_width, data_width, data_pointer, stream_width """
+    """contains read_not_write, address, length, byte_enable,
+    bus_width, data_width, data_pointer, stream_width"""
 
     def __init__(self, **a):
         self.__dict__ = a
@@ -446,6 +445,7 @@ class FragmenterDifference(Exception):
 
 from subprocess import Popen, PIPE
 
+
 # test a single fragment in multiple ways
 def test_a_fragment(f, ms):
     # f is the (fragment of a) transaction
@@ -523,14 +523,12 @@ print("Number to test:", nr_txns_to_test)
 
 # generate and test a number of transactions
 for txn in txn_generator(nr_txns_to_test):
-
     # each transaction has a random initial memory state
     initial_memory = memory_state_cl()
 
     # iterate over all defined fragmentation functions
     first_time = True
     for fragmenter in fragmenters:
-
         # all versions of the transaction start in the same place
         memory_state = initial_memory.copy()
 

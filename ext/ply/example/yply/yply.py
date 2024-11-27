@@ -21,6 +21,7 @@
 #
 
 import sys
+
 sys.path.insert(0, "../..")
 
 import ylex
@@ -33,7 +34,7 @@ if len(sys.argv) == 1:
     raise SystemExit
 
 if len(sys.argv) == 3:
-    if sys.argv[1] == '-nocode':
+    if sys.argv[1] == "-nocode":
         yparse.emit_code = 0
     else:
         print("Unknown option '%s'" % sys.argv[1])
@@ -44,8 +45,10 @@ else:
 
 yacc.parse(open(filename).read())
 
-print("""
+print(
+    """
 if __name__ == '__main__':
     from ply import *
     yacc.yacc()
-""")
+"""
+)

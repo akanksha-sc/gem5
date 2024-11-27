@@ -48,11 +48,13 @@ This script is then passed to the child processes to load.
 
 2. The config script cannot accept parameters. It must be parameterless.
 """
+from __future__ import annotations  # fixing test log errors
 
 import importlib
 import multiprocessing
 from pathlib import Path
 from typing import (
+    List,
     Optional,
     Set,
 )
@@ -67,7 +69,7 @@ module_run = False
 # threads.
 _num_processes = None
 
-_multi_sim: Set["Simulator"] = set()
+_multi_sim: set[Simulator] = set()
 
 
 def _load_module(module_path: Path) -> None:
@@ -142,7 +144,7 @@ def get_simulator_ids(config_module_path: Path) -> list[str]:
     return id_list
 
 
-def get_num_processes(config_module_path: Path) -> Optional[int]:
+def get_num_processes(config_module_path: Path) -> int | None:
     manager = multiprocessing.Manager()
     num_processes_dict = manager.dict()
     p = multiprocessing.Process(
@@ -172,7 +174,7 @@ def _run(module_path: Path, id: str) -> None:
     sim_list[0].run()
 
 
-def run(module_path: Path, processes: Optional[int] = None) -> None:
+def run(module_path: Path, processes: int | None = None) -> None:
     """Run the simulators specified in the module in parallel.
 
     :param module_path: The path to the module containing the simulators to
@@ -228,7 +230,7 @@ def num_simulators() -> int:
     return len(_multi_sim)
 
 
-def add_simulator(simulator: "Simulator") -> None:
+def add_simulator(simulator: Simulator) -> None:
     """Add a single simulator to the Multisim. Doing so informs the simulators
     to run this simulator via multiprocessing.
 

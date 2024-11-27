@@ -96,7 +96,9 @@ def test_builtin_key_type():
 
 @pytest.mark.xfail("env.PYPY", reason="PyModule_GetName()")
 def test_def_submodule_failures():
-    sm = m.def_submodule(m, b"ScratchSubModuleName")  # Using bytes to show it works.
+    sm = m.def_submodule(
+        m, b"ScratchSubModuleName"
+    )  # Using bytes to show it works.
     assert sm.__name__ == m.__name__ + "." + "ScratchSubModuleName"
     malformed_utf8 = b"\x80"
     if env.PYPY:

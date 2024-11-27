@@ -65,7 +65,9 @@ to_src = (
 
 # Read the listed version
 loc: Dict[str, str] = {}
-code = compile(VERSION_FILE.read_text(encoding="utf-8"), "pybind11/_version.py", "exec")
+code = compile(
+    VERSION_FILE.read_text(encoding="utf-8"), "pybind11/_version.py", "exec"
+)
 exec(code, loc)
 version = loc["__version__"]
 
@@ -101,7 +103,9 @@ class SDist(setuptools.command.sdist.sdist):  # type: ignore[misc]
         super().make_release_tree(base_dir, files)
 
         for to, src in to_src:
-            txt = get_and_replace(src, binary=True, version=version, extra_cmd="")
+            txt = get_and_replace(
+                src, binary=True, version=version, extra_cmd=""
+            )
 
             dest = Path(base_dir) / to
 
@@ -136,7 +140,9 @@ with remove_output("pybind11/include", "pybind11/share"):
                 if "DCMAKE_INSTALL_PREFIX" not in c
             ]
             cmd += fcommand
-        subprocess.run(cmd, check=True, cwd=DIR, stdout=sys.stdout, stderr=sys.stderr)
+        subprocess.run(
+            cmd, check=True, cwd=DIR, stdout=sys.stdout, stderr=sys.stderr
+        )
         subprocess.run(
             ["cmake", "--install", tmpdir],
             check=True,

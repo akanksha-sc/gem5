@@ -13,7 +13,8 @@ def test_function_signatures(doc):
     assert doc(m.kw_func_udl_z) == "kw_func_udl_z(x: int, y: int = 0) -> str"
     assert doc(m.args_function) == "args_function(*args) -> tuple"
     assert (
-        doc(m.args_kwargs_function) == "args_kwargs_function(*args, **kwargs) -> tuple"
+        doc(m.args_kwargs_function)
+        == "args_kwargs_function(*args, **kwargs) -> tuple"
     )
     assert (
         doc(m.KWClass.foo0)
@@ -141,7 +142,12 @@ def test_mixed_args_and_kwargs(msg):
 
     # Arguments after a py::args are automatically keyword-only (pybind 2.9+)
     assert m.args_kwonly(2, 2.5, z=22) == (2, 2.5, (), 22)
-    assert m.args_kwonly(2, 2.5, "a", "b", "c", z=22) == (2, 2.5, ("a", "b", "c"), 22)
+    assert m.args_kwonly(2, 2.5, "a", "b", "c", z=22) == (
+        2,
+        2.5,
+        ("a", "b", "c"),
+        22,
+    )
     assert m.args_kwonly(z=22, i=4, j=16) == (4, 16, (), 22)
 
     with pytest.raises(TypeError) as excinfo:
@@ -183,8 +189,20 @@ def test_mixed_args_and_kwargs(msg):
     assert m.args_kwonly_kwargs_defaults(2) == (2, 3.14159, (), 42, {})
     assert m.args_kwonly_kwargs_defaults(z=-99) == (1, 3.14159, (), -99, {})
     assert m.args_kwonly_kwargs_defaults(5, 6, 7, 8) == (5, 6, (7, 8), 42, {})
-    assert m.args_kwonly_kwargs_defaults(5, 6, 7, m=8) == (5, 6, (7,), 42, {"m": 8})
-    assert m.args_kwonly_kwargs_defaults(5, 6, 7, m=8, z=9) == (5, 6, (7,), 9, {"m": 8})
+    assert m.args_kwonly_kwargs_defaults(5, 6, 7, m=8) == (
+        5,
+        6,
+        (7,),
+        42,
+        {"m": 8},
+    )
+    assert m.args_kwonly_kwargs_defaults(5, 6, 7, m=8, z=9) == (
+        5,
+        6,
+        (7,),
+        9,
+        {"m": 8},
+    )
 
 
 def test_keyword_only_args(msg):
@@ -311,7 +329,14 @@ def test_positional_only_args(msg):
         9,
         {"m": 8},
     )
-    assert m.args_kwonly_full_monty(5, j=7, m=8, z=9) == (5, 2, 7.0, (), 9, {"m": 8})
+    assert m.args_kwonly_full_monty(5, j=7, m=8, z=9) == (
+        5,
+        2,
+        7.0,
+        (),
+        9,
+        {"m": 8},
+    )
     assert m.args_kwonly_full_monty(i=5, j=7, m=8, z=9) == (
         1,
         2,
@@ -332,9 +357,16 @@ def test_positional_only_args(msg):
 
 def test_signatures():
     assert "kw_only_all(*, i: int, j: int) -> tuple\n" == m.kw_only_all.__doc__
-    assert "kw_only_mixed(i: int, *, j: int) -> tuple\n" == m.kw_only_mixed.__doc__
-    assert "pos_only_all(i: int, j: int, /) -> tuple\n" == m.pos_only_all.__doc__
-    assert "pos_only_mix(i: int, /, j: int) -> tuple\n" == m.pos_only_mix.__doc__
+    assert (
+        "kw_only_mixed(i: int, *, j: int) -> tuple\n"
+        == m.kw_only_mixed.__doc__
+    )
+    assert (
+        "pos_only_all(i: int, j: int, /) -> tuple\n" == m.pos_only_all.__doc__
+    )
+    assert (
+        "pos_only_mix(i: int, /, j: int) -> tuple\n" == m.pos_only_mix.__doc__
+    )
     assert (
         "pos_kw_only_mix(i: int, /, j: int, *, k: int) -> tuple\n"
         == m.pos_kw_only_mix.__doc__
@@ -356,7 +388,11 @@ def test_args_refcount():
     assert m.mixed_plus_args(1, 2.0, "a", myval) == (1, 2.0, ("a", myval))
     assert refcount(myval) == expected
 
-    assert m.mixed_plus_kwargs(3, 4.0, a=1, b=myval) == (3, 4.0, {"a": 1, "b": myval})
+    assert m.mixed_plus_kwargs(3, 4.0, a=1, b=myval) == (
+        3,
+        4.0,
+        {"a": 1, "b": myval},
+    )
     assert refcount(myval) == expected
 
     assert m.args_function(-1, myval) == (-1, myval)
@@ -385,6 +421,10 @@ def test_args_refcount():
     # for the `py::args`; in the previous case, we could simply inc_ref and pass on Python's input
     # tuple without having to inc_ref the individual elements, but here we can't, hence the extra
     # refs.
-    assert m.mixed_args_refcount(myval, myval, myval) == (exp3 + 3, exp3 + 3, exp3 + 3)
+    assert m.mixed_args_refcount(myval, myval, myval) == (
+        exp3 + 3,
+        exp3 + 3,
+        exp3 + 3,
+    )
 
     assert m.class_default_argument() == "<class 'decimal.Decimal'>"

@@ -48,7 +48,9 @@ def tests(session: nox.Session) -> None:
         *session.posargs,
     )
     session.run("cmake", "--build", tmpdir)
-    session.run("cmake", "--build", tmpdir, "--config=Release", "--target", "check")
+    session.run(
+        "cmake", "--build", tmpdir, "--config=Release", "--target", "check"
+    )
 
 
 @nox.session
@@ -77,7 +79,9 @@ def docs(session: nox.Session) -> None:
     session.run("sphinx-build", "-M", "html", ".", "_build")
 
     if "serve" in session.posargs:
-        session.log("Launching docs at http://localhost:8000/ - use Ctrl-C to quit")
+        session.log(
+            "Launching docs at http://localhost:8000/ - use Ctrl-C to quit"
+        )
         session.run("python", "-m", "http.server", "8000", "-d", "_build/html")
     elif session.posargs:
         session.error("Unsupported argument to docs")
@@ -103,5 +107,9 @@ def build(session: nox.Session) -> None:
     session.run("python", "-m", "build", *session.posargs)
     session.log("Building pybind11-global files (PYBIND11_GLOBAL_SDIST=1)")
     session.run(
-        "python", "-m", "build", *session.posargs, env={"PYBIND11_GLOBAL_SDIST": "1"}
+        "python",
+        "-m",
+        "build",
+        *session.posargs,
+        env={"PYBIND11_GLOBAL_SDIST": "1"},
     )

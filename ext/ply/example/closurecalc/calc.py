@@ -7,6 +7,7 @@
 # -----------------------------------------------------------------------------
 
 import sys
+
 sys.path.insert(0, "../..")
 
 if sys.version_info[0] >= 3:
@@ -21,27 +22,28 @@ def make_calculator():
 
     # ------- Internal calculator state
 
-    variables = {}       # Dictionary of stored variables
+    variables = {}  # Dictionary of stored variables
 
     # ------- Calculator tokenizing rules
 
     tokens = (
-        'NAME', 'NUMBER',
+        "NAME",
+        "NUMBER",
     )
 
-    literals = ['=', '+', '-', '*', '/', '(', ')']
+    literals = ["=", "+", "-", "*", "/", "(", ")"]
 
     t_ignore = " \t"
 
-    t_NAME = r'[a-zA-Z_][a-zA-Z0-9_]*'
+    t_NAME = r"[a-zA-Z_][a-zA-Z0-9_]*"
 
     def t_NUMBER(t):
-        r'\d+'
+        r"\d+"
         t.value = int(t.value)
         return t
 
     def t_newline(t):
-        r'\n+'
+        r"\n+"
         t.lexer.lineno += t.value.count("\n")
 
     def t_error(t):
@@ -54,9 +56,9 @@ def make_calculator():
     # ------- Calculator parsing rules
 
     precedence = (
-        ('left', '+', '-'),
-        ('left', '*', '/'),
-        ('right', 'UMINUS'),
+        ("left", "+", "-"),
+        ("left", "*", "/"),
+        ("right", "UMINUS"),
     )
 
     def p_statement_assign(p):
@@ -65,21 +67,21 @@ def make_calculator():
         p[0] = None
 
     def p_statement_expr(p):
-        'statement : expression'
+        "statement : expression"
         p[0] = p[1]
 
     def p_expression_binop(p):
-        '''expression : expression '+' expression
-                      | expression '-' expression
-                      | expression '*' expression
-                      | expression '/' expression'''
-        if p[2] == '+':
+        """expression : expression '+' expression
+        | expression '-' expression
+        | expression '*' expression
+        | expression '/' expression"""
+        if p[2] == "+":
             p[0] = p[1] + p[3]
-        elif p[2] == '-':
+        elif p[2] == "-":
             p[0] = p[1] - p[3]
-        elif p[2] == '*':
+        elif p[2] == "*":
             p[0] = p[1] * p[3]
-        elif p[2] == '/':
+        elif p[2] == "/":
             p[0] = p[1] / p[3]
 
     def p_expression_uminus(p):
@@ -118,6 +120,7 @@ def make_calculator():
         return result
 
     return input
+
 
 # Make a calculator object and use it
 calc = make_calculator()

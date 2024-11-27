@@ -135,11 +135,11 @@ def normalize_line_endings(value: bytes) -> bytes:
 
 
 def test_build_sdist(monkeypatch, tmpdir):
-
     monkeypatch.chdir(MAIN_DIR)
 
     subprocess.run(
-        [sys.executable, "-m", "build", "--sdist", f"--outdir={tmpdir}"], check=True
+        [sys.executable, "-m", "build", "--sdist", f"--outdir={tmpdir}"],
+        check=True,
     )
 
     (sdist,) = tmpdir.visit("*.tar.gz")
@@ -181,16 +181,18 @@ def test_build_sdist(monkeypatch, tmpdir):
     assert pyproject_toml == contents
 
     simple_version = ".".join(version.split(".")[:3])
-    pkgconfig_expected = PKGCONFIG.format(VERSION=simple_version).encode("utf-8")
+    pkgconfig_expected = PKGCONFIG.format(VERSION=simple_version).encode(
+        "utf-8"
+    )
     assert normalize_line_endings(pkgconfig) == pkgconfig_expected
 
 
 def test_build_global_dist(monkeypatch, tmpdir):
-
     monkeypatch.chdir(MAIN_DIR)
     monkeypatch.setenv("PYBIND11_GLOBAL_SDIST", "1")
     subprocess.run(
-        [sys.executable, "-m", "build", "--sdist", "--outdir", str(tmpdir)], check=True
+        [sys.executable, "-m", "build", "--sdist", "--outdir", str(tmpdir)],
+        check=True,
     )
 
     (sdist,) = tmpdir.visit("*.tar.gz")
@@ -217,7 +219,9 @@ def test_build_global_dist(monkeypatch, tmpdir):
     files |= {f"pybind11_global{n}" for n in local_sdist_files}
     assert simpler == files
 
-    with open(os.path.join(MAIN_DIR, "tools", "setup_global.py.in"), "rb") as f:
+    with open(
+        os.path.join(MAIN_DIR, "tools", "setup_global.py.in"), "rb"
+    ) as f:
         contents = (
             string.Template(f.read().decode())
             .substitute(version=version, extra_cmd="")
@@ -230,7 +234,9 @@ def test_build_global_dist(monkeypatch, tmpdir):
         assert pyproject_toml == contents
 
     simple_version = ".".join(version.split(".")[:3])
-    pkgconfig_expected = PKGCONFIG.format(VERSION=simple_version).encode("utf-8")
+    pkgconfig_expected = PKGCONFIG.format(VERSION=simple_version).encode(
+        "utf-8"
+    )
     assert normalize_line_endings(pkgconfig) == pkgconfig_expected
 
 
@@ -238,7 +244,8 @@ def tests_build_wheel(monkeypatch, tmpdir):
     monkeypatch.chdir(MAIN_DIR)
 
     subprocess.run(
-        [sys.executable, "-m", "pip", "wheel", ".", "-w", str(tmpdir)], check=True
+        [sys.executable, "-m", "pip", "wheel", ".", "-w", str(tmpdir)],
+        check=True,
     )
 
     (wheel,) = tmpdir.visit("*.whl")
@@ -257,7 +264,9 @@ def tests_build_wheel(monkeypatch, tmpdir):
         names = z.namelist()
 
     trimmed = {n for n in names if "dist-info" not in n}
-    trimmed |= {f"dist-info/{n.split('/', 1)[-1]}" for n in names if "dist-info" in n}
+    trimmed |= {
+        f"dist-info/{n.split('/', 1)[-1]}" for n in names if "dist-info" in n
+    }
     assert files == trimmed
 
 
@@ -266,7 +275,8 @@ def tests_build_global_wheel(monkeypatch, tmpdir):
     monkeypatch.setenv("PYBIND11_GLOBAL_SDIST", "1")
 
     subprocess.run(
-        [sys.executable, "-m", "pip", "wheel", ".", "-w", str(tmpdir)], check=True
+        [sys.executable, "-m", "pip", "wheel", ".", "-w", str(tmpdir)],
+        check=True,
     )
 
     (wheel,) = tmpdir.visit("*.whl")
