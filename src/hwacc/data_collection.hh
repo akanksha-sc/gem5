@@ -326,5 +326,3 @@ class Results
 
 
 #endif //__DATA_COLLECTION_HH__
-
-
