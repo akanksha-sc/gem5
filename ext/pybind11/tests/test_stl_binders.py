@@ -113,7 +113,8 @@ def test_vector_buffer_numpy():
         np.zeros(
             3,
             dtype=np.dtype(
-                [("w", "bool"), ("x", "I"), ("y", "float64"), ("z", "bool")], align=True
+                [("w", "bool"), ("x", "I"), ("y", "float64"), ("z", "bool")],
+                align=True,
             ),
         )
     )
@@ -319,7 +320,9 @@ def test_map_view_types():
 
     assert map_string_double.keys().__class__.__name__ == "KeysView[str]"
     assert map_string_double.values().__class__.__name__ == "ValuesView[float]"
-    assert map_string_double.items().__class__.__name__ == "ItemsView[str, float]"
+    assert (
+        map_string_double.items().__class__.__name__ == "ItemsView[str, float]"
+    )
 
     keys_type = type(map_string_double.keys())
     assert type(unordered_map_string_double.keys()) is keys_type

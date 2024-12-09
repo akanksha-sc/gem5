@@ -101,9 +101,29 @@ def lang_type(filename, firstline=None, openok=True):
     # if a first line was not provided but the file is ok to open,
     # grab the first line of the file.
     if firstline is None and openok:
-        handle = open(filename)
-        firstline = handle.readline()
-        handle.close()
+        try:
+            # *** Binary File Detection ***
+            # Check for binary content
+            with open(filename, "rb") as handle:
+                if b"\0" in handle.read(
+                    1024
+                ):  # Look for null bytes in the first 1KB
+                    print(f"Skipping binary file: {filename}")
+                    return None
+
+            # *** Graceful UTF-8 Handling ***
+            # Read the first line as UTF-8, with error handling for non-UTF-8 files
+            with open(filename, encoding="utf-8", errors="replace") as handle:
+                firstline = handle.readline()
+
+        # *** Error Handling ***
+        except (OSError, UnicodeDecodeError):
+            print(f"Error reading file: {filename}. Skipping.")
+            return None
+
+        # handle = open(filename)
+        # firstline = handle.readline()
+        # handle.close()
 
     # try to detect language based on #! in first line
     if firstline and firstline.startswith("#!"):

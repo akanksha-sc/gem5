@@ -2,17 +2,15 @@
 #
 
 import sys
+
 sys.path.insert(0, "../..")
 
 if sys.version_info[0] >= 3:
     raw_input = input
 
 import logging
-logging.basicConfig(
-    level=logging.INFO,
-    filename="parselog.txt",
-    filemode="w"
-)
+
+logging.basicConfig(level=logging.INFO, filename="parselog.txt", filemode="w")
 log = logging.getLogger()
 
 import basiclex
@@ -60,14 +58,14 @@ while 1:
         b.add_statements(prog)
     else:
         stat = prog[keys[0]]
-        if stat[0] == 'RUN':
+        if stat[0] == "RUN":
             try:
                 b.run()
             except RuntimeError:
                 pass
-        elif stat[0] == 'LIST':
+        elif stat[0] == "LIST":
             b.list()
-        elif stat[0] == 'BLANK':
+        elif stat[0] == "BLANK":
             b.del_line(stat[1])
-        elif stat[0] == 'NEW':
+        elif stat[0] == "NEW":
             b.new()

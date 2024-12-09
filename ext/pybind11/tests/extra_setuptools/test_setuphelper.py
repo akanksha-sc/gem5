@@ -89,7 +89,14 @@ def test_simple_setup_py(monkeypatch, tmpdir, parallel, std):
         print(item.basename)
 
     assert (
-        len([f for f in tmpdir.listdir() if f.basename.startswith("simple_setup")]) == 1
+        len(
+            [
+                f
+                for f in tmpdir.listdir()
+                if f.basename.startswith("simple_setup")
+            ]
+        )
+        == 1
     )
     assert len(list(tmpdir.listdir())) == 4  # two files + output + build_dir
 

@@ -1,0 +1,103 @@
+Import('*')
+
+if env['CONF']['USE_ARM_ISA']:
+
+    #Example
+    #SimObject('IOAcc.py')
+
+    #CommInterface
+    SimObject('CommInterface.py', sim_objects=['CommInterface'])
+    SimObject('ScratchpadMemory.py', sim_objects=['ScratchpadMemory'])
+    SimObject('NoncoherentDma.py', sim_objects=['NoncoherentDma'])
+    SimObject('StreamDma.py', sim_objects=['StreamDma'])
+    SimObject('AccCluster.py', sim_objects=['AccCluster'])
+    SimObject('StreamBuffer.py', sim_objects=['StreamBuffer'])
+    SimObject('RegisterBank.py', sim_objects=['RegisterBank'])
+
+    #LLVMInterface
+    SimObject('ComputeUnit.py', sim_objects=['ComputeUnit'])
+    SimObject('LLVMInterface.py', sim_objects=['LLVMInterface'])
+
+    #HWInterface
+    SimObject('CycleCounts.py', sim_objects=['CycleCounts'])
+    SimObject('FunctionalUnits.py', sim_objects=[
+        'FunctionalUnits', 'BitRegister', 'DoubleMultiplier',
+        'BitwiseOperations', 'DoubleAdder', 'FloatDivider',
+        'BitShifter', 'IntegerMultiplier', 'IntegerAdder',
+        'DoubleDivider', 'FloatAdder', 'FloatMultiplier'])
+    SimObject('HWInterface.py', sim_objects=['HWInterface'])
+    SimObject('HWStatistics.py', sim_objects=['HWStatistics'])
+    SimObject('InstConfig.py', sim_objects=[
+        'InstConfig', 'Add', 'Addrspacecast', 'Alloca', 'AndInst',
+        'Ashr', 'Bitcast', 'Br', 'Call', 'Fadd', 'Fcmp', 'Fdiv',
+        'Fence', 'Fmul', 'Fpext', 'Fptosi', 'Fptoui', 'Fptrunc',
+        'Frem', 'Fsub', 'Gep', 'Icmp', 'Indirectbr', 'Inttoptr',
+        'Invoke', 'Landingpad', 'Load', 'Lshr', 'Mul', 'OrInst',
+        'Phi', 'Ptrtoint', 'Resume', 'Ret', 'Sdiv', 'Select',
+        'Sext', 'Shl', 'Srem', 'Store', 'Sub', 'SwitchInst',
+        'Trunc', 'Udiv', 'Uitofp', 'Unreachable', 'Urem', 'Vaarg',
+        'XorInst', 'Zext'])
+    SimObject('InstOpCodes.py', sim_objects=['InstOpCodes'])
+    SimObject('SALAMPowerModel.py', sim_objects=['SALAMPowerModel'])
+    SimObject('SimulatorConfig.py', sim_objects=['SimulatorConfig'])
+
+    #Functional Units
+    #SimObject('Adder.py')
+
+    #
+    Source('comm_interface.cc')
+    Source('compute_unit.cc')
+    Source('llvm_interface.cc')
+    Source('dma_write_fifo.cc')
+    Source('noncoherent_dma.cc')
+    Source('stream_dma.cc')
+    Source('acc_cluster.cc')
+    Source('stream_buffer.cc')
+    Source('stream_port.cc')
+    Source('scratchpad_memory.cc')
+    Source('register_bank.cc')
+
+    #
+    Source('LLVMRead/src/value.cc')
+    Source('LLVMRead/src/function.cc')
+    Source('LLVMRead/src/basic_block.cc')
+    Source('LLVMRead/src/debug_flags.cc')
+    Source('LLVMRead/src/mem_request.cc')
+    Source('LLVMRead/src/instruction.cc')
+    Source('LLVMRead/src/registers.cc')
+    Source('LLVMRead/src/operand.cc')
+
+    # GENERATED FILES
+    # Source('HWModeling/generated/functionalunits/adder.cc')
+    # Source('HWModeling/generated/instructions/add.cc')
+    # END OF GENERATED FILES
+
+    Source('HWModeling/src/cycle_counts.cc')
+    #Source('HWModeling/src/cacti_wrapper.cc')
+    Source('HWModeling/src/functional_units.cc')
+    Source('HWModeling/src/hw_interface.cc')
+    Source('HWModeling/src/hw_statistics.cc')
+    Source('HWModeling/src/instruction_config.cc')
+    Source('HWModeling/src/opcodes.cc')
+    Source('HWModeling/src/salam_power_model.cc')
+    Source('HWModeling/src/simulator_config.cc')
+
+    #
+    DebugFlag('CommInterface')
+    DebugFlag('CommInterfaceQueues')
+    DebugFlag('DeviceMMR')
+    DebugFlag('LLVMInterface')
+    DebugFlag('NoncoherentDma')
+    DebugFlag('LLVMParse')
+    DebugFlag('Runtime')
+    DebugFlag('RuntimeCompute')
+    DebugFlag('RuntimeQueues')
+    DebugFlag('SALAM_Debug')
+    DebugFlag('StreamBuffer')
+    DebugFlag('StreamDma')
+    DebugFlag('Trace')
+    DebugFlag('Step')
+
+    #
+    CompoundFlag('JDEV', ['LLVMInterface','CommInterface', 'Runtime', 'RuntimeCompute', 'RuntimeQueues', 'SALAM_Debug'])
+    CompoundFlag('HWACC', ['CommInterface', 'LLVMInterface'])

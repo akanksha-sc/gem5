@@ -1,0 +1,14 @@
+Copying gem5-SALAM/benchmarks to gem5/benchmarks
+Copying gem5-SALAM/configs/SALAM to gem5/configs/SALAM
+Copying gem5-SALAM/docker to gem5/docker
+Copying gem5-SALAM/docs to gem5/docs
+Copying gem5-SALAM/ext/llvm to gem5/ext/llvm
+Copying gem5-SALAM/ext/mcpat/cacti/.gitignore to gem5/ext/mcpat/cacti/.gitignore
+Copying gem5-SALAM/.hgignore to gem5/.hgignore
+Copying gem5-SALAM/.hgtags to gem5/.hgtags
+Skipping gem5-SALAM/README.md as gem5/README.md already exists
+Copying gem5-SALAM/src/hwacc to gem5/src/hwacc
+Copying gem5-SALAM/tests/test-progs/asmtest to gem5/tests/test-progs/asmtest
+Copying gem5-SALAM/tools to gem5/tools
+Copying gem5-SALAM/util/salam.supp to gem5/util/salam.supp
+

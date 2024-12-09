@@ -77,7 +77,9 @@ from kconfiglib import Kconfig, BOOL, TRISTATE, TRI_TO_STR
 
 
 if len(sys.argv) < 4:
-    sys.exit("usage: merge_config.py Kconfig merged_config config1 [config2 ...]")
+    sys.exit(
+        "usage: merge_config.py Kconfig merged_config config1 [config2 ...]"
+    )
 
 kconf = Kconfig(sys.argv[1], suppress_traceback=True)
 
@@ -115,7 +117,10 @@ for sym in kconf.defined_syms:
             user_value = sym.user_value
 
         if user_value != sym.str_value:
-            print("warning: {} was assigned the value '{}' but got the "
-                  "value '{}' -- check dependencies".format(
-                      sym.name_and_loc, user_value, sym.str_value),
-                  file=sys.stderr)
+            print(
+                "warning: {} was assigned the value '{}' but got the "
+                "value '{}' -- check dependencies".format(
+                    sym.name_and_loc, user_value, sym.str_value
+                ),
+                file=sys.stderr,
+            )

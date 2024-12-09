@@ -154,7 +154,9 @@ class SanitizedString:
         if a == b:
             return True
         else:
-            self.explanation = _make_explanation(a.splitlines(), b.splitlines())
+            self.explanation = _make_explanation(
+                a.splitlines(), b.splitlines()
+            )
             return False
 
 

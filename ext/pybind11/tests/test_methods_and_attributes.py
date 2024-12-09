@@ -7,13 +7,19 @@ from pybind11_tests import ConstructorStats
 from pybind11_tests import methods_and_attributes as m
 
 NO_GETTER_MSG = (
-    "unreadable attribute" if sys.version_info < (3, 11) else "object has no getter"
+    "unreadable attribute"
+    if sys.version_info < (3, 11)
+    else "object has no getter"
 )
 NO_SETTER_MSG = (
-    "can't set attribute" if sys.version_info < (3, 11) else "object has no setter"
+    "can't set attribute"
+    if sys.version_info < (3, 11)
+    else "object has no setter"
 )
 NO_DELETER_MSG = (
-    "can't delete attribute" if sys.version_info < (3, 11) else "object has no deleter"
+    "can't delete attribute"
+    if sys.version_info < (3, 11)
+    else "object has no deleter"
 )
 
 
@@ -280,7 +286,8 @@ def test_property_return_value_policies(access):
 
 def test_property_rvalue_policy():
     """When returning an rvalue, the return value policy is automatically changed from
-    `reference(_internal)` to `move`. The following would not work otherwise."""
+    `reference(_internal)` to `move`. The following would not work otherwise.
+    """
 
     instance = m.TestPropRVP()
     o = instance.rvalue
@@ -311,7 +318,10 @@ def test_dynamic_attributes():
 
     with pytest.raises(TypeError) as excinfo:
         instance.__dict__ = []
-    assert str(excinfo.value) == "__dict__ must be set to a dictionary, not a 'list'"
+    assert (
+        str(excinfo.value)
+        == "__dict__ must be set to a dictionary, not a 'list'"
+    )
 
     cstats = ConstructorStats.get(m.DynamicClass)
     assert cstats.alive() == 1

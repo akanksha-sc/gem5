@@ -1,0 +1,79 @@
+Running the new gem5 testing script.
+For more information see TESTING.md.
+To see details as the testing scripts are running, use the option -v, -vv, or -vvv
+=====================================================================================================================================
+Loading Tests
+Discovered 84 tests and 48 suites in /nobackup2/akankshac/research/gem5/tests/gem5/arm_boot_tests/test_linux_boot.py
+Discovered 7344 tests and 7344 suites in /nobackup2/akankshac/research/gem5/tests/gem5/asmtest/tests.py
+Discovered 90 tests and 48 suites in /nobackup2/akankshac/research/gem5/tests/gem5/checkpoint_tests/test-checkpoints.py
+Discovered 264 tests and 132 suites in /nobackup2/akankshac/research/gem5/tests/gem5/cpu_tests/test.py
+Discovered 24 tests and 12 suites in /nobackup2/akankshac/research/gem5/tests/gem5/dram_lowp/test_dram_lowp.py
+Discovered 204 tests and 168 suites in /nobackup2/akankshac/research/gem5/tests/gem5/fs/linux/arm/test.py
+PARSEC tests are disabled. This is due to our GitHub Actions self-hosted runners only having 60GB of disk space. The PARSEC Disk image is too big to use.
+Discovered 120 tests and 96 suites in /nobackup2/akankshac/research/gem5/tests/gem5/gem5_library_example_tests/test_gem5_library_examples.py
+Discovered 6 tests and 6 suites in /nobackup2/akankshac/research/gem5/tests/gem5/gem5_resources/test_download_resources.py
+Discovered 12 tests and 12 suites in /nobackup2/akankshac/research/gem5/tests/gem5/gpu/test_gpu_ruby_random.py
+Discovered 12 tests and 12 suites in /nobackup2/akankshac/research/gem5/tests/gem5/gpu/test_gpu_ruby_random_wbL2.py
+Discovered 24 tests and 12 suites in /nobackup2/akankshac/research/gem5/tests/gem5/insttest_se/test.py
+Discovered 0 tests and 0 suites in /nobackup2/akankshac/research/gem5/tests/gem5/kvm_fork_tests/test_kvm_fork_run.py
+Discovered 0 tests and 0 suites in /nobackup2/akankshac/research/gem5/tests/gem5/kvm_switch_tests/test_kvm_cpu_switch.py
+Discovered 24 tests and 24 suites in /nobackup2/akankshac/research/gem5/tests/gem5/learning_gem5/part1_test.py
+Discovered 48 tests and 24 suites in /nobackup2/akankshac/research/gem5/tests/gem5/learning_gem5/part2_test.py
+Discovered 18 tests and 9 suites in /nobackup2/akankshac/research/gem5/tests/gem5/learning_gem5/part3_test.py
+Discovered 12 tests and 6 suites in /nobackup2/akankshac/research/gem5/tests/gem5/m5_util/test_exit.py
+Discovered 0 tests and 0 suites in /nobackup2/akankshac/research/gem5/tests/gem5/m5threads_test_atomic/test.py
+Discovered 90 tests and 90 suites in /nobackup2/akankshac/research/gem5/tests/gem5/memory/test.py
+Discovered 54 tests and 54 suites in /nobackup2/akankshac/research/gem5/tests/gem5/multi_isa/test_multi_isa.py
+Discovered 0 tests and 0 suites in /nobackup2/akankshac/research/gem5/tests/gem5/parsec_benchmarks/test_parsec.py
+Discovered 504 tests and 252 suites in /nobackup2/akankshac/research/gem5/tests/gem5/replacement_policies/test_replacement_policies.py
+Discovered 120 tests and 60 suites in /nobackup2/akankshac/research/gem5/tests/gem5/riscv_boot_tests/test_linux_boot.py
+Discovered 336 tests and 168 suites in /nobackup2/akankshac/research/gem5/tests/gem5/se_mode/hello_se/test_hello_se.py
+Discovered 6 tests and 6 suites in /nobackup2/akankshac/research/gem5/tests/gem5/se_mode/hello_se/test_se_multicore.py
+Discovered 24 tests and 6 suites in /nobackup2/akankshac/research/gem5/tests/gem5/stats/test_hdf5.py
+Discovered 60 tests and 60 suites in /nobackup2/akankshac/research/gem5/tests/gem5/stats/test_pystat_output.py
+Discovered 18 tests and 18 suites in /nobackup2/akankshac/research/gem5/tests/gem5/stdlib/test_base_cpu_processor.py
+Discovered 54 tests and 54 suites in /nobackup2/akankshac/research/gem5/tests/gem5/stdlib/test_requires.py
+Discovered 36 tests and 18 suites in /nobackup2/akankshac/research/gem5/tests/gem5/stdlib/simulator/test_event_event.py
+Discovered 36 tests and 18 suites in /nobackup2/akankshac/research/gem5/tests/gem5/suite_tests/test_suite.py
+Discovered 60 tests and 30 suites in /nobackup2/akankshac/research/gem5/tests/gem5/to_tick/test_to_tick.py
+Discovered 2400 tests and 1200 suites in /nobackup2/akankshac/research/gem5/tests/gem5/traffic_gen/test_memory_traffic_gen.py
+Discovered 144 tests and 114 suites in /nobackup2/akankshac/research/gem5/tests/gem5/x86_boot_tests/test_linux_boot.py
+Discovered 6 tests and 6 suites in /nobackup2/akankshac/research/gem5/tests/pyunit/test_run.py
+Filtering suites with tags as follows:
+   Include: ^X86$
+   Include: ^VEGA_X86$
+   Include: ^SPARC$
+   Include: ^RISCV$
+   Include: ^ARM$
+   Include: ^MIPS$
+   Include: ^POWER$
+   Include: ^NULL$
+   Include: ^ALL$
+   Include: ^quick$
+   Include: ^x86_64$
+   Include: ^opt$
+    Remove: ^long$
+    Remove: ^very-long$
+    Remove: ^aarch64$
+    Remove: ^debug$
+    Remove: ^fast$
+=====================================================================================================================================
+Running Tests from 1573 suites
+Results will be stored in /nobackup2/akankshac/research/gem5/tests/testing-results
+=====================================================================================================================================
+Logging call to command: /nobackup2/akankshac/research/gem5/build/ALL/gem5.opt -d /tmp/gem5out78b5yjob -re --silent-redirect /nobackup2/akankshac/research/gem5/tests/gem5/arm_boot_tests/configs/arm_boot_exit_run.py --cpu atomic --num-cpus 1 --mem-system classic --dram-class SingleChannelDDR3_1600 --resource-directory /nobackup2/akankshac/research/gem5/tests/gem5/resources --tick-exit 10000000000
+Starting Test Suite: atomic-cpu_1-cores_classic_SingleChannelDDR3_1600_arm_boot_test_to-tick-ALL-x86_64-opt
+Starting Test Case: atomic-cpu_1-cores_classic_SingleChannelDDR3_1600_arm_boot_test_to-tick-ALL-x86_64-opt
+Test: atomic-cpu_1-cores_classic_SingleChannelDDR3_1600_arm_boot_test_to-tick-ALL-x86_64-opt Passed
+Starting Test Case: atomic-cpu_1-cores_classic_SingleChannelDDR3_1600_arm_boot_test_to-tick-ALL-x86_64-opt-MatchRegex
+Test: atomic-cpu_1-cores_classic_SingleChannelDDR3_1600_arm_boot_test_to-tick-ALL-x86_64-opt-MatchRegex Passed
+Logging call to command: /nobackup2/akankshac/research/gem5/build/ALL/gem5.opt -d /tmp/gem5outfwtsrvyi -re --silent-redirect /nobackup2/akankshac/research/gem5/tests/gem5/arm_boot_tests/configs/arm_boot_exit_run.py --cpu timing --num-cpus 1 --mem-system classic --dram-class SingleChannelDDR3_2133 --resource-directory /nobackup2/akankshac/research/gem5/tests/gem5/resources --tick-exit 10000000000
+Starting Test Suite: timing-cpu_1-cores_classic_SingleChannelDDR3_2133_arm_boot_test_to-tick-ALL-x86_64-opt
+Starting Test Case: timing-cpu_1-cores_classic_SingleChannelDDR3_2133_arm_boot_test_to-tick-ALL-x86_64-opt
+Test: timing-cpu_1-cores_classic_SingleChannelDDR3_2133_arm_boot_test_to-tick-ALL-x86_64-opt Passed
+Test: timing-cpu_1-cores_classic_SingleChannelDDR3_2133_arm_boot_test_to-tick-ALL-x86_64-opt-MatchRegex Passed
+Starting Test Case: timing-cpu_1-cores_classic_SingleChannelDDR3_2133_arm_boot_test_to-tick-ALL-x86_64-opt-MatchRegex
+Logging call to command: /nobackup2/akankshac/research/gem5/build/ALL/gem5.opt -d /tmp/gem5outeun01its -re --silent-redirect /nobackup2/akankshac/research/gem5/tests/gem5/arm_boot_tests/configs/arm_boot_exit_run.py --cpu o3 --num-cpus 1 --mem-system classic --dram-class DualChannelDDR3_1600 --resource-directory /nobackup2/akankshac/research/gem5/tests/gem5/resources --tick-exit 10000000000
+Starting Test Suite: o3-cpu_1-cores_classic_DualChannelDDR3_1600_arm_boot_test_to-tick-ALL-x86_64-opt
+Starting Test Case: o3-cpu_1-cores_classic_DualChannelDDR3_1600_arm_boot_test_to-tick-ALL-x86_64-opt
+=============================================== Results: 4 Passed in 6.1e+01 seconds  ===============================================

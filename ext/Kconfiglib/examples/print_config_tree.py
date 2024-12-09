@@ -53,10 +53,19 @@
 
 import sys
 
-from kconfiglib import Kconfig, \
-                       Symbol, MENU, COMMENT, \
-                       BOOL, TRISTATE, STRING, INT, HEX, UNKNOWN, \
-                       expr_value
+from kconfiglib import (
+    Kconfig,
+    Symbol,
+    MENU,
+    COMMENT,
+    BOOL,
+    TRISTATE,
+    STRING,
+    INT,
+    HEX,
+    UNKNOWN,
+    expr_value,
+)
 
 
 # Add help description to output
@@ -64,7 +73,7 @@ WITH_HELP_DESC = False
 
 
 def indent_print(s, indent):
-    print(indent*" " + s)
+    print(indent * " " + s)
 
 
 def value_str(sc):
@@ -97,7 +106,9 @@ def value_str(sc):
     if sc.type == TRISTATE:
         if sc.assignable == (1, 2):
             # m and y available
-            return "{" + tri_val_str + "}"  # Gets a bit confusing with .format()
+            return (
+                "{" + tri_val_str + "}"
+            )  # Gets a bit confusing with .format()
         return "<{}>".format(tri_val_str)
 
 
@@ -141,7 +152,7 @@ def node_str(node):
 
     # Add help text
     if WITH_HELP_DESC:
-        prompt += ' - ' + str(node.help).replace('\n', ' ').replace('\r', '')
+        prompt += " - " + str(node.help).replace("\n", " ").replace("\r", "")
 
     # {:3} sets the field width to three. Gives nice alignment for empty string
     # values.
@@ -183,13 +194,12 @@ def print_menuconfig(kconf):
 
 
 if __name__ == "__main__":
-
     # Load Kconfig configuration files
     kconf = Kconfig(sys.argv[1])
 
     # Set default .config file or load it from argv
     if len(sys.argv) == 2:
-        config_filename = '.config'
+        config_filename = ".config"
     else:
         config_filename = sys.argv[2]
 

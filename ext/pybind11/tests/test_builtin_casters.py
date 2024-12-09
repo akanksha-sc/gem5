@@ -60,7 +60,9 @@ def test_single_char_arguments():
         m.ord_char("é") == 0xE9
     )  # requires 2 bytes in utf-8, but can be stuffed in a char
     with pytest.raises(ValueError) as excinfo:
-        assert m.ord_char("Ā") == 0x100  # requires 2 bytes, doesn't fit in a char
+        assert (
+            m.ord_char("Ā") == 0x100
+        )  # requires 2 bytes, doesn't fit in a char
     assert str(excinfo.value) == toobig_message(0x100)
     with pytest.raises(ValueError) as excinfo:
         assert m.ord_char("ab")
@@ -112,7 +114,9 @@ def test_single_char_arguments():
             m.ord_char8("é") == 0xE9
         )  # requires 2 bytes in utf-8, but can be stuffed in a char
         with pytest.raises(ValueError) as excinfo:
-            assert m.ord_char8("Ā") == 0x100  # requires 2 bytes, doesn't fit in a char
+            assert (
+                m.ord_char8("Ā") == 0x100
+            )  # requires 2 bytes, doesn't fit in a char
         assert str(excinfo.value) == toobig_message(0x100)
         with pytest.raises(ValueError) as excinfo:
             assert m.ord_char8("ab")
@@ -121,7 +125,8 @@ def test_single_char_arguments():
 
 def test_bytes_to_string():
     """Tests the ability to pass bytes to C++ string-accepting functions.  Note that this is
-    one-way: the only way to return bytes to Python is via the pybind11::bytes class."""
+    one-way: the only way to return bytes to Python is via the pybind11::bytes class.
+    """
     # Issue #816
 
     assert m.strlen(b"hi") == 2
@@ -142,16 +147,34 @@ def test_bytearray_to_string():
     assert m.string_length(bytearray(b"\x80")) == 1
 
 
-@pytest.mark.skipif(not hasattr(m, "has_string_view"), reason="no <string_view>")
+@pytest.mark.skipif(
+    not hasattr(m, "has_string_view"), reason="no <string_view>"
+)
 def test_string_view(capture):
     """Tests support for C++17 string_view arguments and return values"""
     assert m.string_view_chars("Hi") == [72, 105]
-    assert m.string_view_chars("Hi 🎂") == [72, 105, 32, 0xF0, 0x9F, 0x8E, 0x82]
+    assert m.string_view_chars("Hi 🎂") == [
+        72,
+        105,
+        32,
+        0xF0,
+        0x9F,
+        0x8E,
+        0x82,
+    ]
     assert m.string_view16_chars("Hi 🎂") == [72, 105, 32, 0xD83C, 0xDF82]
     assert m.string_view32_chars("Hi 🎂") == [72, 105, 32, 127874]
     if hasattr(m, "has_u8string"):
         assert m.string_view8_chars("Hi") == [72, 105]
-        assert m.string_view8_chars("Hi 🎂") == [72, 105, 32, 0xF0, 0x9F, 0x8E, 0x82]
+        assert m.string_view8_chars("Hi 🎂") == [
+            72,
+            105,
+            32,
+            0xF0,
+            0x9F,
+            0x8E,
+            0x82,
+        ]
 
     assert m.string_view_return() == "utf8 secret 🎂"
     assert m.string_view16_return() == "utf16 secret 🎂"
@@ -218,8 +241,14 @@ def test_string_view(capture):
         assert m.string_view8_str() == "abc ‽ def"
     assert m.string_view_memoryview() == "Have some 🎂".encode()
 
-    assert m.bytes_from_type_with_both_operator_string_and_string_view() == b"success"
-    assert m.str_from_type_with_both_operator_string_and_string_view() == "success"
+    assert (
+        m.bytes_from_type_with_both_operator_string_and_string_view()
+        == b"success"
+    )
+    assert (
+        m.str_from_type_with_both_operator_string_and_string_view()
+        == "success"
+    )
 
 
 def test_integer_casting():
