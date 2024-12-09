@@ -22,7 +22,9 @@ def test_repr():
 def test_instance(msg):
     with pytest.raises(TypeError) as excinfo:
         m.NoConstructor()
-    assert msg(excinfo.value) == "m.class_.NoConstructor: No constructor defined!"
+    assert (
+        msg(excinfo.value) == "m.class_.NoConstructor: No constructor defined!"
+    )
 
     instance = m.NoConstructor.new_instance()
 
@@ -185,7 +187,6 @@ def test_inheritance(msg):
 
 
 def test_inheritance_init(msg):
-
     # Single base
     class Python(m.Pet):
         def __init__(self):
@@ -193,7 +194,9 @@ def test_inheritance_init(msg):
 
     with pytest.raises(TypeError) as exc_info:
         Python()
-    expected = "m.class_.Pet.__init__() must be called when overriding __init__"
+    expected = (
+        "m.class_.Pet.__init__() must be called when overriding __init__"
+    )
     assert msg(exc_info.value) == expected
 
     # Multiple bases
@@ -203,7 +206,9 @@ def test_inheritance_init(msg):
 
     with pytest.raises(TypeError) as exc_info:
         RabbitHamster()
-    expected = "m.class_.Hamster.__init__() must be called when overriding __init__"
+    expected = (
+        "m.class_.Hamster.__init__() must be called when overriding __init__"
+    )
     assert msg(exc_info.value) == expected
 
 
@@ -222,7 +227,9 @@ def test_automatic_upcasting():
 
 
 def test_isinstance():
-    objects = [tuple(), dict(), m.Pet("Polly", "parrot")] + [m.Dog("Molly")] * 4
+    objects = [tuple(), dict(), m.Pet("Polly", "parrot")] + [
+        m.Dog("Molly")
+    ] * 4
     expected = (True, True, True, True, True, False, False)
     assert m.check_instances(objects) == expected
 
@@ -263,7 +270,9 @@ def test_implicit_conversion_life_support():
     assert m.implicitly_convert_argument(UserType(5)) == 5
     assert m.implicitly_convert_variable(UserType(5)) == 5
 
-    assert "outside a bound function" in m.implicitly_convert_variable_fail(UserType(5))
+    assert "outside a bound function" in m.implicitly_convert_variable_fail(
+        UserType(5)
+    )
 
 
 def test_operator_new_delete(capture):
@@ -289,7 +298,9 @@ def test_operator_new_delete(capture):
     with capture:
         c = m.AliasedHasOpNewDelSize()
         c2 = SubAliased()
-    assert capture == ("C new " + sz_noalias + "\n" + "C new " + sz_alias + "\n")
+    assert capture == (
+        "C new " + sz_noalias + "\n" + "C new " + sz_alias + "\n"
+    )
 
     with capture:
         del a
@@ -312,7 +323,9 @@ def test_operator_new_delete(capture):
         pytest.gc_collect()
         del c2
         pytest.gc_collect()
-    assert capture == ("C delete " + sz_noalias + "\n" + "C delete " + sz_alias + "\n")
+    assert capture == (
+        "C delete " + sz_noalias + "\n" + "C delete " + sz_alias + "\n"
+    )
 
 
 def test_bind_protected_functions():
@@ -463,7 +476,9 @@ def test_register_duplicate_class():
     assert str(exc_info.value) == expected
     with pytest.raises(RuntimeError) as exc_info:
         m.register_duplicate_class_type(module_scope)
-    expected = 'generic_type: type "YetAnotherDuplicate" is already registered!'
+    expected = (
+        'generic_type: type "YetAnotherDuplicate" is already registered!'
+    )
     assert str(exc_info.value) == expected
 
     class ClassScope:
@@ -478,7 +493,9 @@ def test_register_duplicate_class():
     assert str(exc_info.value) == expected
     with pytest.raises(RuntimeError) as exc_info:
         m.register_duplicate_nested_class_type(ClassScope)
-    expected = 'generic_type: type "YetAnotherDuplicateNested" is already registered!'
+    expected = (
+        'generic_type: type "YetAnotherDuplicateNested" is already registered!'
+    )
     assert str(exc_info.value) == expected
 
 

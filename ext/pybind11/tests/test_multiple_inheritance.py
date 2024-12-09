@@ -288,7 +288,9 @@ def test_mi_unaligned_base():
     b2d = m.i801b2_d(d)
     assert b2d is d
 
-    assert ConstructorStats.detail_reg_inst() == n_inst + 4  # no extra instances
+    assert (
+        ConstructorStats.detail_reg_inst() == n_inst + 4
+    )  # no extra instances
     del c, b1c, b2c
     assert ConstructorStats.detail_reg_inst() == n_inst + 2
     del d, b1d, b2d

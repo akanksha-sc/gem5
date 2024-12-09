@@ -108,7 +108,9 @@ def test_multi_acquire_release_cross_module():
 
 
 # Intentionally putting human review in the loop here, to guard against accidents.
-VARS_BEFORE_ALL_BASIC_TESTS = dict(vars())  # Make a copy of the dict (critical).
+VARS_BEFORE_ALL_BASIC_TESTS = dict(
+    vars()
+)  # Make a copy of the dict (critical).
 ALL_BASIC_TESTS = (
     test_callback_py_obj,
     test_callback_std_func,
@@ -144,7 +146,9 @@ def _intentional_deadlock():
     m.intentional_deadlock()
 
 
-ALL_BASIC_TESTS_PLUS_INTENTIONAL_DEADLOCK = ALL_BASIC_TESTS + (_intentional_deadlock,)
+ALL_BASIC_TESTS_PLUS_INTENTIONAL_DEADLOCK = ALL_BASIC_TESTS + (
+    _intentional_deadlock,
+)
 
 
 def _run_in_process(target, *args, **kwargs):
@@ -161,14 +165,21 @@ def _run_in_process(target, *args, **kwargs):
         process.start()
         if timeout >= 100:  # For debugging.
             print(
-                "\nprocess.pid STARTED", process.pid, (sys.argv, target, args, kwargs)
+                "\nprocess.pid STARTED",
+                process.pid,
+                (sys.argv, target, args, kwargs),
             )
-            print(f"COPY-PASTE-THIS: gdb {sys.argv[0]} -p {process.pid}", flush=True)
+            print(
+                f"COPY-PASTE-THIS: gdb {sys.argv[0]} -p {process.pid}",
+                flush=True,
+            )
         process.join(timeout=timeout)
         if timeout >= 100:
             print("\nprocess.pid JOINED", process.pid, flush=True)
         t_delta = time.time() - t_start
-        if process.exitcode == 66 and m.defined_THREAD_SANITIZER:  # Issue #2754
+        if (
+            process.exitcode == 66 and m.defined_THREAD_SANITIZER
+        ):  # Issue #2754
             # WOULD-BE-NICE-TO-HAVE: Check that the message below is actually in the output.
             # Maybe this could work:
             # https://gist.github.com/alexeygrigorev/01ce847f2e721b513b42ea4a6c96905e
@@ -211,7 +222,12 @@ def test_run_in_process_one_thread(test_fn):
 
     It runs in a separate process to be able to stop and assert if it deadlocks.
     """
-    assert _run_in_process(_run_in_threads, test_fn, num_threads=1, parallel=False) == 0
+    assert (
+        _run_in_process(
+            _run_in_threads, test_fn, num_threads=1, parallel=False
+        )
+        == 0
+    )
 
 
 # TODO: FIXME on macOS Python 3.9
@@ -221,7 +237,10 @@ def test_run_in_process_multiple_threads_parallel(test_fn):
 
     It runs in a separate process to be able to stop and assert if it deadlocks.
     """
-    assert _run_in_process(_run_in_threads, test_fn, num_threads=8, parallel=True) == 0
+    assert (
+        _run_in_process(_run_in_threads, test_fn, num_threads=8, parallel=True)
+        == 0
+    )
 
 
 # TODO: FIXME on macOS Python 3.9
@@ -231,7 +250,12 @@ def test_run_in_process_multiple_threads_sequential(test_fn):
 
     It runs in a separate process to be able to stop and assert if it deadlocks.
     """
-    assert _run_in_process(_run_in_threads, test_fn, num_threads=8, parallel=False) == 0
+    assert (
+        _run_in_process(
+            _run_in_threads, test_fn, num_threads=8, parallel=False
+        )
+        == 0
+    )
 
 
 # TODO: FIXME on macOS Python 3.9

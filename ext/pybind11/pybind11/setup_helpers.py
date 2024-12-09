@@ -72,7 +72,10 @@ except ImportError:
 import distutils.ccompiler
 import distutils.errors
 
-WIN = sys.platform.startswith("win32") and "mingw" not in sysconfig.get_platform()
+WIN = (
+    sys.platform.startswith("win32")
+    and "mingw" not in sysconfig.get_platform()
+)
 MACOS = sys.platform.startswith("darwin")
 STD_TMPL = "/std:c++{}" if WIN else "-std=c++{}"
 
@@ -118,7 +121,6 @@ class Pybind11Extension(_Extension):  # type: ignore[misc]
         self.extra_link_args[:0] = flags
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-
         self._cxx_level = 0
         cxx_std = kwargs.pop("cxx_std", 0)
 
@@ -174,9 +176,10 @@ class Pybind11Extension(_Extension):  # type: ignore[misc]
 
     @cxx_std.setter
     def cxx_std(self, level: int) -> None:
-
         if self._cxx_level:
-            warnings.warn("You cannot safely change the cxx_level after setting it!")
+            warnings.warn(
+                "You cannot safely change the cxx_level after setting it!"
+            )
 
         # MSVC 2015 Update 3 and later only have 14 (and later 17) modes, so
         # force a valid flag here.
@@ -197,9 +200,13 @@ class Pybind11Extension(_Extension):  # type: ignore[misc]
             # you are careful in your feature usage, but 10.14 is the safest
             # setting for general use. However, never set higher than the
             # current macOS version!
-            current_macos = tuple(int(x) for x in platform.mac_ver()[0].split(".")[:2])
+            current_macos = tuple(
+                int(x) for x in platform.mac_ver()[0].split(".")[:2]
+            )
             desired_macos = (10, 9) if level < 17 else (10, 14)
-            macos_string = ".".join(str(x) for x in min(current_macos, desired_macos))
+            macos_string = ".".join(
+                str(x) for x in min(current_macos, desired_macos)
+            )
             macosx_min = f"-mmacosx-version-min={macos_string}"
             cflags += [macosx_min]
             ldflags += [macosx_min]
@@ -239,7 +246,9 @@ def has_flag(compiler: Any, flag: str) -> bool:
     with tmp_chdir():
         fname = Path("flagcheck.cpp")
         # Don't trigger -Wunused-parameter.
-        fname.write_text("int main (int, char **) { return 0; }", encoding="utf-8")
+        fname.write_text(
+            "int main (int, char **) { return 0; }", encoding="utf-8"
+        )
 
         try:
             compiler.compile([str(fname)], extra_postargs=[flag])
@@ -341,7 +350,9 @@ def naive_recompile(obj: str, src: str) -> bool:
     return os.stat(obj).st_mtime < os.stat(src).st_mtime
 
 
-def no_recompile(obg: str, src: str) -> bool:  # pylint: disable=unused-argument
+def no_recompile(
+    obg: str, src: str
+) -> bool:  # pylint: disable=unused-argument
     """
     This is the safest but slowest choice (and is the default) - will always
     recompile sources.
@@ -432,17 +443,23 @@ class ParallelCompile:
             compiler: distutils.ccompiler.CCompiler,
             sources: List[str],
             output_dir: Optional[str] = None,
-            macros: Optional[Union[Tuple[str], Tuple[str, Optional[str]]]] = None,
+            macros: Optional[
+                Union[Tuple[str], Tuple[str, Optional[str]]]
+            ] = None,
             include_dirs: Optional[List[str]] = None,
             debug: bool = False,
             extra_preargs: Optional[List[str]] = None,
             extra_postargs: Optional[List[str]] = None,
             depends: Optional[List[str]] = None,
         ) -> Any:
-
             # These lines are directly from distutils.ccompiler.CCompiler
             macros, objects, extra_postargs, pp_opts, build = compiler._setup_compile(  # type: ignore[attr-defined]
-                output_dir, macros, include_dirs, sources, depends, extra_postargs
+                output_dir,
+                macros,
+                include_dirs,
+                sources,
+                depends,
+                extra_postargs,
             )
             cc_args = compiler._get_cc_args(pp_opts, debug, extra_preargs)  # type: ignore[attr-defined]
 
@@ -473,7 +490,11 @@ class ParallelCompile:
             if threads == 0:
                 try:
                     threads = multiprocessing.cpu_count()
-                    threads = self.max if self.max and self.max < threads else threads
+                    threads = (
+                        self.max
+                        if self.max and self.max < threads
+                        else threads
+                    )
                 except NotImplementedError:
                     threads = 1
 

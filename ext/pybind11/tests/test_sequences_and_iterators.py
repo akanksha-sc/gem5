@@ -13,20 +13,34 @@ def test_slice_constructors():
 @pytest.mark.skipif(not m.has_optional, reason="no <optional>")
 def test_slice_constructors_explicit_optional():
     assert m.make_reversed_slice_size_t_optional() == slice(None, None, -1)
-    assert m.make_reversed_slice_size_t_optional_verbose() == slice(None, None, -1)
+    assert m.make_reversed_slice_size_t_optional_verbose() == slice(
+        None, None, -1
+    )
 
 
 def test_generalized_iterators():
-    assert list(m.IntPairs([(1, 2), (3, 4), (0, 5)]).nonzero()) == [(1, 2), (3, 4)]
-    assert list(m.IntPairs([(1, 2), (2, 0), (0, 3), (4, 5)]).nonzero()) == [(1, 2)]
+    assert list(m.IntPairs([(1, 2), (3, 4), (0, 5)]).nonzero()) == [
+        (1, 2),
+        (3, 4),
+    ]
+    assert list(m.IntPairs([(1, 2), (2, 0), (0, 3), (4, 5)]).nonzero()) == [
+        (1, 2)
+    ]
     assert list(m.IntPairs([(0, 3), (1, 2), (3, 4)]).nonzero()) == []
 
     assert list(m.IntPairs([(1, 2), (3, 4), (0, 5)]).nonzero_keys()) == [1, 3]
-    assert list(m.IntPairs([(1, 2), (2, 0), (0, 3), (4, 5)]).nonzero_keys()) == [1]
+    assert list(
+        m.IntPairs([(1, 2), (2, 0), (0, 3), (4, 5)]).nonzero_keys()
+    ) == [1]
     assert list(m.IntPairs([(0, 3), (1, 2), (3, 4)]).nonzero_keys()) == []
 
-    assert list(m.IntPairs([(1, 2), (3, 4), (0, 5)]).nonzero_values()) == [2, 4]
-    assert list(m.IntPairs([(1, 2), (2, 0), (0, 3), (4, 5)]).nonzero_values()) == [2]
+    assert list(m.IntPairs([(1, 2), (3, 4), (0, 5)]).nonzero_values()) == [
+        2,
+        4,
+    ]
+    assert list(
+        m.IntPairs([(1, 2), (2, 0), (0, 3), (4, 5)]).nonzero_values()
+    ) == [2]
     assert list(m.IntPairs([(0, 3), (1, 2), (3, 4)]).nonzero_values()) == []
 
     # __next__ must continue to raise StopIteration
@@ -54,8 +68,16 @@ def test_generalized_iterators_simple():
         (3, 4),
         (0, 5),
     ]
-    assert list(m.IntPairs([(1, 2), (3, 4), (0, 5)]).simple_keys()) == [1, 3, 0]
-    assert list(m.IntPairs([(1, 2), (3, 4), (0, 5)]).simple_values()) == [2, 4, 5]
+    assert list(m.IntPairs([(1, 2), (3, 4), (0, 5)]).simple_keys()) == [
+        1,
+        3,
+        0,
+    ]
+    assert list(m.IntPairs([(1, 2), (3, 4), (0, 5)]).simple_values()) == [
+        2,
+        4,
+        5,
+    ]
 
 
 def test_iterator_referencing():
@@ -213,7 +235,9 @@ def test_python_iterator_in_cpp():
 
     with pytest.raises(RuntimeError) as excinfo:
         m.iterator_to_list(iter(bad_next_call, None))
-    assert str(excinfo.value) == "py::iterator::advance() should propagate errors"
+    assert (
+        str(excinfo.value) == "py::iterator::advance() should propagate errors"
+    )
 
     lst = [1, None, 0, None]
     assert m.count_none(lst) == 2

@@ -189,7 +189,9 @@ class CustomContains:
         (CustomContains(), m.obj_contains),
     ],
 )
-@pytest.mark.xfail("env.PYPY and sys.pypy_version_info < (7, 3, 10)", strict=False)
+@pytest.mark.xfail(
+    "env.PYPY and sys.pypy_version_info < (7, 3, 10)", strict=False
+)
 def test_unhashable_exceptions(arg, func):
     class Unhashable:
         __hash__ = None
@@ -451,9 +453,7 @@ def test_non_converting_constructors():
         for move in [True, False]:
             with pytest.raises(TypeError) as excinfo:
                 m.nonconverting_constructor(t, v, move)
-            expected_error = (
-                f"Object of type '{type(v).__name__}' is not an instance of '{t}'"
-            )
+            expected_error = f"Object of type '{type(v).__name__}' is not an instance of '{t}'"
             assert str(excinfo.value) == expected_error
 
 
@@ -747,7 +747,9 @@ def test_weakref_err(create_weakref, has_callback):
 
     ob = C()
     # Should raise TypeError on CPython
-    with pytest.raises(TypeError) if not env.PYPY else contextlib.nullcontext():
+    with (
+        pytest.raises(TypeError) if not env.PYPY else contextlib.nullcontext()
+    ):
         if has_callback:
             _ = create_weakref(ob, callback)
         else:
@@ -808,20 +810,25 @@ def test_populate_obj_str_attrs():
     pop = 1000
     o = types.SimpleNamespace(**{str(i): i for i in range(pop)})
     new_o = m.populate_obj_str_attrs(o, pop)
-    new_attrs = {k: v for k, v in new_o.__dict__.items() if not k.startswith("_")}
+    new_attrs = {
+        k: v for k, v in new_o.__dict__.items() if not k.startswith("_")
+    }
     assert all(isinstance(v, str) for v in new_attrs.values())
     assert len(new_attrs) == pop
 
 
 @pytest.mark.parametrize(
-    "a,b", [("foo", "bar"), (1, 2), (1.0, 2.0), (list(range(3)), list(range(3, 6)))]
+    "a,b",
+    [("foo", "bar"), (1, 2), (1.0, 2.0), (list(range(3)), list(range(3, 6)))],
 )
 def test_inplace_append(a, b):
     expected = a + b
     assert m.inplace_append(a, b) == expected
 
 
-@pytest.mark.parametrize("a,b", [(3, 2), (3.0, 2.0), (set(range(3)), set(range(2)))])
+@pytest.mark.parametrize(
+    "a,b", [(3, 2), (3.0, 2.0), (set(range(3)), set(range(2)))]
+)
 def test_inplace_subtract(a, b):
     expected = a - b
     assert m.inplace_subtract(a, b) == expected

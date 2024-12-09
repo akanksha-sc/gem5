@@ -41,7 +41,7 @@ FDT_MAX_VERSION = 17
 
 
 class FdtProperty(object):
-    """ Represents an empty property"""
+    """Represents an empty property"""
 
     @staticmethod
     def __validate_dt_name(name):
@@ -89,13 +89,12 @@ class FdtProperty(object):
         return None
 
     def __ne__(self, node):
-        """Check property inequality
-        """
+        """Check property inequality"""
         return not self.__eq__(node)
 
     def __eq__(self, node):
         """Check node equality
-           check properties are the same (same values)
+        check properties are the same (same values)
         """
         if not isinstance(node, FdtProperty):
             raise Exception("Invalid object type")
@@ -106,7 +105,7 @@ class FdtProperty(object):
     @staticmethod
     def __check_prop_strings(value):
         """Check property string validity
-           Python version of util_is_printable_string from dtc
+        Python version of util_is_printable_string from dtc
         """
         pos = 0
         posi = 0
@@ -242,7 +241,7 @@ class FdtPropertyStrings(FdtProperty):
 
     def __eq__(self, node):
         """Check node equality
-           check properties are the same (same values)
+        check properties are the same (same values)
         """
         if not FdtProperty.__eq__(self, node):
             return False
@@ -333,7 +332,7 @@ class FdtPropertyWords(FdtProperty):
 
     def __eq__(self, node):
         """Check node equality
-           check properties are the same (same values)
+        check properties are the same (same values)
         """
         if not FdtProperty.__eq__(self, node):
             return False
@@ -420,7 +419,7 @@ class FdtPropertyBytes(FdtProperty):
 
     def __eq__(self, node):
         """Check node equality
-           check properties are the same (same values)
+        check properties are the same (same values)
         """
         if not FdtProperty.__eq__(self, node):
             return False
@@ -524,8 +523,8 @@ class FdtNode(object):
 
     def dtb_represent(self, strings_store, pos=0, version=17):
         """Get blob representation
-           Pass string storage as strings_store, pos for current node start
-           and version as current dtb version
+        Pass string storage as strings_store, pos for current node start
+        and version as current dtb version
         """
         # print "%x:%s" % (pos, self)
         strings = strings_store
@@ -572,7 +571,7 @@ class FdtNode(object):
 
     def __setitem__(self, index, subnode):
         """Set node at index, replacing previous subnode,
-           must not be a duplicate name
+        must not be a duplicate name
         """
         if self.subdata[
             index
@@ -590,17 +589,17 @@ class FdtNode(object):
 
     def __ne__(self, node):
         """Check node inequality
-           i.e. is subnodes are the same, in either order
-           and properties are the same (same values)
-           The FdtNop is excluded from the check
+        i.e. is subnodes are the same, in either order
+        and properties are the same (same values)
+        The FdtNop is excluded from the check
         """
         return not self.__eq__(node)
 
     def __eq__(self, node):
         """Check node equality
-           i.e. is subnodes are the same, in either order
-           and properties are the same (same values)
-           The FdtNop is excluded from the check
+        i.e. is subnodes are the same, in either order
+        and properties are the same (same values)
+        The FdtNop is excluded from the check
         """
         if not isinstance(node, FdtNode):
             raise Exception("Invalid object type")
@@ -664,7 +663,7 @@ class FdtNode(object):
 
     def remove(self, name):
         """Remove subnode with the name
-           Raises ValueError is not present
+        Raises ValueError is not present
         """
         index = self._find(name)
         if index is None:
@@ -673,7 +672,7 @@ class FdtNode(object):
 
     def index(self, name):
         """Returns position of subnode with the name
-           Raises ValueError is not present
+        Raises ValueError is not present
         """
         index = self._find(name)
         if index is None:
@@ -682,7 +681,7 @@ class FdtNode(object):
 
     def merge(self, node):
         """Merge two nodes and subnodes
-           Replace current properties with the given properties
+        Replace current properties with the given properties
         """
         if not isinstance(node, FdtNode):
             raise Exception("Can only merge with a FdtNode")
@@ -702,7 +701,7 @@ class FdtNode(object):
 
     def walk(self):
         """Walk into subnodes and yield paths and objects
-           Returns set with (path string, node object)
+        Returns set with (path string, node object)
         """
         node = self
         start = 0
@@ -766,7 +765,7 @@ class Fdt(object):
 
     def add_reserve_entries(self, reserve_entries):
         """Add reserved entries as list of dict with
-           'address' and 'size' keys"""
+        'address' and 'size' keys"""
         self.reserve_entries = reserve_entries
 
     def to_dts(self):
@@ -880,7 +879,7 @@ class Fdt(object):
 
     def resolve_path(self, path):
         """Resolve path like /memory/reg and return either a FdtNode,
-            a FdtProperty or None"""
+        a FdtProperty or None"""
         if self.rootnode is None:
             return None
         if not path.startswith("/"):
@@ -906,7 +905,7 @@ class Fdt(object):
 
 def _add_json_to_fdtnode(node, subjson):
     """Populate FdtNode with JSON dict items"""
-    for (key, value) in subjson.items():
+    for key, value in subjson.items():
         if isinstance(value, dict):
             subnode = FdtNode(key)
             subnode.set_parent_node(node)
@@ -933,8 +932,8 @@ def _add_json_to_fdtnode(node, subjson):
 
 def FdtJsonParse(buf):
     """Import FDT from JSON representation, see JSONDeviceTree.md for
-       structure and encoding
-       Returns an Fdt object
+    structure and encoding
+    Returns an Fdt object
     """
     tree = json.loads(buf)
 
@@ -949,8 +948,8 @@ def FdtJsonParse(buf):
 
 def FdtFsParse(path):
     """Parse device tree filesystem and return a Fdt instance
-       Should be /proc/device-tree on a device, or the fusemount.py
-       mount point.
+    Should be /proc/device-tree on a device, or the fusemount.py
+    mount point.
     """
     root = FdtNode("/")
 
@@ -1093,7 +1092,7 @@ class FdtBlobParse(object):  # pylint: disable-msg=R0903
             data = self.infile.read(cell.size)
             if len(data) < cell.size:
                 break
-            tag, = cell.unpack_from(data)
+            (tag,) = cell.unpack_from(data)
             # print "*** %s" % self.__fdt_dt_tag_name.get(tag, '')
             if self.__fdt_dt_tag_name.get(tag, "") in "node_begin":
                 name = self.__extract_fdt_nodename()
@@ -1130,8 +1129,8 @@ class FdtBlobParse(object):  # pylint: disable-msg=R0903
 
     def __to_nodes(self):
         """Represent fdt as Node and properties structure
-           Returns a set with the pre-node Nops, the Root Node,
-            and the post-node Nops.
+        Returns a set with the pre-node Nops, the Root Node,
+         and the post-node Nops.
         """
         prenops = []
         postnops = []
@@ -1165,7 +1164,7 @@ class FdtBlobParse(object):  # pylint: disable-msg=R0903
 
     def to_fdt(self):
         """Create a fdt object
-            Returns a Fdt object
+        Returns a Fdt object
         """
         if self.fdt_header["version"] >= 2:
             boot_cpuid_phys = self.fdt_header["boot_cpuid_phys"]

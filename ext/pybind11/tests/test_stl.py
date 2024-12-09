@@ -87,7 +87,9 @@ def test_recursive_casting():
     assert m.cast_lv_array() == ["lvalue", "lvalue"]
     assert m.cast_rv_map() == {"a": "rvalue"}
     assert m.cast_lv_map() == {"a": "lvalue", "b": "lvalue"}
-    assert m.cast_rv_nested() == [[[{"b": "rvalue", "c": "rvalue"}], [{"a": "rvalue"}]]]
+    assert m.cast_rv_nested() == [
+        [[{"b": "rvalue", "c": "rvalue"}], [{"a": "rvalue"}]]
+    ]
     assert m.cast_lv_nested() == {
         "a": [[["lvalue", "lvalue"]], [["lvalue", "lvalue"]]],
         "b": [[["lvalue", "lvalue"], ["lvalue", "lvalue"]]],
@@ -172,7 +174,9 @@ def test_exp_optional():
     assert int(props.access_by_copy) == 42
 
 
-@pytest.mark.skipif(not hasattr(m, "has_boost_optional"), reason="no <boost/optional>")
+@pytest.mark.skipif(
+    not hasattr(m, "has_boost_optional"), reason="no <boost/optional>"
+)
 def test_boost_optional():
     assert m.double_or_zero_boost(None) == 0
     assert m.double_or_zero_boost(42) == 84
@@ -263,7 +267,8 @@ def test_variant(doc):
     assert m.cast_variant() == (5, "Hello")
 
     assert (
-        doc(m.load_variant) == "load_variant(arg0: Union[int, str, float, None]) -> str"
+        doc(m.load_variant)
+        == "load_variant(arg0: Union[int, str, float, None]) -> str"
     )
 
 
@@ -322,7 +327,8 @@ def test_stl_pass_by_pointer(msg):
 
 def test_missing_header_message():
     """Trying convert `list` to a `std::vector`, or vice versa, without including
-    <pybind11/stl.h> should result in a helpful suggestion in the error message"""
+    <pybind11/stl.h> should result in a helpful suggestion in the error message
+    """
     import pybind11_cross_module_tests as cm
 
     expected_message = (

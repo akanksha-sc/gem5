@@ -42,11 +42,16 @@ def test_init_factory_basic():
     z3 = m.TestFactory3("bye")
     assert z3.value == "bye"
 
-    for null_ptr_kind in [tag.null_ptr, tag.null_unique_ptr, tag.null_shared_ptr]:
+    for null_ptr_kind in [
+        tag.null_ptr,
+        tag.null_unique_ptr,
+        tag.null_shared_ptr,
+    ]:
         with pytest.raises(TypeError) as excinfo:
             m.TestFactory3(null_ptr_kind)
         assert (
-            str(excinfo.value) == "pybind11::init(): factory function returned nullptr"
+            str(excinfo.value)
+            == "pybind11::init(): factory function returned nullptr"
         )
 
     assert [i.alive() for i in cstats] == [3, 3, 3]
@@ -295,7 +300,22 @@ def test_init_factory_dual():
     assert ConstructorStats.detail_reg_inst() == n_inst
 
     assert [i.values() for i in cstats] == [
-        ["1", "2", "3", "4", "5", "6", "7", "8", "9", "100", "11", "12", "13", "14"],
+        [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "100",
+            "11",
+            "12",
+            "13",
+            "14",
+        ],
         ["2", "4", "6", "8", "9", "100", "12"],
     ]
 
@@ -306,7 +326,9 @@ def test_no_placement_new(capture):
     with capture:
         a = m.NoPlacementNew(123)
 
-    found = re.search(r"^operator new called, returning (\d+)\n$", str(capture))
+    found = re.search(
+        r"^operator new called, returning (\d+)\n$", str(capture)
+    )
     assert found
     assert a.i == 123
     with capture:
@@ -317,7 +339,9 @@ def test_no_placement_new(capture):
     with capture:
         b = m.NoPlacementNew()
 
-    found = re.search(r"^operator new called, returning (\d+)\n$", str(capture))
+    found = re.search(
+        r"^operator new called, returning (\d+)\n$", str(capture)
+    )
     assert found
     assert b.i == 100
     with capture:

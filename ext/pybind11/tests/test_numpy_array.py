@@ -89,7 +89,9 @@ def test_dim_check_fail(arr):
     ):
         with pytest.raises(IndexError) as excinfo:
             func(arr, 1, 2, 3)
-        assert str(excinfo.value) == "too many indices for an array: 3 (ndim = 2)"
+        assert (
+            str(excinfo.value) == "too many indices for an array: 3 (ndim = 2)"
+        )
 
 
 @pytest.mark.parametrize(
@@ -105,8 +107,12 @@ def test_data(arr, args, ret):
     from sys import byteorder
 
     assert all(m.data_t(arr, *args) == ret)
-    assert all(m.data(arr, *args)[(0 if byteorder == "little" else 1) :: 2] == ret)
-    assert all(m.data(arr, *args)[(1 if byteorder == "little" else 0) :: 2] == 0)
+    assert all(
+        m.data(arr, *args)[(0 if byteorder == "little" else 1) :: 2] == ret
+    )
+    assert all(
+        m.data(arr, *args)[(1 if byteorder == "little" else 0) :: 2] == 0
+    )
 
 
 @pytest.mark.parametrize("dim", [0, 1, 3])
@@ -114,7 +120,9 @@ def test_at_fail(arr, dim):
     for func in m.at_t, m.mutate_at_t:
         with pytest.raises(IndexError) as excinfo:
             func(arr, *([0] * dim))
-        assert str(excinfo.value) == f"index dimension mismatch: {dim} (ndim = 2)"
+        assert (
+            str(excinfo.value) == f"index dimension mismatch: {dim} (ndim = 2)"
+        )
 
 
 def test_at(arr):
@@ -164,10 +172,16 @@ def test_bounds_check(arr):
     ):
         with pytest.raises(IndexError) as excinfo:
             func(arr, 2, 0)
-        assert str(excinfo.value) == "index 2 is out of bounds for axis 0 with size 2"
+        assert (
+            str(excinfo.value)
+            == "index 2 is out of bounds for axis 0 with size 2"
+        )
         with pytest.raises(IndexError) as excinfo:
             func(arr, 0, 4)
-        assert str(excinfo.value) == "index 4 is out of bounds for axis 1 with size 3"
+        assert (
+            str(excinfo.value)
+            == "index 4 is out of bounds for axis 1 with size 3"
+        )
 
 
 def test_make_c_f_array():
@@ -191,7 +205,10 @@ def test_wrap():
         if base is None:
             base = a
         assert a is not b
-        assert a.__array_interface__["data"][0] == b.__array_interface__["data"][0]
+        assert (
+            a.__array_interface__["data"][0]
+            == b.__array_interface__["data"][0]
+        )
         assert a.shape == b.shape
         assert a.strides == b.strides
         assert a.flags.c_contiguous == b.flags.c_contiguous
@@ -349,10 +366,14 @@ def test_overload_resolution(msg):
 
     with pytest.raises(TypeError) as excinfo:
         m.overloaded3(np.array([1], dtype="uintc"))
-    assert msg(excinfo.value) == expected_exc + repr(np.array([1], dtype="uint32"))
+    assert msg(excinfo.value) == expected_exc + repr(
+        np.array([1], dtype="uint32")
+    )
     with pytest.raises(TypeError) as excinfo:
         m.overloaded3(np.array([1], dtype="float32"))
-    assert msg(excinfo.value) == expected_exc + repr(np.array([1.0], dtype="float32"))
+    assert msg(excinfo.value) == expected_exc + repr(
+        np.array([1.0], dtype="float32")
+    )
     with pytest.raises(TypeError) as excinfo:
         m.overloaded3(np.array([1], dtype="complex"))
     assert msg(excinfo.value) == expected_exc + repr(np.array([1.0 + 0.0j]))
@@ -387,10 +408,13 @@ def test_array_unchecked_fixed_dims(msg):
     with pytest.raises(ValueError) as excinfo:
         m.proxy_add2(np.array([1.0, 2, 3]), 5.0)
     assert (
-        msg(excinfo.value) == "array has incorrect number of dimensions: 1; expected 2"
+        msg(excinfo.value)
+        == "array has incorrect number of dimensions: 1; expected 2"
     )
 
-    expect_c = np.ndarray(shape=(3, 3, 3), buffer=np.array(range(3, 30)), dtype="int")
+    expect_c = np.ndarray(
+        shape=(3, 3, 3), buffer=np.array(range(3, 30)), dtype="int"
+    )
     assert np.all(m.proxy_init3(3.0) == expect_c)
     expect_f = np.transpose(expect_c)
     assert np.all(m.proxy_init3F(3.0) == expect_f)
@@ -410,7 +434,9 @@ def test_array_unchecked_dyn_dims():
     m.proxy_add2_dyn(z1, 10)
     assert np.all(z1 == [[11, 12], [13, 14]])
 
-    expect_c = np.ndarray(shape=(3, 3, 3), buffer=np.array(range(3, 30)), dtype="int")
+    expect_c = np.ndarray(
+        shape=(3, 3, 3), buffer=np.array(range(3, 30)), dtype="int"
+    )
     assert np.all(m.proxy_init3_dyn(3.0) == expect_c)
 
     assert m.proxy_auxiliaries2_dyn(z1) == [11, 11, True, 2, 8, 2, 2, 4, 32]
@@ -420,11 +446,16 @@ def test_array_unchecked_dyn_dims():
 def test_array_failure():
     with pytest.raises(ValueError) as excinfo:
         m.array_fail_test()
-    assert str(excinfo.value) == "cannot create a pybind11::array from a nullptr"
+    assert (
+        str(excinfo.value) == "cannot create a pybind11::array from a nullptr"
+    )
 
     with pytest.raises(ValueError) as excinfo:
         m.array_t_fail_test()
-    assert str(excinfo.value) == "cannot create a pybind11::array_t from a nullptr"
+    assert (
+        str(excinfo.value)
+        == "cannot create a pybind11::array_t from a nullptr"
+    )
 
     with pytest.raises(ValueError) as excinfo:
         m.array_fail_test_negative_size()
@@ -457,7 +488,9 @@ def test_array_resize():
     try:
         m.array_resize3(b, 3, False)
     except ValueError as e:
-        assert str(e).startswith("cannot resize this array: it does not own its data")
+        assert str(e).startswith(
+            "cannot resize this array: it does not own its data"
+        )
     # ... but reshape should be fine
     m.array_reshape2(b)
     assert b.shape == (8, 8)
@@ -492,7 +525,10 @@ def test_reshape_initializer_list():
     assert list(x[1][4]) == [34, 35, 36]
     with pytest.raises(ValueError) as excinfo:
         m.reshape_initializer_list(a, 1, 7, 3)
-    assert str(excinfo.value) == "cannot reshape array of size 42 into shape (1,7,3)"
+    assert (
+        str(excinfo.value)
+        == "cannot reshape array of size 42 into shape (1,7,3)"
+    )
 
 
 def test_reshape_tuple():
@@ -504,10 +540,15 @@ def test_reshape_tuple():
     assert y.shape == (42,)
     with pytest.raises(ValueError) as excinfo:
         m.reshape_tuple(a, (3, 7, 1))
-    assert str(excinfo.value) == "cannot reshape array of size 42 into shape (3,7,1)"
+    assert (
+        str(excinfo.value)
+        == "cannot reshape array of size 42 into shape (3,7,1)"
+    )
     with pytest.raises(ValueError) as excinfo:
         m.reshape_tuple(a, ())
-    assert str(excinfo.value) == "cannot reshape array of size 42 into shape ()"
+    assert (
+        str(excinfo.value) == "cannot reshape array of size 42 into shape ()"
+    )
 
 
 def test_index_using_ellipsis():
@@ -546,7 +587,11 @@ def test_argument_conversions(forcecast, contiguity, noconvert):
         function_name += "_noconvert"
     function = getattr(m, function_name)
 
-    for dtype in [np.dtype("float32"), np.dtype("float64"), np.dtype("complex128")]:
+    for dtype in [
+        np.dtype("float32"),
+        np.dtype("float64"),
+        np.dtype("complex128"),
+    ]:
         for order in ["C", "F"]:
             for shape in [(2, 2), (1, 3, 1, 1), (1, 1, 1), (0,)]:
                 if not noconvert:
