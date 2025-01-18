@@ -1,0 +1,90 @@
+Import('*')
+
+if env['TARGET_ISA'] == 'arm':
+
+    #Example
+    #SimObject('IOAcc.py')
+
+    #CommInterface
+    SimObject('CommInterface.py')
+    SimObject('ScratchpadMemory.py')
+    SimObject('NoncoherentDma.py')
+    SimObject('StreamDma.py')
+    SimObject('AccCluster.py')
+    SimObject('StreamBuffer.py')
+    SimObject('RegisterBank.py')
+
+    #LLVMInterface
+    SimObject('ComputeUnit.py')
+    SimObject('LLVMInterface.py')
+    
+    #HWInterface
+    SimObject('CycleCounts.py')
+    SimObject('FunctionalUnits.py')
+    SimObject('HWInterface.py')
+    SimObject('HWStatistics.py')
+    SimObject('InstConfig.py')
+    SimObject('InstOpCodes.py')
+    SimObject('SALAMPowerModel.py')
+    SimObject('SimulatorConfig.py')
+
+    #Functional Units
+    #SimObject('Adder.py')
+
+    # 
+    Source('comm_interface.cc')
+    Source('compute_unit.cc')
+    Source('llvm_interface.cc')
+    Source('dma_write_fifo.cc')
+    Source('noncoherent_dma.cc')
+    Source('stream_dma.cc')
+    Source('acc_cluster.cc')
+    Source('stream_buffer.cc')
+    Source('stream_port.cc')
+    Source('scratchpad_memory.cc')
+    Source('register_bank.cc')
+    
+    #
+    Source('LLVMRead/src/value.cc')
+    Source('LLVMRead/src/function.cc')
+    Source('LLVMRead/src/basic_block.cc')
+    Source('LLVMRead/src/debug_flags.cc')
+    Source('LLVMRead/src/mem_request.cc')
+    Source('LLVMRead/src/instruction.cc')
+    Source('LLVMRead/src/registers.cc')
+    Source('LLVMRead/src/operand.cc')
+
+    # GENERATED FILES
+    # Source('HWModeling/generated/functionalunits/adder.cc')
+    # Source('HWModeling/generated/instructions/add.cc')
+    # END OF GENERATED FILES
+
+    Source('HWModeling/src/cycle_counts.cc')
+    #Source('HWModeling/src/cacti_wrapper.cc') 
+    Source('HWModeling/src/functional_units.cc')
+    Source('HWModeling/src/hw_interface.cc')
+    Source('HWModeling/src/hw_statistics.cc')
+    Source('HWModeling/src/instruction_config.cc')
+    Source('HWModeling/src/opcodes.cc')
+    Source('HWModeling/src/salam_power_model.cc')
+    Source('HWModeling/src/simulator_config.cc')
+
+    #
+    DebugFlag('CommInterface')
+    DebugFlag('CommInterfaceQueues')
+    DebugFlag('DeviceMMR')
+    DebugFlag('LLVMInterface')
+    DebugFlag('NoncoherentDma')
+    DebugFlag('LLVMParse')
+    DebugFlag('Runtime')
+    DebugFlag('RuntimeCompute')
+    DebugFlag('RuntimeQueues')
+    DebugFlag('SALAM_Debug')
+    DebugFlag('StreamBuffer')
+    DebugFlag('StreamDma')
+    DebugFlag('Trace')
+    DebugFlag('Step')
+
+    #
+    CompoundFlag('JDEV', ['LLVMInterface','CommInterface', 'Runtime', 'RuntimeCompute', 'RuntimeQueues', 'SALAM_Debug'])
+    CompoundFlag('HWACC', ['CommInterface', 'LLVMInterface'])
