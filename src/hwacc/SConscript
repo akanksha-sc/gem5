@@ -1,6 +1,7 @@
 Import('*')
 
-if env['TARGET_ISA'] == 'arm':
+#if env['TARGET_ISA'] == 'arm':
+if env['CONF']['USE_ARM_ISA']:
 
     #Example
     #SimObject('IOAcc.py')
@@ -17,7 +18,7 @@ if env['TARGET_ISA'] == 'arm':
     #LLVMInterface
     SimObject('ComputeUnit.py')
     SimObject('LLVMInterface.py')
-    
+
     #HWInterface
     SimObject('CycleCounts.py')
     SimObject('FunctionalUnits.py')
@@ -31,7 +32,7 @@ if env['TARGET_ISA'] == 'arm':
     #Functional Units
     #SimObject('Adder.py')
 
-    # 
+    #
     Source('comm_interface.cc')
     Source('compute_unit.cc')
     Source('llvm_interface.cc')
@@ -43,7 +44,7 @@ if env['TARGET_ISA'] == 'arm':
     Source('stream_port.cc')
     Source('scratchpad_memory.cc')
     Source('register_bank.cc')
-    
+
     #
     Source('LLVMRead/src/value.cc')
     Source('LLVMRead/src/function.cc')
@@ -60,7 +61,7 @@ if env['TARGET_ISA'] == 'arm':
     # END OF GENERATED FILES
 
     Source('HWModeling/src/cycle_counts.cc')
-    #Source('HWModeling/src/cacti_wrapper.cc') 
+    #Source('HWModeling/src/cacti_wrapper.cc')
     Source('HWModeling/src/functional_units.cc')
     Source('HWModeling/src/hw_interface.cc')
     Source('HWModeling/src/hw_statistics.cc')

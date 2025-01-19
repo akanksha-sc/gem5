@@ -158,6 +158,9 @@ gpu-compute:
         - Matt Poremba <matthew.poremba@amd.com>
         - Matt Sinclair <sinclair@cs.wisc.edu>
 
+hwacc:
+    status: orphaned
+
 learning-gem5:
     desc: >-
         The code and configs for the Learning gem5 book
