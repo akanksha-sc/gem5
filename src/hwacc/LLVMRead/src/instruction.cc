@@ -150,9 +150,9 @@ SALAM::Instruction::launch()
     if (hasFunctionalUnit()) {
         if(!hw_interface->availableFunctionalUnit(getFunctionalUnit())) {
             return false;
-            std::cout << "Waiting on next available FU\n"; 
+            std::cout << "Waiting on next available FU\n";
         } else {
-            
+
         }
     }
     launched = true;
@@ -184,7 +184,7 @@ SALAM::Instruction::commit()
             hw_interface->clearFunctionalUnit(getFunctionalUnit());
            // hw_interface->functional_units->
         } else {
-            // 
+            //
         }
         return true;
     } else {
@@ -531,7 +531,7 @@ Switch::initialize(llvm::Value * irval,
 // std::shared_ptr<SALAM::Value>
 // Switch::destination(int switchVar)
 // {
-//   
+//
 //     for (int i = 2; i < this->arguments.size(); ++i) {
 //     #if USE_LLVM_AP_VALUES
 //         if (this->arguments.at(i).first->getReg()->getIntData()->getSExtValue() == switchVar) return this->arguments.at(i).second;
@@ -682,7 +682,8 @@ FAdd::compute() {
                 operands.at(0).getIRStub(), op1,
                 operands.at(1).getIRStub(), op2);
             if (dbg) DPRINTFS(RuntimeCompute, owner, "|| %s = %f\n", ir_stub, result);
-            bitcastResult = *(uint64_t *)&result;
+            uint32_t tmp_val = *(uint32_t *)&result;
+            bitcastResult = tmp_val;
             break;
         }
         case 64:
@@ -839,7 +840,8 @@ FSub::compute() {
                 operands.at(0).getIRStub(), op1,
                 operands.at(1).getIRStub(), op2);
             if (dbg) DPRINTFS(RuntimeCompute, owner, "|| %s = %f\n", ir_stub, result);
-            bitcastResult = *(uint64_t *)&result;
+            uint32_t tmp_val = *(uint32_t *)&result;
+            bitcastResult = tmp_val;
             break;
         }
         case 64:
@@ -995,7 +997,8 @@ FMul::compute() {
                 operands.at(0).getIRStub(), op1,
                 operands.at(1).getIRStub(), op2);
             if (dbg) DPRINTFS(RuntimeCompute, owner, "|| %s = %f\n", ir_stub, result);
-            bitcastResult = *(uint64_t *)&result;
+            uint32_t tmp_val = *(uint32_t *)&result;
+            bitcastResult = tmp_val;
             break;
         }
         case 64:
@@ -1220,7 +1223,8 @@ FDiv::compute() {
                 operands.at(0).getIRStub(), op1,
                 operands.at(1).getIRStub(), op2);
             if (dbg) DPRINTFS(RuntimeCompute, owner, "|| %s = %f\n", ir_stub, result);
-            bitcastResult = *(uint64_t *)&result;
+            uint32_t tmp_val = *(uint32_t *)&result;
+            bitcastResult = tmp_val;
             break;
         }
         case 64:
@@ -1447,7 +1451,8 @@ FRem::compute() {
                 operands.at(0).getIRStub(), op1,
                 operands.at(1).getIRStub(), op2);
             if (dbg) DPRINTFS(RuntimeCompute, owner, "|| %s = %f\n", ir_stub, result);
-            bitcastResult = *(uint64_t *)&result;
+            uint32_t tmp_val = *(uint32_t *)&result;
+            bitcastResult = tmp_val;
             break;
         }
         case 64:
@@ -2078,7 +2083,7 @@ GetElementPtr::initialize(llvm::Value * irval,
             const llvm::StructLayout *Layout = layout.getStructLayout(STy);
             offsets.push_back(Layout->getElementOffset(FieldNo));
             offsetOfStruct.push_back(true);
-            
+
         } else {
             llvm::Type * idxty = GTI.getIndexedType();
             offsets.push_back(1 * layout.getTypeAllocSize(idxty));
@@ -2488,7 +2493,8 @@ UIToFP::compute() {
         case 32:
         {
             float tmp = (float)opdata; // Cast to float
-            setRegisterValue(*(uint64_t *)&tmp); // Bitcast for writeback to reg
+            uint32_t tmp_val = *(uint32_t *)&tmp;
+            setRegisterValue((uint64_t)tmp_val);
             break;
         }
         case 64:
@@ -2560,7 +2566,8 @@ SIToFP::compute() {
         case 32:
         {
             float tmp = (float)opdata; // Cast to float
-            setRegisterValue(*(uint64_t *)&tmp); // Bitcast for writeback to reg
+            uint32_t tmp_val = *(uint32_t *)&tmp;
+            setRegisterValue((uint64_t)tmp_val);
             break;
         }
         case 64:
@@ -2633,7 +2640,8 @@ FPTrunc::compute() {
         {
             double opdata = operands.front().getDoubleFromReg();
             float tmp = (float)opdata; // Cast to float
-            setRegisterValue(*(uint64_t *)&tmp); // Bitcast for writeback to reg
+            uint32_t tmp_val = *(uint32_t *)&tmp;
+            setRegisterValue((uint64_t)tmp_val);
             break;
         }
         default:
@@ -3023,8 +3031,8 @@ FCmp::compute() {
             break;
         }
         case SALAM::Predicate::FCMP_OGE:   {
-            result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual) || 
-                          (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
+            result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual) ||
+                     (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
             break;
         }
         case SALAM::Predicate::FCMP_OLT:   {
@@ -3032,12 +3040,12 @@ FCmp::compute() {
             break;
         }
         case SALAM::Predicate::FCMP_OLE:   {
-            result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual) || 
+            result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
             break;
         }
         case SALAM::Predicate::FCMP_ONE:   {
-            result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) && 
+            result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) &&
                           (cmp != llvm::APFloatBase::cmpResult::cmpEqual);
             break;
         }
