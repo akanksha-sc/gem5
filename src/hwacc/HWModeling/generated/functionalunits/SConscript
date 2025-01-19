@@ -1,5 +1,6 @@
 Import('*')
-if env['TARGET_ISA'] == 'arm':
+#if env['TARGET_ISA'] == 'arm':
+if env['CONF']['USE_ARM_ISA']:
 
     Source('double_multiplier.cc')
     Source('bit_register.cc')
