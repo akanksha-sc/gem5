@@ -70,6 +70,7 @@
 import atexit
 import itertools
 import os
+import subprocess
 import sys
 
 from os import mkdir, remove, environ, listdir
@@ -420,6 +421,41 @@ main.Append(CPPPATH=[Dir('ext')])
 main.Prepend(CPPPATH=Dir('include'))
 if not GetOption('duplicate_sources'):
     main.Prepend(CPPPATH=Dir('src'))
+
+
+########################################################################
+# LLVM Configuration
+#
+# Configure compilation flags and linking for LLVM using llvm-config.
+########################################################################
+
+# Path to the llvm-config binary
+llvm_config = 'llvm-config'
+
+# Add LLVM-specific CPP flags
+main.Append(CPPFLAGS=Split(subprocess.check_output(
+    [llvm_config, '--cppflags']).decode()))
+
+# Add LLVM library paths
+main.Append(LIBPATH=Split(subprocess.check_output(
+    [llvm_config, '--libdir']).decode()))
+
+# Link against all LLVM libraries
+main.Append(LIBS=Split(subprocess.check_output(
+    [llvm_config, '--libs', 'all']).decode()))
+
+# Add LLVM include directory to the search path
+main.Append(CPPPATH=Split(subprocess.check_output(
+    [llvm_config, '--includedir']).decode()))
+
+# Define LLVM-specific preprocessor macros
+main.Append(CPPDEFINES=[
+    'LLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING=1'
+])
+
+# Configure runtime library paths for LLVM
+main.Append(RPATH=Split(subprocess.check_output(
+    [llvm_config, '--libdir']).decode()))
 
 
 ########################################################################
