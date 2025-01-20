@@ -132,7 +132,7 @@ class CommInterface : public BasicPioDevice
         MemoryRequest *writeReq;
       public:
         RegPort(const std::string& name, CommInterface *_owner, PortID id=InvalidPortID) :
-          RequestPort(name, _owner), owner(_owner) {}
+          RequestPort(name), owner(_owner) {}
         void setReadReq(MemoryRequest * req = nullptr) { readReq = req; }
         void setWriteReq(MemoryRequest * req = nullptr) { writeReq = req; }
       protected:
@@ -259,7 +259,7 @@ class CommInterface : public BasicPioDevice
     void recvPacket(PacketPtr pkt);
 
     // Addr value stored in gep register, length based on data type
-    void enqueueRead(MemoryRequest * req); 
+    void enqueueRead(MemoryRequest * req);
 
     void enqueueWrite(MemoryRequest * req);
 
@@ -273,7 +273,7 @@ class CommInterface : public BasicPioDevice
     virtual int getReadPorts()  { return 0; }
     virtual int getWritePorts()  { return 0; }
     virtual int getReadBusWidth()  { return 0; }
-    virtual int getWriteBusWidth()  { return 0; }  
+    virtual int getWriteBusWidth()  { return 0; }
     virtual int getPmemRange() { return 0; }
     void registerCompUnit(ComputeUnit *compunit) { cu = compunit; }
     virtual void finish();

@@ -17,7 +17,7 @@ class ScratchpadResponsePort : public ResponsePort
   private:
   public:
     ScratchpadResponsePort(const std::string& _name, SimObject* _owner,
-        PortID id=InvalidPortID) : ResponsePort (_name, _owner, id) {}
+        PortID id=InvalidPortID) : ResponsePort (_name, id) {}
   protected:
     virtual bool canAccess(Addr add, size_t len, bool read) { return true; }
     Tick recvAtomic(PacketPtr pkt) override { return 0; }
@@ -41,7 +41,7 @@ class ScratchpadRequestPort : public RequestPort
     //
   public:
     ScratchpadRequestPort(const std::string& _name, SimObject* _owner,
-        PortID id=InvalidPortID) : RequestPort(_name, _owner, id) {}
+        PortID id=InvalidPortID) : RequestPort(_name, id) {}
     void setReadyStatus(bool r) { _spmslave->setReadyStatus(r); }
     bool canAccess(Addr add, size_t len, bool read) { return _spmslave->canAccess(add, len, read); }
     void bind(Port &peer) override {

@@ -36,7 +36,7 @@ class RegisterBank : public AbstractMemory
         RegisterBank * memory;
       public:
         RegPort(const std::string& _name, RegisterBank * _memory, PortID id=InvalidPortID) :
-            ResponsePort(_name, _memory, id), memory(_memory) {}
+            ResponsePort(_name, id), memory(_memory) {}
       protected:
         Tick recvAtomic(PacketPtr pkt) override { return memory->recvAtomic(pkt); };
         Tick recvAtomicBackdoor(

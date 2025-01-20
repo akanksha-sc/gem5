@@ -2,8 +2,8 @@
 #include "sim/sim_object.hh"
 
 StreamRequestPort::StreamRequestPort(const std::string& name, SimObject* _owner, PortID _id)
-	: RequestPort(name, _owner, _id) {
-	//
+        : RequestPort(name, _id) {
+        //
 }
 
 StreamRequestPort::~StreamRequestPort() {
