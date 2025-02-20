@@ -28,6 +28,8 @@ volatile uint32_t * loc_position_y = (uint32_t *) (TOP + 33);
 volatile uint32_t * loc_position_z = (uint32_t *) (TOP + 41);
 volatile uint32_t * loc_NL         = (uint32_t *) (TOP + 49);
 
+volatile int stage = 0;
+
 int main(void) {
 	TYPE *force_x       = (TYPE     *)(BASE+FRCX_OFFSET);
 	TYPE *force_y       = (TYPE     *)(BASE+FRCY_OFFSET);

@@ -6,7 +6,7 @@
 #define EPSILON 1.0e-6
 #define rcIndex     (r*COL + c)
 
-volatile int stage;
+extern volatile int stage;
 
 typedef struct {
     TYPE * inp;
@@ -60,4 +60,3 @@ void genData(stencil_struct * sts) {
     }
 
 }
-

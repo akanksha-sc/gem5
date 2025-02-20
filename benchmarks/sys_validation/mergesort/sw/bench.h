@@ -2,7 +2,7 @@
 
 #define rcIndex     (r*ROW + c)
 
-volatile int stage;
+extern volatile int stage;
 
 // void genData(gemm_struct * ges) {
 //     int r, c, k, mult, sum;

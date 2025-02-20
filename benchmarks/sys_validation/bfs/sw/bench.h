@@ -2,7 +2,7 @@
 #include "../defines.h"
 #endif
 
-volatile int stage;
+extern volatile int stage;
 
 #include "data.h"
 

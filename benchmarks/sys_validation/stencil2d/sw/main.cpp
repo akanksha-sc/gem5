@@ -16,6 +16,8 @@ volatile uint32_t * loc_inp    = (uint32_t *)(TOP + 0x1);
 volatile uint32_t * loc_sol    = (uint32_t *)(TOP + 0x9);
 volatile uint32_t * loc_filter = (uint32_t *)(TOP + 0x11);
 
+volatile int stage = 0;
+
 int main(void) {
     m5_reset_stats();
 	uint32_t base = 0x80c00000;

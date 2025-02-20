@@ -3,7 +3,7 @@
 
 #define EPSILON 1.0e-2
 
-volatile int stage;
+extern volatile int stage;
 
 typedef struct {
     TYPE * force_x;

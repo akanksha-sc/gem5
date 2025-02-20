@@ -1,6 +1,6 @@
 #include "../defines.h"
 
-volatile int stage;
+extern volatile int stage;
 
 void runCPUBench( int n_points[blockSide][blockSide][blockSide],
          dvector_t force[blockSide][blockSide][blockSide][densityFactor],

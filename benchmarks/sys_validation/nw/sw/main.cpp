@@ -20,6 +20,8 @@ volatile int32_t * val_seqb   = (int32_t *)(TOP + 0x09);
 volatile int32_t * val_aligna = (int32_t *)(TOP + 0x11);
 volatile int32_t * val_alignb = (int32_t *)(TOP + 0x19);
 
+volatile int stage = 0;
+
 int main(void) {
 	char * seqA     = (char *)(BASE+SEQA_OFF);
 	char * seqB     = (char *)(BASE+SEQB_OFF);

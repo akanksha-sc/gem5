@@ -22,6 +22,8 @@ volatile uint32_t     * LEVEL_ADDR = (uint32_t     *)(TOP+17);
 volatile uint32_t     * COUNT_ADDR = (uint32_t     *)(TOP+25);
 volatile node_index_t * START_ADDR = (node_index_t *)(TOP+33);
 
+volatile int stage = 0;
+
 int main(void) {
     node_index_t * nodes 			= (node_index_t *)(BASE + NODES_OFFSET);
     edge_index_t * edges 			= (edge_index_t *)(BASE + EDGES_OFFSET);

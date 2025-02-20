@@ -18,6 +18,8 @@ volatile uint32_t * val_a = (uint32_t *)(TOP + 0x01);
 volatile uint32_t * val_b = (uint32_t *)(TOP + 0x09);
 volatile uint32_t * val_c = (uint32_t *)(TOP + 0x11);
 
+volatile int stage = 0;
+
 int main(void) {
 	int32_t *n_points    = (int32_t *)(BASE+NP_OFFSET);
 	TYPE *force          = (TYPE    *)(BASE+FRC_OFFSET);

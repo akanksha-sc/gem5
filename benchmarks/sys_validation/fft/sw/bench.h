@@ -1,7 +1,7 @@
 #include "../defines.h"
 #include "data.h"
 
-volatile int stage;
+extern volatile int stage;
 
 typedef struct {
     double * real;

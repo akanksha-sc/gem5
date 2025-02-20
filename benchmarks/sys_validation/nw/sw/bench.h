@@ -3,7 +3,7 @@
 
 #include "data.h"
 
-volatile int stage;
+extern volatile int stage;
 
 typedef struct {
     char * seqA;

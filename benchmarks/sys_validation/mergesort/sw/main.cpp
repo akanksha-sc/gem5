@@ -9,6 +9,8 @@ volatile uint8_t  * top   = (uint8_t  *) (TOP + 0x00);
 volatile uint32_t * unsorted = (uint32_t *) (TOP + 0x01);
 volatile uint32_t * sorted = (uint32_t *) (TOP + 0x09);
 
+volatile int stage = 0;
+
 int __attribute__ ((optimize("0"))) main(void) {
 	m5_reset_stats();
     uint32_t base = 0x80c00000;

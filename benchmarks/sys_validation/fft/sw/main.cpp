@@ -22,6 +22,8 @@ volatile uint32_t * loc_img       = (uint32_t *)(TOP+9);
 volatile uint32_t * loc_real_twid = (uint32_t *)(TOP+17);
 volatile uint32_t * loc_img_twid  = (uint32_t *)(TOP+25);
 
+volatile int stage = 0;
+
 int __attribute__ ((optimize("0"))) main(void) {
 	double *real       	= (double *)(BASE+REAL_OFFSET);
 	double *img        	= (double *)(BASE+IMG_OFFSET);
@@ -61,8 +63,8 @@ int __attribute__ ((optimize("0"))) main(void) {
         creal = real[i] - real_check[i];
         cimg = img[i] - img_check[i];
 		// printf("[%i] = Real: %.12f, Img: %.12f \n", i, creal, cimg);
-		
-        if((creal > EPSILON) || (creal < -EPSILON)) {
+
+        if ((creal > EPSILON) || (creal < -EPSILON)) {
             fail = true;
         }
         if((cimg > EPSILON) || (cimg < -EPSILON)) {
