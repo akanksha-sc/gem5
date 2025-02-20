@@ -107,4 +107,6 @@ int _kill(int pid, int sig)
 void _exit(int sig)
 {
     _kill(sig, -1);
+    while (1);  // Infinite loop to halt execution
+    __builtin_unreachable();
 }
