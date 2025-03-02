@@ -169,7 +169,7 @@ def build_test_system(np):
     # if args.lpae:
     # test_sys.have_lpae = True
 
-    if args.virtualisation:
+    if getattr(args, "virtualisation", False):
         test_sys.have_virtualization = True
 
     test_sys.init_param = args.init_param
