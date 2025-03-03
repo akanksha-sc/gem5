@@ -29,7 +29,7 @@
 
 Import('*')
 
-Source('group.cc')
+Source('group.cc', tags=['gem5 simobject'])
 Source('info.cc')
 Source('storage.cc')
 Source('text.cc')

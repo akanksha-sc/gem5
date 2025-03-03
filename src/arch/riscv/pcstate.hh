@@ -67,11 +67,14 @@ class PCState : public GenericISA::UPCState<4>
     RiscvType _rvType = RV64;
     VTYPE _vtype = (1ULL << 63); // vtype.vill = 1 at initial;
     uint32_t _vl = 0;
+    bool _zcmtSecondFetch = false;
+    Addr _zcmtPc = 0;
 
   public:
     PCState(const PCState &other) : Base(other),
         _compressed(other._compressed),
-        _rvType(other._rvType), _vtype(other._vtype), _vl(other._vl)
+        _rvType(other._rvType), _vtype(other._vtype), _vl(other._vl),
+        _zcmtSecondFetch(other._zcmtSecondFetch), _zcmtPc(other._zcmtPc)
     {}
     PCState &operator=(const PCState &other) = default;
     PCState() = default;
@@ -93,6 +96,8 @@ class PCState : public GenericISA::UPCState<4>
         _rvType = pcstate._rvType;
         _vtype = pcstate._vtype;
         _vl = pcstate._vl;
+        _zcmtSecondFetch = pcstate._zcmtSecondFetch;
+        _zcmtPc = pcstate._zcmtPc;
     }
 
     void compressed(bool c) { _compressed = c; }
@@ -106,6 +111,12 @@ class PCState : public GenericISA::UPCState<4>
 
     void vl(uint32_t v) { _vl = v; }
     uint32_t vl() const { return _vl; }
+
+    void zcmtSecondFetch(bool z) { _zcmtSecondFetch = z; }
+    bool zcmtSecondFetch() const { return _zcmtSecondFetch; }
+
+    void zcmtPc(Addr a) { _zcmtPc = a; }
+    Addr zcmtPc() const { return _zcmtPc; }
 
     uint64_t size() const { return _compressed ? 2 : 4; }
 
@@ -121,7 +132,9 @@ class PCState : public GenericISA::UPCState<4>
         auto &opc = other.as<PCState>();
         return Base::equals(other) &&
             _vtype == opc._vtype &&
-            _vl == opc._vl;
+            _vl == opc._vl &&
+            _zcmtSecondFetch == opc._zcmtSecondFetch &&
+            _zcmtPc == opc._zcmtPc;
     }
 
     void
@@ -132,6 +145,8 @@ class PCState : public GenericISA::UPCState<4>
         SERIALIZE_SCALAR(_vtype);
         SERIALIZE_SCALAR(_vl);
         SERIALIZE_SCALAR(_compressed);
+        SERIALIZE_SCALAR(_zcmtSecondFetch);
+        SERIALIZE_SCALAR(_zcmtPc);
     }
 
     void
@@ -142,6 +157,8 @@ class PCState : public GenericISA::UPCState<4>
         UNSERIALIZE_SCALAR(_vtype);
         UNSERIALIZE_SCALAR(_vl);
         UNSERIALIZE_SCALAR(_compressed);
+        UNSERIALIZE_SCALAR(_zcmtSecondFetch);
+        UNSERIALIZE_SCALAR(_zcmtPc);
     }
 };
 

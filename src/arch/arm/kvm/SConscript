@@ -37,7 +37,7 @@
 
 Import('*')
 
-if env['CONF']['KVM_ISA'] != 'arm':
+if env['CONF']['KVM_ISA'] != 'arm' or not env['CONF']['USE_ARM_ISA']:
     Return()
 
 import platform
@@ -58,16 +58,17 @@ SimObject(
 )
 Source('base_cpu.cc', tags=['arm kvm'])
 
-SimObject(
-    'ArmKvmCPU.py',
-    sim_objects=['ArmKvmCPU'],
-    tags=['armv71 kvm']
-)
-Source('arm_cpu.cc', tags=['armv71 kvm'])
-
-SimObject(
-    'ArmV8KvmCPU.py',
-    sim_objects=['ArmV8KvmCPU'],
-    tags=['aarch64 kvm']
-)
-Source('armv8_cpu.cc', tags=['aarch64 kvm'])
+if host_isa == 'aarch64':
+    SimObject(
+        'ArmV8KvmCPU.py',
+        sim_objects=['ArmV8KvmCPU'],
+        tags=['aarch64 kvm']
+    )
+    Source('armv8_cpu.cc', tags=['aarch64 kvm'])
+else:
+    SimObject(
+        'ArmKvmCPU.py',
+        sim_objects=['ArmKvmCPU'],
+        tags=['armv71 kvm']
+    )
+    Source('arm_cpu.cc', tags=['armv71 kvm'])

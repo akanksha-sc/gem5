@@ -37,7 +37,7 @@
 
 Import('*')
 
-if not env['CONF']['USE_X86_ISA']:
+if not env['CONF']['USE_X86_ISA'] or env['CONF']['KVM_ISA'] != 'x86':
     Return()
 
 SimObject(

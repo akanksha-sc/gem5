@@ -28,6 +28,7 @@
  */
 
 #include "arch/riscv/decoder.hh"
+#include "arch/riscv/insts/zcmt.hh"
 #include "arch/riscv/isa.hh"
 #include "arch/riscv/types.hh"
 #include "base/bitfield.hh"
@@ -54,6 +55,7 @@ void Decoder::reset()
     mid = false;
     machInst = 0;
     emi = 0;
+    jvtEntry = 0;
 }
 
 void
@@ -66,6 +68,27 @@ Decoder::moreBytes(const PCStateBase &pc, Addr fetchPC)
     auto inst = letoh(machInst);
     DPRINTF(Decode, "Requesting bytes 0x%08x from address %#x\n", inst,
             fetchPC);
+
+    PCState pc_state = pc.as<PCState>();
+
+    if (GEM5_UNLIKELY(pc_state.zcmtSecondFetch())) {
+        if (mid) {
+            replaceBits(jvtEntry, sizeof(jvtEntry) * 8 - 1, max_bit + 1, inst);
+            mid = false;
+            instDone = true;
+            outOfBytes = true;
+        } else {
+            replaceBits(jvtEntry, max_bit, 0, inst);
+            mid = (pc_state.rvType() != RV32);
+            instDone = (pc_state.rvType() == RV32);
+            outOfBytes = true;
+        }
+
+        if (instDone && pc_state.rvType() == RV32) {
+            jvtEntry = sext<32>(jvtEntry);
+        }
+        return;
+    }
 
     bool aligned = pc.instAddr() % sizeof(machInst) == 0;
     if (aligned) {
@@ -115,6 +138,10 @@ Decoder::decode(PCStateBase &_next_pc)
     instDone = false;
 
     auto &next_pc = _next_pc.as<PCState>();
+
+    if (GEM5_UNLIKELY(next_pc.zcmtSecondFetch())) {
+        return new ZcmtSecondFetchInst(emi, jvtEntry);
+    }
 
     if (compressed(emi)) {
         next_pc.npc(next_pc.instAddr() + sizeof(machInst) / 2);

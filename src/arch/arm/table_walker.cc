@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012-2019, 2021-2024 Arm Limited
+ * Copyright (c) 2010, 2012-2019, 2021-2025 Arm Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -881,7 +881,12 @@ TableWalker::maxTxSz(GrainSize tg) const
           case Grain16KB: return 48;
           case Grain64KB: return 47;
           default:
-            panic("Invalid grain size\n");
+            // If the value is programmed to either a reserved value or a size
+            // that has not been implemented, then the hardware will treat the
+            // field as if it has been programmed to an IMPLEMENTATION DEFINED
+            // choice
+            warn_once("Invalid grain size\n");
+            return 48;
         }
     }
     return 39;
