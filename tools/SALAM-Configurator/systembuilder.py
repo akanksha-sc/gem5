@@ -392,8 +392,8 @@ def main():
     main_yml_path = working_dir + args.config_name
 
     # Set base addresses
-    base_address = 0x10020000
-    max_address = 0x13FFFFFF
+    base_address = 0x2F000000  # 0x10020000
+    max_address = 0x2FFFFFFF  # 0x13FFFFFF
     # Load in the YAML file
     config = open_yaml(yml_path=main_yml_path)
     # Parse YAML File

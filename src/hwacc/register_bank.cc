@@ -69,7 +69,7 @@ void
 RegisterBank::registerAccess(PacketPtr pkt)
 {
     assert(AddrRange(pkt->getAddr(),
-                     pkt->getAddr() + (pkt->getSize() - 1)).isSubset(range));
+                     pkt->getAddr() + (pkt->getSize())).isSubset(range));
 
     if (pkt->isRead()) {
         assert(!pkt->isWrite());

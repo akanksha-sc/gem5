@@ -4,7 +4,7 @@ BENCH_PATH=""
 CONFIG_NAME=""
 FLAGS=""
 # FLAGS="SALAM_Debug,CommInterface,NoncoherentDma,LLVMParse"
-BUILD=False
+BUILD=True
 DEBUG=False
 PRINT_TO_FILE=False
 VALGRIND=False
@@ -87,7 +87,7 @@ fi
 
 KERNEL=$M5_PATH/"$BENCH_PATH"/sw/main.elf
 
-SYS_OPTS="--mem-size=4GB \
+SYS_OPTS="--mem-size=16GB \
 		  --mem-type=DDR4_2400_8x8 \
           --kernel=$KERNEL \
           --disk-image=$M5_PATH/benchmarks/common/fake.iso \

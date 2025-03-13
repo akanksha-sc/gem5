@@ -405,6 +405,21 @@ def makeArmSystem(
                 "with the MI_example protocol will not work properly."
             )
 
+    # ------------------ Added Debug Prints ------------------
+    # print("---- makeArmSystem() Debug Info ----")
+    # print("Machine Type:", machine_type)
+    # print("Memory Mode:", mem_mode)
+    # print("Number of CPUs:", num_cpus)
+    # print("Memory Descriptor (mem):", mdesc.mem())
+    # print("Calculated DRAM memory ranges:")
+    # for r in self.mem_ranges:
+    #     print("  Range:", r)
+    # print("Platform's GIC configuration (if available):", getattr(self.realview, "gic", "None"))
+    # if hasattr(self, 'bridge') and hasattr(self.bridge, 'ranges'):
+    #     print("Bridge Ranges:", self.bridge.ranges)
+    # print("-------------------------------------")
+    # ------------------ End Debug Prints --------------------
+
     return self
 
 
