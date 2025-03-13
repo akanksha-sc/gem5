@@ -1927,6 +1927,9 @@ readvFunc(SyscallDesc *desc, ThreadContext *tc,
           int tgt_fd, VPtr<> tiov_base,
           typename OS::size_t count)
 {
+    if (count > static_cast<typename OS::size_t>(INT_MAX))
+        return -EINVAL;
+
     auto p = tc->getProcessPtr();
 
     auto ffdp = std::dynamic_pointer_cast<FileFDEntry>((*p->fds)[tgt_fd]);
@@ -1965,6 +1968,9 @@ writevFunc(SyscallDesc *desc, ThreadContext *tc,
            int tgt_fd, VPtr<> tiov_base,
            typename OS::size_t count)
 {
+    if (count > static_cast<typename OS::size_t>(INT_MAX))
+        return -EINVAL;
+
     auto p = tc->getProcessPtr();
 
     auto hbfdp = std::dynamic_pointer_cast<HBFDEntry>((*p->fds)[tgt_fd]);
