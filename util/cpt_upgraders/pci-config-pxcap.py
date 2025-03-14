@@ -1,5 +1,4 @@
-# Copyright (c) 2008 The Regents of The University of Michigan
-# All rights reserved.
+# Copyright (c) 2025 REDS institute of the HEIG-VD
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -24,46 +23,30 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from m5.objects.PciDevice import (
-    PciEndpoint,
-    PciMemBar,
-)
-from m5.params import *
-from m5.proxy import *
-from m5.SimObject import SimObject
 
+# Rename config into _config in PciDevice and a new fields for pxcap
+def upgrader(cpt):
+    import re
 
-class CopyEngine(PciEndpoint):
-    type = "CopyEngine"
-    cxx_header = "dev/pci/copy_engine.hh"
-    cxx_class = "gem5::CopyEngine"
-    dma = VectorRequestPort("Copy engine DMA port")
-    VendorID = 0x8086
-    DeviceID = 0x1A38
-    Revision = 0xA2  # CM2 stepping (newest listed)
-    SubsystemID = 0
-    SubsystemVendorID = 0
-    Status = 0x0000
-    SubClassCode = 0x08
-    ClassCode = 0x80
-    ProgIF = 0x00
-    MaximumLatency = 0x00
-    MinimumGrant = 0xFF
-    InterruptLine = 0x20
-    InterruptPin = 0x01
+    for sec in cpt.sections():
+        # pmcap.pid is a unique option in PciDevice. So it allows to
+        # detect any PciDevice.
+        if cpt.has_option(sec, "pmcap.pid"):
+            cpt.set(sec, "_config.data", cpt.get(sec, "config.data"))
+            cpt.remove_option(sec, "config.data")
+            pxdc2 = cpt.getint(sec, "pxcap.pxdc2")
+            cpt.set(sec, "pxcap.pxdc2", str(pxdc2 & 0xFFFF))
+            cpt.set(sec, "pxcap.pxds2", str((pxdc2 >> 16) & 0xFFFF))
 
-    BAR0 = PciMemBar(size="1KiB")
-
-    ChanCnt = Param.UInt8(4, "Number of DMA channels that exist on device")
-    XferCap = Param.MemorySize(
-        "4KiB", "Number of bits of transfer size that are supported"
-    )
-
-    latBeforeBegin = Param.Latency(
-        "20ns", "Latency after a DMA command is seen before it's proccessed"
-    )
-    latAfterCompletion = Param.Latency(
-        "20ns",
-        "Latency after a DMA command is complete before "
-        "it's reported as such",
-    )
+            cpt.set(sec, "pxcap.pxscap", "0")
+            cpt.set(sec, "pxcap.pxsc", "0")
+            cpt.set(sec, "pxcap.pxss", "0")
+            cpt.set(sec, "pxcap.pxrcap", "0")
+            cpt.set(sec, "pxcap.pxrc", "0")
+            cpt.set(sec, "pxcap.pxrs", "0")
+            cpt.set(sec, "pxcap.pxlcap2", "0")
+            cpt.set(sec, "pxcap.pxlc2", "0")
+            cpt.set(sec, "pxcap.pxls2", "0")
+            cpt.set(sec, "pxcap.pxscap2", "0")
+            cpt.set(sec, "pxcap.pxsc2", "0")
+            cpt.set(sec, "pxcap.pxss2", "0")

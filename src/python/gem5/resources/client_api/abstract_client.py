@@ -24,6 +24,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import re
 import urllib.parse
 from abc import (
     ABC,
@@ -101,6 +102,25 @@ class AbstractClient(ABC):
             those less significant. If the value is a digit it is cast as an
             int, otherwise, it is cast as a string, to lower-case.
             """
+
+            # check if resource_version exists as a key
+            if "resource_version" not in resource:
+                raise Exception(
+                    f"Resource version is not provided for resource '{resource['id']}'."
+                )
+            # check if resource_version follows the correct format of "x.y.z"
+            if resource["resource_version"] is not None:
+                if not isinstance(resource["resource_version"], str):
+                    raise Exception(
+                        f"Resource version '{resource['resource_version']}' is not a string."
+                    )
+                if not re.match(
+                    r"^\d+\.\d+\.\d+$", resource["resource_version"]
+                ):
+                    raise Exception(
+                        f"Resource version '{resource['resource_version']}' does not follow the correct format of 'x.y.z'."
+                    )
+
             to_return = (resource["id"].lower(),)
             for val in resource["resource_version"].split("."):
                 if val.isdigit():

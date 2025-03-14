@@ -60,6 +60,11 @@ class JSONClient(AbstractClient):
             try:
                 with open(path, encoding="utf-8") as f:
                     self.resources = json.load(f)
+                if not isinstance(self.resources, list):
+                    raise ValueError(
+                        f"Invalid JSON in file '{path}': "
+                        "Top-level object must be a list"
+                    )
                 return
             except json.JSONDecodeError as e:
                 raise ValueError(f"Invalid JSON in file '{path}': {e}")
@@ -78,6 +83,11 @@ class JSONClient(AbstractClient):
 
                     with local_path.open("r", encoding="utf-8") as f:
                         self.resources = json.load(f)
+                    if not isinstance(self.resources, list):
+                        raise ValueError(
+                            f"Invalid JSON in file '{path}': "
+                            "Top-level object must be a list"
+                        )
                     return
 
                 # Handle HTTP/HTTPS URLs
@@ -85,6 +95,11 @@ class JSONClient(AbstractClient):
                 with request.urlopen(req) as response:
                     self.resources = json.loads(
                         response.read().decode("utf-8")
+                    )
+                if not isinstance(self.resources, list):
+                    raise ValueError(
+                        f"Invalid JSON in file '{path}': "
+                        "Top-level object must be a list"
                     )
                 return
 
