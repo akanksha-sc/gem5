@@ -86,6 +86,7 @@ import SCons
 import SCons.Node
 import SCons.Node.FS
 import SCons.Tool
+import SCons.Errors
 
 if getattr(SCons, '__version__', None) in ('3.0.0', '3.0.1'):
     # Monkey patch a fix which appears in version 3.0.2, since we only
@@ -140,6 +141,7 @@ AddOption('--gprof', action='store_true',
           help='Enable support for the gprof profiler')
 AddOption('--pprof', action='store_true',
           help='Enable support for the pprof profiler')
+AddOption('--debug-fission', action='store_true', help='Enable debug fission')
 # Default to --no-duplicate-sources, but keep --duplicate-sources to opt-out
 # of this new build behaviour in case it introduces regressions. We could use
 # action=argparse.BooleanOptionalAction here once Python 3.9 is required.
@@ -265,6 +267,15 @@ Targets:
 
         scons build/SPARC/base/bitunion.test.opt
         build/SPARC/base/bitunion.test.opt
+
+        To generate the compile_commands.json, you can use a target:
+
+        scons build/{{ISA}}/compile_commands.json
+
+        The {{ISA}} is a target Instruction Set Architecture (X86, ARM,
+        RISCV, etc.). This command creates a compile_commands.json in the
+        respective build directory. You can generate a compile_commands.json
+        only with scons version 4.0+.
 """, append=True)
 
 
@@ -572,6 +583,23 @@ for variant_path in variant_paths:
     env = main.Clone()
     env['BUILDDIR'] = variant_path
 
+    try:
+        # try-except section is required because
+        # SConsEnvironmentError/UserError exception raises if FindTool
+        # can't find a tool module. This exeption rises BEFORE check
+        # that tool exists and makes FindTool function useless in some way.
+        cdb_tool = SCons.Tool.FindTool(['compilation_db'], env)
+
+        if cdb_tool:
+            env['COMPILATIONDB_USE_ABSPATH'] = True
+            env.Tool(cdb_tool)
+
+            cdb_path = f"{variant_path}/compile_commands.json"
+            env.CompilationDatabase(cdb_path)
+    except (SCons.Errors.SConsEnvironmentError, SCons.Errors.UserError):
+        # Looks like different scons versions raise different exeptions
+        pass
+
     gem5_build = os.path.join(variant_path, 'gem5.build')
     env['GEM5BUILD'] = gem5_build
     Execute(Mkdir(gem5_build))
@@ -645,6 +673,14 @@ for variant_path in variant_paths:
                     env.Append(LINKFLAGS=['-Wl,--no-keep-memory'])
                 else:
                     error("Unable to use --no-keep-memory with the linker")
+
+        debug_fission = GetOption('debug_fission')
+        if debug_fission:
+            with gem5_scons.Configure(env) as conf:
+                if not conf.CheckCxxFlag(
+                    '-gsplit-dwarf'
+                ) or not conf.CheckLinkFlag('-gsplit-dwarf'):
+                    error('Debug fission is not supported in the toolchain')
 
         # Treat warnings as errors but white list some warnings that we
         # want to allow (e.g., deprecation warnings).
@@ -834,10 +870,12 @@ for variant_path in variant_paths:
     with gem5_scons.Configure(env) as conf:
         # On Solaris you need to use libsocket for socket ops
         if not conf.CheckLibWithHeader(
-                [None, 'socket'], 'sys/socket.h', 'C++', 'accept(0,0,0);'):
+                [None, 'socket'], 'sys/socket.h', 'C++',
+                call='accept(0,0,0);'):
            error("Can't find library with socket calls (e.g. accept()).")
 
-        if not conf.CheckLibWithHeader('z', 'zlib.h', 'C++','zlibVersion();'):
+        if not conf.CheckLibWithHeader('z', 'zlib.h', 'C++',
+                                       call='zlibVersion();'):
             error('Did not find needed zlib compression library '
                   'and/or zlib.h header file.\n'
                   'Please install zlib and try again.')
