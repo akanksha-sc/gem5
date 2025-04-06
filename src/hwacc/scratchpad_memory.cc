@@ -124,7 +124,7 @@ ScratchpadMemory::scratchpadAccess(PacketPtr pkt, bool validateAccess)
     }
 
     assert(AddrRange(pkt->getAddr(),
-                     pkt->getAddr() + (pkt->getSize() - 1)).isSubset(range));
+                     pkt->getAddr() + pkt->getSize()).isSubset(range));
 
     uint8_t *hostAddr = pmemAddr + pkt->getAddr() - range.start();
 
