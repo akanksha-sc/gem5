@@ -1,5 +1,4 @@
 #!/bin/bash
 
 echo "Generating HW"
-python3 ${M5_PATH}/HWProfileGenerator.py -b bfs
-
+python3 ${M5_PATH}/tools/hw_generator/HWProfileGenerator.py -b bfs
