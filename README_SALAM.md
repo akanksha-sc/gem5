@@ -36,6 +36,14 @@ Once you have successfully installed all of the necessary dependencies, you can 
 git clone https://github.com/TeCSAR-UNCC/gem5-SALAM
 ```
 
+Before building gem5-SALAM, you must generate source and header files for hardware modeling using the provided script:
+
+```bash
+$M5_PATH/tools/hw_generator/generate_hw.sh
+```
+
+This script generates necessary functional unit and instruction configuration files required for successful compilation. Be sure to run it before invoking scons.
+
 When building gem5-SALAM, there are multiple different binary types that can be created. Just like in gem5 the options are debug, opt, fast, prof, and perf. We recommend that users either use the opt or debug builds, as these are the build types we develop and test on.
 
 Below are the bash commands you would use to build the opt or debug binary.
