@@ -108,6 +108,4 @@ $NDSAM1 \
 $NDSAM2 \
 $ECC
 
-cd $M5_PATH/cacti-SALAM
-
-
+cd $M5_PATH/tools/cacti-SALAM
