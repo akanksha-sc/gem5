@@ -1,17 +1,14 @@
 #!/bin/bash
 
-sudo apt-get install gcc-multilib g++-multilib
+chmod u+x cactiStats.sh
+chmod u+x cactiSweep.sh
+chmod u+x clearStats.sh
+chmod u+x getcactiResults.sh
 
-sudo chmod u+x cactiStats.sh
-sudo chmod u+x cactiSweep.sh
-sudo chmod u+x clearStats.sh
-sudo chmod u+x getcactiResults.sh
-
-cd ../ext/mcpat/cacti
+cd $M5_PATH/ext/mcpat/cacti
 
 make clean
 make all
-
 
 echo " "
 echo "Testing Install"
