@@ -43,6 +43,7 @@
 
 #include <deque>
 #include <memory>
+#include <optional>
 
 #include "base/addr_range_map.hh"
 #include "base/chunk_generator.hh"
@@ -113,15 +114,17 @@ class DmaPort : public RequestPort, public Drainable
         const RequestorID id;
 
         /** Stream IDs. */
-        const uint32_t sid;
-        const uint32_t ssid;
+        const std::optional<uint32_t> sid;
+        const std::optional<uint32_t> ssid;
 
         /** Command for the request. */
         const Packet::Command cmd;
 
         DmaReqState(Packet::Command _cmd, Addr addr, Addr chunk_sz, Addr tb,
                     uint8_t *_data, Request::Flags _flags, RequestorID _id,
-                    uint32_t _sid, uint32_t _ssid, Event *ce, Tick _delay,
+                    std::optional<uint32_t> _sid,
+                    std::optional<uint32_t> _ssid,
+                    Event *ce, Tick _delay,
                     Event *ae=nullptr)
             : completionEvent(ce), abortEvent(ae), totBytes(tb), delay(_delay),
               gen(addr, tb, chunk_sz), data(_data), flags(_flags), id(_id),
@@ -182,10 +185,10 @@ class DmaPort : public RequestPort, public Drainable
     bool retryPending = false;
 
     /** Default streamId */
-    const uint32_t defaultSid;
+    const std::optional<uint32_t> defaultSid;
 
     /** Default substreamId */
-    const uint32_t defaultSSid;
+    const std::optional<uint32_t> defaultSSid;
 
     const Addr cacheLineSize;
 
@@ -196,7 +199,8 @@ class DmaPort : public RequestPort, public Drainable
 
   public:
 
-    DmaPort(ClockedObject *dev, System *s, uint32_t sid=0, uint32_t ssid=0);
+    DmaPort(ClockedObject *dev, System *s, std::optional<uint32_t> sid=0,
+            std::optional<uint32_t> ssid=0);
 
     void
     dmaAction(Packet::Command cmd, Addr addr, int size, Event *event,
@@ -204,8 +208,8 @@ class DmaPort : public RequestPort, public Drainable
 
     void
     dmaAction(Packet::Command cmd, Addr addr, int size, Event *event,
-              uint8_t *data, uint32_t sid, uint32_t ssid, Tick delay,
-              Request::Flags flag=0);
+              uint8_t *data, std::optional<uint32_t> sid,
+              std::optional<uint32_t> ssid, Tick delay, Request::Flags flag=0);
 
     // Abort and remove any pending DMA transmissions.
     void abortPending();
@@ -227,7 +231,8 @@ class DmaDevice : public PioDevice
 
     void
     dmaWrite(Addr addr, int size, Event *event, uint8_t *data,
-             uint32_t sid, uint32_t ssid, Tick delay=0)
+             std::optional<uint32_t> sid, std::optional<uint32_t> ssid,
+             Tick delay=0)
     {
         dmaPort.dmaAction(MemCmd::WriteReq, addr, size, event, data,
                           sid, ssid, delay);
@@ -241,7 +246,8 @@ class DmaDevice : public PioDevice
 
     void
     dmaRead(Addr addr, int size, Event *event, uint8_t *data,
-            uint32_t sid, uint32_t ssid, Tick delay=0)
+            std::optional<uint32_t> sid, std::optional<uint32_t> ssid,
+            Tick delay=0)
     {
         dmaPort.dmaAction(MemCmd::ReadReq, addr, size, event, data,
                           sid, ssid, delay);

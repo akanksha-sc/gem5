@@ -145,6 +145,7 @@ class MetaSimObject(type):
         "cxx_exports": list,
         "cxx_param_exports": list,
         "cxx_template_params": list,
+        "override_create": bool,  # True if overrides the default create()
     }
     # Attributes that can be set any time
     keywords = {"check": FunctionType}
@@ -186,6 +187,8 @@ class MetaSimObject(type):
             value_dict["cxx_param_exports"] = []
         if "cxx_template_params" not in value_dict:
             value_dict["cxx_template_params"] = []
+        if "override_create" not in value_dict:
+            value_dict["override_create"] = False
         cls_dict["_value_dict"] = value_dict
         cls = super().__new__(mcls, name, bases, cls_dict)
         if "type" in value_dict:

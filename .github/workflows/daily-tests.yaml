@@ -38,28 +38,6 @@ jobs:
             - name: Build ALL/gem5.opt
               run: scons --no-compress-debug build/ALL/gem5.opt -j $(nproc)
 
-
-    build-vega-gem5:
-        runs-on: [self-hosted, linux, x64]
-        container: ghcr.io/gem5/gcn-gpu:latest
-        timeout-minutes: 180
-        needs: get-date
-
-        steps:
-            - uses: actions/checkout@v4
-
-            - name: Cache build/VEGA_X86
-              uses: actions/cache@v4
-              with:
-                  path: build/VEGA_X86
-                  key: testlib-build-vega-${{ needs.get-date.outputs.date }}
-                  restore-keys: |
-                      testlib-build-vega
-
-            - name: Build VEGA_X86/gem5.opt
-              run: scons --no-compress-debug build/VEGA_X86/gem5.opt -j $(nproc)
-
-
   # this builds both unittests.fast and unittests.debug
     unittests-fast-debug:
         strategy:
@@ -102,7 +80,7 @@ jobs:
 
             - name: long ${{ matrix.test-type }} tests
               working-directory: ${{ github.workspace }}/tests
-              run: ./main.py run gem5/${{ matrix.test-type }} -j$(nproc) --length=long -vv -t $(nproc)
+              run: ./main.py run gem5/${{ matrix.test-type }} -j$(nproc) --length=long -vv -t $(nproc) --exclude-tags gcn_gpu
             - name: upload results
               if: success() || failure()
               uses: actions/upload-artifact@v4
@@ -145,7 +123,7 @@ jobs:
             - name: long ${{ matrix.test-type }} gem5_library_example_tests
               working-directory: ${{ github.workspace }}/tests
               run: ./main.py run --uid SuiteUID:tests/gem5/gem5_library_example_tests/test_gem5_library_examples.py:test-${{ matrix.test-type }} -j $(nproc)
-                  --length=long -vv
+                  --exclude-tags gcn_gpu --length=long -vv
             - name: upload results
               if: success() || failure()
               uses: actions/upload-artifact@v4
@@ -160,9 +138,8 @@ jobs:
     gpu-tests:
         runs-on: [self-hosted, linux, x64]
         container: ghcr.io/gem5/gcn-gpu:latest
-        timeout-minutes: 720 # 12 hours
+        timeout-minutes: 1440 # 24 hours
         needs:
-            - build-vega-gem5
             - get-date
 
         steps:
@@ -171,7 +148,7 @@ jobs:
                   ref: develop
 
             - name: Cache build/VEGA_X86
-              uses: actions/cache/restore@v4
+              uses: actions/cache@v4
               with:
                   path: build/VEGA_X86
                   key: testlib-build-vega-${{ needs.get-date.outputs.date }}
@@ -181,7 +158,7 @@ jobs:
 
             - name: Run Testlib GPU Tests
               working-directory: ${{ github.workspace }}/tests
-              run: ./main.py run --length=long -vvv -t $(nproc) --host gcn_gpu  gem5/gpu
+              run: ./main.py run --length=long -vvv -j $(nproc) --host gcn_gpu
 
             - name: Upload results
               if: success() || failure()
