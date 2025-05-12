@@ -16,7 +16,7 @@ if env['CONF']['USE_ARM_ISA']:
     SimObject('RegisterBank.py', sim_objects=['RegisterBank'])
 
     #LLVMInterface
-    SimObject('ComputeUnit.py', sim_objects=['ComputeUnit'])
+    SimObject('AccComputeUnit.py', sim_objects=['AccComputeUnit'])
     SimObject('LLVMInterface.py', sim_objects=['LLVMInterface'])
 
     #HWInterface
@@ -47,7 +47,7 @@ if env['CONF']['USE_ARM_ISA']:
 
     #
     Source('comm_interface.cc')
-    Source('compute_unit.cc')
+    Source('acc_compute_unit.cc')
     Source('llvm_interface.cc')
     Source('dma_write_fifo.cc')
     Source('noncoherent_dma.cc')

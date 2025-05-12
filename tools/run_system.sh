@@ -133,7 +133,7 @@ fi
 # IOAcc
 # ClassDetail
 # CommInterface
-# ComputeUnit
+# AccComputeUnit
 # LLVMInterface
 # ComputeNode
 # LLVMRegister

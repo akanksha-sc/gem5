@@ -36,10 +36,11 @@
 #include "hwacc/LLVMRead/src/debug_flags.hh"
 #include "hwacc/LLVMRead/src/function.hh"
 #include "hwacc/LLVMRead/src/operand.hh"
-#include "hwacc/compute_unit.hh"
+#include "hwacc/acc_compute_unit.hh"
 #include "params/LLVMInterface.hh"
 
-class LLVMInterface : public ComputeUnit {
+class LLVMInterface : public AccComputeUnit
+{
   private:
     std::string filename;
     std::string topName;

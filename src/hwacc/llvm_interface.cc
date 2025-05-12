@@ -2,7 +2,7 @@
 #include "hwacc/llvm_interface.hh"
 
 LLVMInterface::LLVMInterface(const LLVMInterfaceParams &p):
-    ComputeUnit(p),
+    AccComputeUnit(p),
     filename(p.in_file),
     topName(p.top_name),
     scheduling_threshold(p.sched_threshold),

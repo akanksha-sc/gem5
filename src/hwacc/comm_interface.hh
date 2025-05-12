@@ -1,18 +1,17 @@
 #ifndef __HWACC_COMM_INTERFACE_HH__
 #define __HWACC_COMM_INTERFACE_HH__
-
-#include "params/CommInterface.hh"
-#include "dev/io_device.hh"
-#include "dev/arm/base_gic.hh"
-#include "hwacc/compute_unit.hh"
-#include "hwacc/LLVMRead/src/mem_request.hh"
-#include "hwacc/stream_port.hh"
-#include "hwacc/scratchpad_memory.hh"
-#include "hwacc/LLVMRead/src/debug_flags.hh"
-
 #include <list>
 #include <queue>
 #include <vector>
+
+#include "dev/arm/base_gic.hh"
+#include "dev/io_device.hh"
+#include "hwacc/LLVMRead/src/debug_flags.hh"
+#include "hwacc/LLVMRead/src/mem_request.hh"
+#include "hwacc/acc_compute_unit.hh"
+#include "hwacc/scratchpad_memory.hh"
+#include "hwacc/stream_port.hh"
+#include "params/CommInterface.hh"
 
 class CommInterface : public BasicPioDevice
 {
@@ -240,7 +239,7 @@ class CommInterface : public BasicPioDevice
 
     bool reset_spm;
 
-    ComputeUnit *cu;
+    AccComputeUnit *cu;
 
   public:
     PARAMS(CommInterface);
@@ -275,7 +274,7 @@ class CommInterface : public BasicPioDevice
     virtual int getReadBusWidth()  { return 0; }
     virtual int getWriteBusWidth()  { return 0; }
     virtual int getPmemRange() { return 0; }
-    void registerCompUnit(ComputeUnit *compunit) { cu = compunit; }
+    void registerCompUnit(AccComputeUnit *compunit) { cu = compunit; }
     virtual void finish();
 
     MemoryRequest * findMemRequest(PacketPtr pkt, bool isRead);
