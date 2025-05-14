@@ -13,6 +13,8 @@
 #include "hwacc/stream_port.hh"
 #include "params/CommInterface.hh"
 
+class AccComputeUnit;
+
 class CommInterface : public BasicPioDevice
 {
   protected:
