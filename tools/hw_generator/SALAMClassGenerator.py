@@ -1,3 +1,12 @@
+import os
+
+M5_PATH = os.environ.get("M5_PATH")
+if not M5_PATH:
+    raise RuntimeError("Environment variable M5_PATH must be set.")
+
+HWACC_DIR = os.path.join(M5_PATH, "src", "hwacc")
+
+
 class FunctionalUnitGenerator:
     def __init__(self, bench_directory="", fu_directory=""):
         self.bench_directory = bench_directory
@@ -5,19 +14,25 @@ class FunctionalUnitGenerator:
         self.alias = ""
         self.classname = ""
         self.header_name = ""
-        self.cxx_header = "src/hwacc/HWModeling/src/functional_units.hh"
+        self.cxx_header = os.path.join(
+            HWACC_DIR, "HWModeling", "src", "functional_units.hh"
+        )
         self.cxx_header_py_path = "hwacc/HWModeling/src/functional_units.hh"
         self.fu_base_directory = (
-            "src/hwacc/HWModeling/generated/functionalunits/"
+            os.path.join(
+                HWACC_DIR, "HWModeling", "generated", "functionalunits"
+            )
+            + os.sep
         )
         self.fu_base_directory_py_path = (
             "hwacc/HWModeling/generated/functionalunits/"
         )
-        self.scons_dir_fu = (
-            "src/hwacc/HWModeling/generated/functionalunits/SConscript"
-        )
-        self.scons_dir_inst = (
-            "src/hwacc/HWModeling/generated/instructions/SConscript"
+        self.scons_dir_fu = os.path.join(
+            HWACC_DIR,
+            "HWModeling",
+            "generated",
+            "functionalunits",
+            "SConscript",
         )
 
     # Functional unit alias from yml is passed for classname variable
@@ -33,8 +48,6 @@ class FunctionalUnitGenerator:
             self.fu_base_directory_py_path + self.alias + ".hh"
         )
         self.source_name = self.fu_base_directory + self.alias + ".cc"
-        # self.header_name = self.alias + '.hh'
-        # self.source_name = self.alias + '.cc'
 
     def functional_unit_header_generator(self, hwmodel):
         self.hwmodel = hwmodel
@@ -231,7 +244,9 @@ class FunctionalUnitGenerator:
             )
 
     def generate_fu_list_source(self, fu_list=[]):
-        agg_source_path = "src/hwacc/HWModeling/src/functional_units.cc"
+        agg_source_path = os.path.join(
+            HWACC_DIR, "HWModeling", "src", "functional_units.cc"
+        )
         with open(agg_source_path, "w+") as self.fu_list_source_file:
             self.fu_list_source_file.write(
                 '#include "functional_units.hh"\n\n'
@@ -259,39 +274,6 @@ class FunctionalUnitGenerator:
             self.fu_list_source_file.write("}\n")
             self.fu_list_source_file.write("// END OF GENERATED CONSTRUCTOR\n")
             self.fu_list_source_file.write("\n")
-
-    def generate_inst_config_source(self, inst_list_dict={}):
-        instructions = list(inst_list_dict["instructions"].keys())
-        agg_source_path = "src/hwacc/HWModeling/src/instruction_config.cc"
-        with open(agg_source_path, "w+") as self.inst_config_source_file:
-            self.inst_config_source_file.write(
-                '#include "instruction_config.hh"\n\n'
-            )
-            self.inst_config_source_file.write(
-                "// GENERATED CONSTRUCTOR - DO NOT MODIFY\n"
-            )
-            self.inst_config_source_file.write(
-                "InstConfig::InstConfig(const InstConfigParams &params) :\n"
-            )
-            self.inst_config_source_file.write("\tSimObject(params),\n")
-            for idx, inst in enumerate(instructions):
-                if idx < len(instructions) - 1:
-                    self.inst_config_source_file.write(
-                        "\t_" + inst + "(params." + inst + "),\n"
-                    )
-                else:
-                    self.inst_config_source_file.write(
-                        "\t_" + inst + "(params." + inst + ") {\n"
-                    )
-            for inst in instructions:
-                self.inst_config_source_file.write(
-                    "\tinst_list.push_back(_" + inst + ");\n"
-                )
-            self.inst_config_source_file.write("}\n")
-            self.inst_config_source_file.write(
-                "// END OF GENERATED CONSTRUCTOR\n"
-            )
-            self.inst_config_source_file.write("\n")
 
     def initialize_functional_unit_base_header_file(self):
         self.base_header = self.fu_base_directory + "base.hh"
@@ -812,11 +794,67 @@ class FunctionalUnitGenerator:
                 + '.yml")\n\n'
             )
 
-    def instruction_simobject(self, instruction):
-        self.functional_unit = instruction["functional_unit"]
-        self.functional_unit_limit = instruction["functional_unit_limit"]
-        self.opcode_num = instruction["opcode_num"]
-        self.runtime_cycles = instruction["runtime_cycles"]
+
+class InstConfigGenerator:
+    def __init__(self, bench_directory="", inst_directory=""):
+        self.bench_directory = bench_directory
+        self.inst_directory = inst_directory
+        self.alias = ""
+        self.classname = ""
+        self.header_name = ""
+        self.cxx_header = os.path.join(HWACC_DIR, "HWModeling", "src", ".hh")
+        self.cxx_header_py_path = "hwacc/HWModeling/src/instruction_config"
+        self.inst_base_directory = (
+            os.path.join(HWACC_DIR, "HWModeling", "generated", "instructions")
+            + os.sep
+        )
+        self.inst_base_directory_py_path = (
+            "hwacc/HWModeling/generated/instructions/"
+        )
+        self.scons_dir_inst = os.path.join(
+            HWACC_DIR, "HWModeling", "generated", "instructions", "SConscript"
+        )
+
+    def generate_inst_config_source(self, inst_list_dict={}):
+        instructions = list(inst_list_dict["instructions"].keys())
+        agg_source_path = os.path.join(
+            HWACC_DIR, "HWModeling", "src", "instruction_config.cc"
+        )
+        with open(agg_source_path, "w+") as self.inst_config_source_file:
+            self.inst_config_source_file.write(
+                '#include "instruction_config.hh"\n\n'
+            )
+            self.inst_config_source_file.write(
+                "// GENERATED CONSTRUCTOR - DO NOT MODIFY\n"
+            )
+            self.inst_config_source_file.write(
+                "InstConfig::InstConfig(const InstConfigParams &params) :\n"
+            )
+            self.inst_config_source_file.write("\tSimObject(params),\n")
+            for idx, inst in enumerate(instructions):
+                if idx < len(instructions) - 1:
+                    self.inst_config_source_file.write(
+                        "\t_" + inst + "(params." + inst + "),\n"
+                    )
+                else:
+                    self.inst_config_source_file.write(
+                        "\t_" + inst + "(params." + inst + ") {\n"
+                    )
+            for inst in instructions:
+                self.inst_config_source_file.write(
+                    "\tinst_list.push_back(_" + inst + ");\n"
+                )
+            self.inst_config_source_file.write("}\n")
+            self.inst_config_source_file.write(
+                "// END OF GENERATED CONSTRUCTOR\n"
+            )
+            self.inst_config_source_file.write("\n")
+
+    # def instruction_simobject(self, instruction):
+    # self.functional_unit = instruction["functional_unit"]
+    # self.functional_unit_limit = instruction["functional_unit_limit"]
+    # self.opcode_num = instruction["opcode_num"]
+    # self.runtime_cycles = instruction["runtime_cycles"]
 
     def instruction_simobject_generator(self, hwmodel):
         self.hwmodel = hwmodel

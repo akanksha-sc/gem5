@@ -2,7 +2,16 @@ import os
 
 import yaml
 from SALAMArgs import HWArgs
-from SALAMClassGenerator import FunctionalUnitGenerator
+from SALAMClassGenerator import (
+    FunctionalUnitGenerator,
+    InstConfigGenerator,
+)
+
+M5_PATH = os.environ.get("M5_PATH")
+if not M5_PATH:
+    raise RuntimeError("Environment variable M5_PATH must be set.")
+
+HWACC_DIR = os.path.join(M5_PATH, "src", "hwacc")
 
 
 class HWModel:
@@ -12,30 +21,32 @@ class HWModel:
         latency="10ns",
         profile="default_profile",
         benchname=None,
-        benchfolder="benchmarks/sys_validation",
+        benchfolder="/nobackup/akankshac/research/gem5-SALAM-benchmarks/sys_validation",
     ):
         self.benchname = benchname
         self.benchfolder = benchfolder
         self.model = model
         self.latency = latency
         self.profile = profile
-        self.yaml_dir = (
-            benchfolder
-            + "/"
-            + benchname
-            + "/configs/hw_interface/functional_units/"
-            + model
-            + "/"
-            + latency
-            + "/"
-            + profile
+        self.yaml_dir = os.path.join(
+            benchfolder,
+            benchname,
+            "configs",
+            "hw_interface",
+            "functional_units",
+            model,
+            latency,
+            profile,
         )
-        self.inst_list_yaml = (
-            benchfolder
-            + "/"
-            + benchname
-            + "/configs/hw_interface/instructions/inst_list.yml"
+        self.inst_list_yaml = os.path.join(
+            benchfolder,
+            benchname,
+            "configs",
+            "hw_interface",
+            "instructions",
+            "inst_list.yml",
         )
+
         self.fu_list = os.listdir(self.yaml_dir)
         self.inst_list = []
 
@@ -135,19 +146,14 @@ class HWModel:
         ]
 
 
-if not os.path.exists("src/hwacc/HWModeling/generated"):
-    os.makedirs("src/hwacc/HWModeling/generated")
-
-if not os.path.exists("src/hwacc/HWModeling/generated/functionalunits"):
-    os.makedirs("src/hwacc/HWModeling/generated/functionalunits")
-
-if not os.path.exists("src/hwacc/HWModeling/generated/instructions"):
-    os.makedirs("src/hwacc/HWModeling/generated/instructions")
+GEN_BASE = os.path.join(HWACC_DIR, "HWModeling", "generated")
+os.makedirs(os.path.join(GEN_BASE, "functionalunits"), exist_ok=True)
+os.makedirs(os.path.join(GEN_BASE, "instructions"), exist_ok=True)
 
 benchmark_args = HWArgs()
 generate_hw_models = HWModel(benchname=benchmark_args.bench, latency="5ns")
 fu_file_generator = FunctionalUnitGenerator(
-    fu_directory="src/hwacc/FunctionalUnits.py"
+    fu_directory=os.path.join(HWACC_DIR, "FunctionalUnits.py")
 )
 fu_file_generator.initialize_functional_unit_base_header_file()
 fu_file_generator.initalize_fu_list_header(generate_hw_models.get_fu_list())
@@ -160,23 +166,27 @@ for functional_unit in generate_hw_models.get_fu_list():
     fu_file_generator.functional_unit_header_generator(generate_hw_models)
     fu_file_generator.simobject_generator(generate_hw_models)
 
-# TODO clean up this by creating a InstConfigGenerator class, for clarity
-fu_file_generator.instruction_simobject_generator(generate_hw_models)
-fu_file_generator.initalize_inst_config_header(
+inst_cfg_gen = InstConfigGenerator()
+
+inst_cfg_gen.initialize_inst_config_base_header_file()
+inst_cfg_gen.instruction_simobject_generator(generate_hw_models)
+inst_cfg_gen.initalize_inst_config_header(
     generate_hw_models.get_instruction_list()
 )
-fu_file_generator.initialize_inst_config_base_header_file()
 for inst in generate_hw_models.get_instruction_list()["instructions"].keys():
-    fu_file_generator.inst_config_header_generator(inst)
+    inst_cfg_gen.inst_config_header_generator(inst)
 
-fu_file_generator.generate_fu_list_source(generate_hw_models.get_fu_list())
-fu_file_generator.generate_inst_config_source(
+# source + SCons
+inst_cfg_gen.generate_inst_config_source(
     generate_hw_models.get_instruction_list()
 )
-
+inst_cfg_gen.generate_inst_config_sconscript(
+    generate_hw_models.get_instruction_list()["instructions"]
+)
+fu_file_generator.generate_fu_list_source(generate_hw_models.get_fu_list())
 fu_file_generator.generate_functional_unit_sconscript(
     generate_hw_models.get_fu_list()
 )
-fu_file_generator.generate_inst_config_sconscript(
-    generate_hw_models.get_instruction_list()["instructions"]
-)
+
+if __name__ == "__main__":
+    pass
