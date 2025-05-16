@@ -3,7 +3,7 @@ BENCH=""
 BENCH_PATH=""
 CONFIG_NAME=""
 FLAGS=""
-# FLAGS="SALAM_Debug,CommInterface,NoncoherentDma,LLVMParse"
+FLAGS="SALAM_Debug,CommInterface,LLVMInterface,NoncoherentDma"
 BUILD=True
 DEBUG=False
 PRINT_TO_FILE=False
@@ -69,6 +69,11 @@ if [ "$M5_PATH" == "" ]; then
 	exit 1
 fi
 
+if [ "$ACC_BENCH_PATH" == "" ]; then
+	        echo "ACC_BENCH_PATH env var is not set, exiting"
+		        exit 1
+fi
+
 if [ "$CONFIG_NAME" == "" ]; then
 	CONFIG_NAME="config.yml"
 fi
@@ -85,12 +90,12 @@ else
 	BINARY="${M5_PATH}/build/ARM/gem5.opt"
 fi
 
-KERNEL=$M5_PATH/"$BENCH_PATH"/sw/main.elf
+KERNEL=$ACC_BENCH_PATH/"$BENCH_PATH"/sw/main.elf
 
 SYS_OPTS="--mem-size=16GB \
 		  --mem-type=DDR4_2400_8x8 \
           --kernel=$KERNEL \
-          --disk-image=$M5_PATH/benchmarks/common/fake.iso \
+          --disk-image=$ACC_BENCH_PATH/benchmarks/common/fake.iso \
           --machine-type=VExpress_GEM5_V1 \
           --dtb-file=none --bare-metal \
           --cpu-type=DerivO3CPU"
@@ -108,7 +113,7 @@ fi
 
 RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
 			$M5_PATH/configs/SALAM/fs_$BENCH.py $SYS_OPTS \
-			--accpath=$M5_PATH/$BENCH_PATH \
+			--accpath=$ACC_BENCH_PATH/$BENCH_PATH \
 			--accbench=$BENCH $CACHE_OPTS"
 
 if (! "$M5_PATH"/tools/SALAM-Configurator/systembuilder.py --sys-name "$BENCH" --bench-path "$BENCH_PATH" --config-name $CONFIG_NAME) then
@@ -118,7 +123,7 @@ fi
 
 if [ $BUILD ]; then
   echo "Building Bench"
-  make all -C "$M5_PATH/$BENCH_PATH"
+  make all -C "$ACC_BENCH_PATH/$BENCH_PATH"
 fi
 
 if [ ${PRINT_TO_FILE} == True ]; then

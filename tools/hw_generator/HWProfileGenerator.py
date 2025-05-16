@@ -9,7 +9,7 @@ from SALAMClassGenerator import (
 
 M5_PATH = os.environ.get("M5_PATH")
 if not M5_PATH:
-    raise RuntimeError("Environment variable M5_PATH must be set.")
+    raise RuntimeError("Environment variable M5_PATH must be set")
 
 HWACC_DIR = os.path.join(M5_PATH, "src", "hwacc")
 

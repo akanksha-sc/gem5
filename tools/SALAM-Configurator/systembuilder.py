@@ -30,7 +30,7 @@ def parse_cur_args():
     argparser = argparse.ArgumentParser(description="SALAM System Builder")
     argparser.add_argument(
         "--bench-path",
-        help="Path to Benchmark Directory Relative to M5_PATH. e.g. gemm's bench path will be benchmarks/sys_validation/gemm",
+        help="Path to Benchmark Directory Relative to ACC_BENCH_PATH. e.g. gemm's bench path will be benchmarks/sys_validation/gemm",
         required=True,
     )
     argparser.add_argument(
@@ -373,6 +373,7 @@ def main():
     args = parse_cur_args()
     # This requires M5_PATH to point to your gem5-SALAM directory
     M5_Path = os.getenv("M5_PATH")
+    acc_bench_path = os.getenv("ACC_BENCH_PATH")
 
     if M5_Path is None:
         print("Looking for Path Argument from Command Line")
@@ -382,13 +383,23 @@ def main():
         if M5_Path is None:
             raise Exception("M5_PATH Not Found")
 
+    if acc_bench_path is None:
+        print("Looking for Path Argument from Command Line")
+        if args.m5_path is None:
+            raise Exception(
+                "Path argument required when ACC_BENCH_PATH not set"
+            )
+        acc_bench_path = args.path
+        if acc_bench_path is None:
+            raise Exception("ACC_BENCH_PATH Not Found")
+
     # Set file information
     if args.sys_name == None:
         file_name = os.path.basename(os.path.normpath(args.sys_path))
     else:
         file_name = args.sys_name
     config_path = M5_Path + "/configs/SALAM/"
-    working_dir = M5_Path + "/" + args.bench_path + "/"
+    working_dir = acc_bench_path + "/" + args.bench_path + "/"
     main_yml_path = working_dir + args.config_name
 
     # Set base addresses

@@ -852,7 +852,7 @@ class InstConfigGenerator:
 
     # def instruction_simobject(self, instruction):
     # self.functional_unit = instruction["functional_unit"]
-    # self.functional_unit_limit = instruction["functional_unit_limit"]
+    # self.functional_unit_limit = instruction.get("functional_unit_limit", 0)
     # self.opcode_num = instruction["opcode_num"]
     # self.runtime_cycles = instruction["runtime_cycles"]
 
@@ -922,9 +922,9 @@ class InstConfigGenerator:
                 self.simobject_file.write(
                     "\tfunctional_unit_limit = Param.UInt32("
                     + str(
-                        self.inst_dict["instructions"][inst_name][
-                            "functional_unit_limit"
-                        ]
+                        self.inst_dict["instructions"][inst_name].get(
+                            "functional_unit_limit", 0
+                        )
                     )
                     + ', "Default functional unit limit.")\n'
                 )

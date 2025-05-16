@@ -14,17 +14,21 @@ import yaml
 
 # Configuration variables
 M5_PATH_ENV = os.environ.get("M5_PATH")
-if not M5_PATH_ENV:
-    sys.exit("ERROR: M5_PATH environment variable is not set.")
+ACC_BENCH_PATH_ENV = os.environ.get("ACC_BENCH_PATH")
+if not M5_PATH_ENV or not ACC_BENCH_PATH:
+    sys.exit(
+        "ERROR: M5_PATH and/or ACC_BENCH_PATH environment variables not set."
+    )
 
 M5_PATH = Path(M5_PATH_ENV).resolve()
+ACC_BENCH_PATH = Path(ACC_BENCH_PATH_ENV).resolve()
 CACTI_DIR = M5_PATH / "ext" / "mcpat" / "cacti"
 CACTI_EXE = CACTI_DIR / "cacti"
 SCRIPT_DIR = Path(__file__).parent.resolve()
 RESULTS_DIR = SCRIPT_DIR / "results"
 DEFAULT_DELAY_S = 1.0
 MIN_CACTI_SIZE = 2048
-BENCH_LIST = M5_PATH / "benchmarks.list"
+BENCH_LIST = ACC_BENCH_PATH / "benchmarks.list"
 
 # Cacti SALAM default args
 CACTI_DEFAULT_FILE = SCRIPT_DIR / "cacti_salam.cfg"
@@ -116,7 +120,7 @@ def main():
         config_file, bench_name, sub_name = parts
         config_path = Path(config_file)
         if not config_path.is_absolute() and not config_path.exists():
-            potential_path = M5_PATH / config_path
+            potential_path = ACC_BENCH_PATH / config_path
             if potential_path.exists():
                 config_path = potential_path
 

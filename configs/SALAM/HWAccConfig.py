@@ -15,7 +15,7 @@ def AccConfig(acc, bench_file, config_file):
 
     # Benchmark path
     acc.llvm_interface.in_file = bench_file
-    M5_Path = os.getenv("M5_PATH")
+    M5_Path = os.getenv("ACC_BENCH_PATH")
     benchname = os.path.splitext(os.path.basename(bench_file))[0]
 
     # lenet config launcher custom stuff

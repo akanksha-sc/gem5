@@ -6,6 +6,7 @@ import subprocess
 import time
 
 M5_PATH_ENV_VAR = "M5_PATH"
+ACC_BENCH_PATH_ENV_VAR = "ACC_BENCH_PATH"
 TARGET_SUBDIR = "ext/mcpat/cacti"
 CACTI_INFILE = "cache.cfg"
 
@@ -21,9 +22,10 @@ def run_command(command_list, working_dir):
 
 def main():
     m5_path = os.environ.get(M5_PATH_ENV_VAR)
-    if not m5_path:
+    acc_bench_path = os.environ.get(ACC_BENCH_PATH_ENV_VAR)
+    if not m5_path or not acc_bench_path:
         print(
-            f"Error: Environment variable {M5_PATH_ENV_VAR} is not set.",
+            f"Error: Environment variables M5_PATH and/or ACC_BENCH_PATH not set.",
             file=os.sys.stderr,
         )
         exit(1)
@@ -52,7 +54,7 @@ def main():
     print(f"CACTI exited with code: {cacti_result.returncode}\n")
 
     print("==================================================================")
-    print("Running cacti-SALAM\n")
+    print("Next, to run cacti-SALAM use run_cacti_salam.py\n")
     print("Usage: ./run_cacti_salam.py <path to benchmark configs list>")
     print(
         "Each line of benchmark configs list contains </path/to/config> <benchmark name> <config>"
