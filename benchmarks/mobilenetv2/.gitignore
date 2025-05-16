@@ -1,5 +1,0 @@
-*.ll
-*.o
-*.elf
-*defines.h
-network_params.h

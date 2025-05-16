@@ -1,9 +1,0 @@
-Misc/
-/*/*/*.ll
-/*/*/*.o
-/*/*/*.elf
-/*/*/*.bc
-lenet5/*
-lenet5-kernelunroll/*
-lenet5-nounroll/*
-lenet5-channelunroll/*
