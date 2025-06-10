@@ -1,5 +1,6 @@
 //------------------------------------------//
 #include "hwacc/dma_write_fifo.hh"
+
 //------------------------------------------//
 
 DmaWriteFifo::DmaWriteFifo(DmaPort &_port, size_t size,

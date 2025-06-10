@@ -1,19 +1,21 @@
 #ifndef __HWACC_OPERAND_HH__
 #define __HWACC_OPERAND_HH__
 //------------------------------------------//
-#include "llvm/IR/Value.h"
-#include "llvm/IR/GlobalVariable.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/ADT/APSInt.h"
-#include "llvm/ADT/APFloat.h"
-#include "llvm/IR/Instructions.h"
 #include <llvm-c/Core.h>
-#include "debug_flags.hh"
-#include "value.hh"
-#include "registers.hh"
+
 #include <map>
 #include <memory>
 #include <vector>
+
+#include "debug_flags.hh"
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/APSInt.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/IR/Value.h"
+#include "registers.hh"
+#include "value.hh"
 
 namespace SALAM
 {
@@ -67,7 +69,8 @@ class Operand: public Value
         std::shared_ptr<SALAM::Register> getOpRegister() { return lockedValue; }
 };
 
-class Constant: public Value {
+class Constant: public Value
+{
     private:
     protected:
         SALAM::valueListTy operands;
@@ -79,7 +82,8 @@ class Constant: public Value {
         virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values);
 };
 
-class GlobalConstant : public Constant {
+class GlobalConstant : public Constant
+{
     private:
     protected:
     public:
@@ -90,7 +94,8 @@ class GlobalConstant : public Constant {
         virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values) override;
 };
 
-class Argument : public Value {
+class Argument : public Value
+{
     private:
     protected:
     public:

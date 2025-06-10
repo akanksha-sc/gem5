@@ -4,8 +4,10 @@
 //#include "debug_flags.hh"
 #include "params/CycleCounts.hh"
 #include "sim/sim_object.hh"
+
 //------------------------------------------//
 #include <cstdint>
+
 //------------------------------------------//
 
 using namespace gem5;

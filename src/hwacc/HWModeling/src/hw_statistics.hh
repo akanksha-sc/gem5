@@ -1,21 +1,21 @@
 #ifndef __HWMODEL_HW_STATISTICS_HH__
 #define __HWMODEL_HW_STATISTICS_HH__
 
-#include "params/HWStatistics.hh"
-#include "sim/sim_object.hh"
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <vector>
 
 #include "hwacc/LLVMRead/src/debug_flags.hh"
-
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <vector>
+#include "params/HWStatistics.hh"
+#include "sim/sim_object.hh"
 
 using namespace gem5;
 
 
 // Things here are output only once at end of simulation
-struct HW_Params {
+struct HW_Params
+{
     int run_end;
 
     void reset() {
@@ -25,7 +25,8 @@ struct HW_Params {
 };
 
 // These are outputs that are stored each cycle
-struct HW_Cycle_Stats {
+struct HW_Cycle_Stats
+{
     int cycle;
 
     int resInFlight;
@@ -115,7 +116,7 @@ class HWStatistics : public SimObject
         int loadStoreStall; //
         int loadCompStall;
         int loadStoreCompStall;
-        int storeCompStall;        
+        int storeCompStall;
         //Memory Stats
         int cache_ports;
         int local_ports;

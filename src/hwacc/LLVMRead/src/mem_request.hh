@@ -1,14 +1,16 @@
 #ifndef MEMORY_REQUEST_HH
 #define MEMORY_REQUEST_HH
 //------------------------------------------//
+#include "debug_flags.hh"
 #include "mem/packet.hh"
 #include "mem/port.hh"
-#include "debug_flags.hh"
+
 //------------------------------------------//
 
 using namespace gem5;
 
-class MemoryRequest {
+class MemoryRequest
+{
   friend class CommInterface;
   // friend class LLVMInterface;
   private:

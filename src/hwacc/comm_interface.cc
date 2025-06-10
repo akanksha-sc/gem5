@@ -1,12 +1,13 @@
 #include "hwacc/comm_interface.hh"
+
+#include <cstdio>
+#include <cstdlib>
+#include <iomanip>
+
 #include "base/trace.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 #include "sim/system.hh"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <iomanip>
 
 using namespace std;
 
@@ -41,7 +42,7 @@ CommInterface::CommInterface(const CommInterfaceParams &p) :
     int_flag = false;
 
     mmreg = new uint8_t[io_size];
-    for(int i = 0; i < io_size; i++) {
+    for (int i = 0; i < io_size; i++) {
         mmreg[i] = 0;
     }
     cu = nullptr;
@@ -133,7 +134,7 @@ CommInterface::RegPort::sendPacket(PacketPtr pkt) {
 
 void
 CommInterface::recvPacket(PacketPtr pkt) {
-	if (pkt->isRead()) {
+        if (pkt->isRead()) {
         MemoryRequest * readReq = findMemRequest(pkt, true);
         RequestPort * carrier = readReq->getCarrierPort();
         if (MemSidePort * port = dynamic_cast<MemSidePort *>(carrier)) port->readReq = nullptr;

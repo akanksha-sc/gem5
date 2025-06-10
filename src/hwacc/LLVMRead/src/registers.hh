@@ -1,13 +1,14 @@
 #ifndef __HWACC_REGISTERS_HH__
 #define __HWACC_REGISTERS_HH__
 
-#include "debug_flags.hh"
-#include "llvm/IR/Value.h"
-#include "llvm/IR/GlobalVariable.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/ADT/APSInt.h"
-#include "llvm/ADT/APFloat.h"
 #include <llvm-c/Core.h>
+
+#include "debug_flags.hh"
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/APSInt.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/Value.h"
 
 #define USE_LLVM_AP_VALUES 0
 
@@ -138,7 +139,7 @@ class APFloatRegister : public Register
         // This constructor is only used for constants.
         APFloatRegister(const uint64_t RHS) : Register(false) {
             data = RHS;
-            regdata = data;    
+            regdata = data;
         }
         virtual uint64_t getFloatData(bool incReads=true) override;
         virtual float getFloat(bool incReads=true) override;

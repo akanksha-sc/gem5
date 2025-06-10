@@ -1,9 +1,10 @@
 #ifndef __HWACC_ACC_CLUSTER_HH__
 #define __HWACC_ACC_CLUSTER_HH__
 //------------------------------------------//
-#include "hwacc/LLVMRead/src/debug_flags.hh"
 #include "dev/platform.hh"
+#include "hwacc/LLVMRead/src/debug_flags.hh"
 #include "params/AccCluster.hh"
+
 //------------------------------------------//
 using namespace gem5;
 

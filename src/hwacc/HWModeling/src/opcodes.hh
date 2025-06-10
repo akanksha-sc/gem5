@@ -4,9 +4,11 @@
 //#include "debug_flags.hh"
 #include "params/InstOpCodes.hh"
 #include "sim/sim_object.hh"
+
 //------------------------------------------//
 #include <cstdint>
 #include <map>
+
 //------------------------------------------//
 
 using namespace gem5;

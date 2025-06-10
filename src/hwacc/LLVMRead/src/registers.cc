@@ -1,5 +1,6 @@
 //------------------------------------------//
 #include "registers.hh"
+
 //------------------------------------------//
 
 SALAM::Register::Register(bool trk,
@@ -329,8 +330,8 @@ SALAM::PointerRegister::writePtrData(uint64_t ptr, size_t len, bool incWrites)
     regdata = pointer;
 }
 
-#include <sstream>
 #include <ios>
+#include <sstream>
 
 std::string
 SALAM::APFloatRegister::dataString() {

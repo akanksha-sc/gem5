@@ -1,5 +1,6 @@
 //------------------------------------------//
 #include "opcodes.hh"
+
 //------------------------------------------//
 
 InstOpCodes::InstOpCodes(const InstOpCodesParams &p):
@@ -53,7 +54,7 @@ InstOpCodes::InstOpCodes(const InstOpCodesParams &p):
     fmul_inst(p.fmul),
     fdiv_inst(p.fdiv),
     frem_inst(p.frem)
-    { 
+    {
         usage.insert(std::pair<int, int>(counter_inst, 0));
         usage.insert(std::pair<int, int>(gep_inst, 0));
         usage.insert(std::pair<int, int>(phi_inst, 0));

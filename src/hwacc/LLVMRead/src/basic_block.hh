@@ -2,24 +2,27 @@
 #define __SALAM_BASIC_BLOCK_HH__
 //------------------------------------------//
 #include "debug_flags.hh"
-#include "value.hh"
 #include "instruction.hh"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Instruction.h"
+#include "value.hh"
+
 //------------------------------------------//
-#include <memory>
+#include <algorithm>
 #include <iomanip>
-#include <string>
-#include <sstream>
 #include <iostream>
 #include <iterator>
-#include <algorithm>
+#include <memory>
+#include <sstream>
+#include <string>
+
 //------------------------------------------//
 
 namespace SALAM {
   class Instruction; // Do not remove
 
-  class BasicBlock : public Value {
+  class BasicBlock : public Value
+  {
     private:
       std::vector<std::shared_ptr<SALAM::BasicBlock>> predecessors;
       std::vector<std::shared_ptr<SALAM::Instruction>> instructions;
@@ -30,9 +33,9 @@ namespace SALAM {
                 BasicBlock_Debugger();
                 ~BasicBlock_Debugger() = default;
                 virtual void dumper(SALAM::BasicBlock * bb);
-        }; 
+        };
 
-       BasicBlock_Debugger* bb_dbg;  
+       BasicBlock_Debugger* bb_dbg;
     public:
       BasicBlock(uint64_t id, gem5::SimObject * owner, bool dbg);
       ~BasicBlock();

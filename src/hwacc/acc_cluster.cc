@@ -1,5 +1,6 @@
 //------------------------------------------//
 #include "hwacc/acc_cluster.hh"
+
 //------------------------------------------//
 
 AccCluster::AccCluster(const AccClusterParams &p)

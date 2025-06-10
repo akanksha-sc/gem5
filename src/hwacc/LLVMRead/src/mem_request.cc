@@ -1,7 +1,9 @@
 //------------------------------------------//
-#include "mem_request.hh"
-#include <sstream>
 #include <iomanip>
+#include <sstream>
+
+#include "mem_request.hh"
+
 //------------------------------------------//
 
 MemoryRequest::MemoryRequest(Addr add, size_t len) {

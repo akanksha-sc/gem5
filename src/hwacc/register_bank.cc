@@ -4,16 +4,16 @@
 #include <sys/types.h>
 #include <sys/user.h>
 
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
-#include <stdio.h>
-#include <stdlib.h>
 #include <iomanip>
 
 #include "base/trace.hh"
+#include "debug/Drain.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 #include "sim/system.hh"
-#include "debug/Drain.hh"
 
 using namespace std;
 

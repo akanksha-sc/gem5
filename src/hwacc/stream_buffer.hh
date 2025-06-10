@@ -2,12 +2,14 @@
 #define __HWACC_STREAM_BUFFER_HH__
 
 #include "params/StreamBuffer.hh"
+
 // #include "dev/io_device.hh"
 #include "base/circlebuf.hh"
-#include "sim/clocked_object.hh"
 #include "hwacc/stream_port.hh"
+#include "sim/clocked_object.hh"
 
-class StreamBuffer : public ClockedObject {
+class StreamBuffer : public ClockedObject
+{
   private:
     StreamResponsePortT<StreamBuffer> streamIn;
     StreamResponsePortT<StreamBuffer> streamOut;

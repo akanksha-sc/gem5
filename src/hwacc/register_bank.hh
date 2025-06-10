@@ -1,11 +1,11 @@
 #ifndef __HWACC_REGISTER_BANK_HH__
 #define __HWACC_REGISTER_BANK_HH__
 
+#include <vector>
+
 #include "mem/abstract_mem.hh"
 #include "mem/port.hh"
 #include "mem/tport.hh"
-
-#include <vector>
 
 using namespace gem5;
 using namespace memory;

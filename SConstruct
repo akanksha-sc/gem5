@@ -79,6 +79,7 @@ from os.path import isdir, isfile
 from os.path import join, split
 
 import logging
+
 logging.basicConfig()
 
 # SCons imports
@@ -87,6 +88,7 @@ import SCons.Node
 import SCons.Node.FS
 import SCons.Tool
 from SCons.Errors import UserError as SConsUserError
+
 try:
     # SCons.Errors.SConsEnvironmentError for version > 4.0.0
     from SCons.Errors import SConsEnvironmentError
@@ -94,12 +96,14 @@ except ImportError:
     # SCons.Errors.EnvironmentError for version < 4.0.0
     from SCons.Errors import EnvironmentError as SConsEnvironmentError
 
-if getattr(SCons, '__version__', None) in ('3.0.0', '3.0.1'):
+if getattr(SCons, "__version__", None) in ("3.0.0", "3.0.1"):
     # Monkey patch a fix which appears in version 3.0.2, since we only
     # require version 3.0.0
     def __hash__(self):
         return hash(self.lstr)
+
     import SCons.Subst
+
     SCons.Subst.Literal.__hash__ = __hash__
 
 
@@ -109,57 +113,115 @@ if getattr(SCons, '__version__', None) in ('3.0.0', '3.0.1'):
 #
 ########################################################################
 
-linker_options = ('bfd', 'gold', 'lld', 'mold')
+linker_options = ("bfd", "gold", "lld", "mold")
 
-AddOption('--no-colors', dest='use_colors', action='store_false',
-          help="Don't add color to abbreviated scons output")
-AddOption('--with-cxx-config', action='store_true',
-          help="Build with support for C++-based configuration")
-AddOption('--ignore-style', action='store_true',
-          help='Disable style checking hooks')
-AddOption('--linker', action='store', default=None, choices=linker_options,
-          help=f'Select which linker to use ({", ".join(linker_options)})')
-AddOption('--gold-linker', action='store_const', const='gold', dest='linker',
-          help='Use the gold linker. Deprecated: Use --linker=gold')
-AddOption('--no-compress-debug', action='store_true',
-          help="Don't compress debug info in build files")
-AddOption('--with-lto', action='store_true',
-          help='Enable Link-Time Optimization')
-AddOption('--with-libcxx', action='store_true',
-          help='Use libc++ as the C++ standard library (requires Clang)')
-AddOption('--verbose', action='store_true',
-          help='Print full tool command lines')
-AddOption('--without-python', action='store_true',
-          help='Build without Python configuration support')
-AddOption('--without-tcmalloc', action='store_true',
-          help='Disable linking against tcmalloc')
-AddOption('--with-ubsan', action='store_true',
-          help='Build with Undefined Behavior Sanitizer if available')
-AddOption('--with-asan', action='store_true',
-          help='Build with Address Sanitizer if available')
-AddOption('--with-systemc-tests', action='store_true',
-          help='Build systemc tests')
-AddOption('--install-hooks', action='store_true',
-          help='Install revision control hooks non-interactively')
-AddOption('--limit-ld-memory-usage', action='store_true',
-          help='Tell ld, the linker, to reduce memory usage.')
-AddOption('--gprof', action='store_true',
-          help='Enable support for the gprof profiler')
-AddOption('--pprof', action='store_true',
-          help='Enable support for the pprof profiler')
-AddOption('--debug-fission', action='store_true', help='Enable debug fission')
+AddOption(
+    "--no-colors",
+    dest="use_colors",
+    action="store_false",
+    help="Don't add color to abbreviated scons output",
+)
+AddOption(
+    "--with-cxx-config",
+    action="store_true",
+    help="Build with support for C++-based configuration",
+)
+AddOption(
+    "--ignore-style", action="store_true", help="Disable style checking hooks"
+)
+AddOption(
+    "--linker",
+    action="store",
+    default=None,
+    choices=linker_options,
+    help=f'Select which linker to use ({", ".join(linker_options)})',
+)
+AddOption(
+    "--gold-linker",
+    action="store_const",
+    const="gold",
+    dest="linker",
+    help="Use the gold linker. Deprecated: Use --linker=gold",
+)
+AddOption(
+    "--no-compress-debug",
+    action="store_true",
+    help="Don't compress debug info in build files",
+)
+AddOption(
+    "--with-lto", action="store_true", help="Enable Link-Time Optimization"
+)
+AddOption(
+    "--with-libcxx",
+    action="store_true",
+    help="Use libc++ as the C++ standard library (requires Clang)",
+)
+AddOption(
+    "--verbose", action="store_true", help="Print full tool command lines"
+)
+AddOption(
+    "--without-python",
+    action="store_true",
+    help="Build without Python configuration support",
+)
+AddOption(
+    "--without-tcmalloc",
+    action="store_true",
+    help="Disable linking against tcmalloc",
+)
+AddOption(
+    "--with-ubsan",
+    action="store_true",
+    help="Build with Undefined Behavior Sanitizer if available",
+)
+AddOption(
+    "--with-asan",
+    action="store_true",
+    help="Build with Address Sanitizer if available",
+)
+AddOption(
+    "--with-systemc-tests", action="store_true", help="Build systemc tests"
+)
+AddOption(
+    "--install-hooks",
+    action="store_true",
+    help="Install revision control hooks non-interactively",
+)
+AddOption(
+    "--limit-ld-memory-usage",
+    action="store_true",
+    help="Tell ld, the linker, to reduce memory usage.",
+)
+AddOption(
+    "--gprof",
+    action="store_true",
+    help="Enable support for the gprof profiler",
+)
+AddOption(
+    "--pprof",
+    action="store_true",
+    help="Enable support for the pprof profiler",
+)
+AddOption("--debug-fission", action="store_true", help="Enable debug fission")
 # Default to --no-duplicate-sources, but keep --duplicate-sources to opt-out
 # of this new build behaviour in case it introduces regressions. We could use
 # action=argparse.BooleanOptionalAction here once Python 3.9 is required.
-AddOption('--duplicate-sources', action='store_true', default=False,
-          dest='duplicate_sources',
-          help='Create symlinks to sources in the build directory')
-AddOption('--no-duplicate-sources', action='store_false',
-          dest='duplicate_sources',
-          help='Do not create symlinks to sources in the build directory')
+AddOption(
+    "--duplicate-sources",
+    action="store_true",
+    default=False,
+    dest="duplicate_sources",
+    help="Create symlinks to sources in the build directory",
+)
+AddOption(
+    "--no-duplicate-sources",
+    action="store_false",
+    dest="duplicate_sources",
+    help="Do not create symlinks to sources in the build directory",
+)
 
 # Inject the built_tools directory into the python path.
-sys.path[1:1] = [ Dir('#build_tools').abspath ]
+sys.path[1:1] = [Dir("#build_tools").abspath]
 
 # Imports of gem5_scons happen here since it depends on some options which are
 # declared above.
@@ -177,9 +239,9 @@ from gem5_scons.util import compareVersions, readCommand
 # generated source file is used to build object files in different ways in
 # different environments, but generating the source file itself is exactly the
 # same. This can be re-enabled from the command line if desired.
-SetOption('warn', 'no-duplicate-environment')
+SetOption("warn", "no-duplicate-environment")
 
-Export('MakeAction')
+Export("MakeAction")
 
 # Patch re.compile to support inline flags anywhere within a RE
 # string. Required to use PLY with Python 3.11+.
@@ -191,41 +253,58 @@ gem5_scons.patch_re_compile_for_inline_flags()
 #
 ########################################################################
 
-main = Environment(tools=[
-        'default', 'git', TempFileSpawn, EnvDefaults, MakeActionTool,
-        ConfigFile, AddLocalRPATH, SwitchingHeaders, TagImpliesTool, Blob
-    ])
+main = Environment(
+    tools=[
+        "default",
+        "git",
+        TempFileSpawn,
+        EnvDefaults,
+        MakeActionTool,
+        ConfigFile,
+        AddLocalRPATH,
+        SwitchingHeaders,
+        TagImpliesTool,
+        Blob,
+    ]
+)
 
-main.Tool(SCons.Tool.FindTool(['gcc', 'clang'], main))
-main.Tool(SCons.Tool.FindTool(['g++', 'clang++'], main))
+main.Tool(SCons.Tool.FindTool(["gcc", "clang"], main))
+main.Tool(SCons.Tool.FindTool(["g++", "clang++"], main))
 
-Export('main')
+Export("main")
 
 from gem5_scons.util import get_termcap
+
 termcap = get_termcap()
 
 # Check that we have a C/C++ compiler
-if not ('CC' in main and 'CXX' in main):
+if not ("CC" in main and "CXX" in main):
     error("No C++ compiler installed (package g++ on Ubuntu and RedHat)")
 
 # Find default configuration & binary.
-default_target = environ.get('M5_DEFAULT_BINARY', None)
+default_target = environ.get("M5_DEFAULT_BINARY", None)
 if default_target:
     Default(default_target)
 
 # If no target is set, even a default, print help instead.
 if not BUILD_TARGETS:
     warning("No target specified, and no default.")
-    SetOption('help', True)
+    SetOption("help", True)
 
-buildopts_dir = Dir('#build_opts')
-buildopts = list([f for f in os.listdir(buildopts_dir.abspath) if
-        isfile(os.path.join(buildopts_dir.abspath, f))])
+buildopts_dir = Dir("#build_opts")
+buildopts = list(
+    [
+        f
+        for f in os.listdir(buildopts_dir.abspath)
+        if isfile(os.path.join(buildopts_dir.abspath, f))
+    ]
+)
 buildopts.sort()
 
-buildopt_list = '\n'.join(' ' * 10 + buildopt for buildopt in buildopts)
+buildopt_list = "\n".join(" " * 10 + buildopt for buildopt in buildopts)
 
-Help(f"""
+Help(
+    f"""
 Targets:
         To build gem5 using a predefined configuration, use a target with
         a directory called "build" in the path, followed by a directory named
@@ -282,7 +361,9 @@ Targets:
         RISCV, etc.). This command creates a compile_commands.json in the
         respective build directory. You can generate a compile_commands.json
         only with scons version 4.0+.
-""", append=True)
+""",
+    append=True,
+)
 
 
 ########################################################################
@@ -293,17 +374,18 @@ Targets:
 ########################################################################
 
 kconfig_actions = (
-    'defconfig',
-    'guiconfig',
-    'listnewconfig',
-    'menuconfig',
-    'oldconfig',
-    'olddefconfig',
-    'savedefconfig',
-    'setconfig',
+    "defconfig",
+    "guiconfig",
+    "listnewconfig",
+    "menuconfig",
+    "oldconfig",
+    "olddefconfig",
+    "savedefconfig",
+    "setconfig",
 )
 
-Help("""
+Help(
+    """
 Kconfig:
         In addition to the default configs, you can also create your own
         configs, or edit one that already exists. To use one of the kconfig
@@ -380,16 +462,22 @@ Kconfig tools:
         line. For example, to enable gem5's built in systemc kernel:
 
         scons setconfig build_foo/bar USE_SYSTEMC=y
-""", append=True)
+""",
+    append=True,
+)
 
 # Take a list of paths (or SCons Nodes) and return a list with all
 # paths made absolute and ~-expanded.  Paths will be interpreted
 # relative to the launch directory unless a different root is provided
 
+
 def makePathAbsolute(path, root=GetLaunchDir()):
     return abspath(os.path.join(root, expanduser(str(path))))
+
+
 def makePathListAbsolute(path_list, root=GetLaunchDir()):
     return [makePathAbsolute(p, root) for p in path_list]
+
 
 if BUILD_TARGETS and BUILD_TARGETS[0] in kconfig_actions:
     # The build targets are really arguments for the kconfig action.
@@ -398,7 +486,7 @@ if BUILD_TARGETS and BUILD_TARGETS[0] in kconfig_actions:
 
     kconfig_action = kconfig_args[0]
     if len(kconfig_args) < 2:
-        error(f'Missing arguments for kconfig action {kconfig_action}')
+        error(f"Missing arguments for kconfig action {kconfig_action}")
     dir_to_configure = makePathAbsolute(kconfig_args[1])
 
     kconfig_args = kconfig_args[2:]
@@ -428,16 +516,16 @@ else:
 #
 ########################################################################
 
-base_dir = Dir('#src').abspath
-Export('base_dir')
+base_dir = Dir("#src").abspath
+Export("base_dir")
 
 # the ext directory should be on the #includes path
-main.Append(CPPPATH=[Dir('ext')])
+main.Append(CPPPATH=[Dir("ext")])
 
 # Add shared top-level headers
-main.Prepend(CPPPATH=Dir('include'))
-if not GetOption('duplicate_sources'):
-    main.Prepend(CPPPATH=Dir('src'))
+main.Prepend(CPPPATH=Dir("include"))
+if not GetOption("duplicate_sources"):
+    main.Prepend(CPPPATH=Dir("src"))
 
 
 ########################################################################
@@ -447,32 +535,41 @@ if not GetOption('duplicate_sources'):
 ########################################################################
 
 # Path to the llvm-config binary
-llvm_config = 'llvm-config'
+llvm_config = "llvm-config"
 
 # Add LLVM-specific CPP flags
-main.Append(CPPFLAGS=Split(subprocess.check_output(
-    [llvm_config, '--cppflags']).decode()))
+main.Append(
+    CPPFLAGS=Split(
+        subprocess.check_output([llvm_config, "--cppflags"]).decode()
+    )
+)
 
 # Add LLVM library paths
-main.Append(LIBPATH=Split(subprocess.check_output(
-    [llvm_config, '--libdir']).decode()))
+main.Append(
+    LIBPATH=Split(subprocess.check_output([llvm_config, "--libdir"]).decode())
+)
 
 # Link against all LLVM libraries
-main.Append(LIBS=Split(subprocess.check_output(
-    [llvm_config, '--libs', 'all']).decode()))
+main.Append(
+    LIBS=Split(
+        subprocess.check_output([llvm_config, "--libs", "all"]).decode()
+    )
+)
 
 # Add LLVM include directory to the search path
-main.Append(CPPPATH=Split(subprocess.check_output(
-    [llvm_config, '--includedir']).decode()))
+main.Append(
+    CPPPATH=Split(
+        subprocess.check_output([llvm_config, "--includedir"]).decode()
+    )
+)
 
 # Define LLVM-specific preprocessor macros
-main.Append(CPPDEFINES=[
-    'LLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING=1'
-])
+main.Append(CPPDEFINES=["LLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING=1"])
 
 # Configure runtime library paths for LLVM
-main.Append(RPATH=Split(subprocess.check_output(
-    [llvm_config, '--libdir']).decode()))
+main.Append(
+    RPATH=Split(subprocess.check_output([llvm_config, "--libdir"]).decode())
+)
 
 
 ########################################################################
@@ -483,32 +580,34 @@ main.Append(RPATH=Split(subprocess.check_output(
 ########################################################################
 
 # Initialize the Link-Time Optimization (LTO) flags
-main['LTO_CCFLAGS'] = []
-main['LTO_LINKFLAGS'] = []
+main["LTO_CCFLAGS"] = []
+main["LTO_LINKFLAGS"] = []
 
 # According to the readme, tcmalloc works best if the compiler doesn't
 # assume that we're using the builtin malloc and friends. These flags
 # are compiler-specific, so we need to set them after we detect which
 # compiler we're using.
-main['TCMALLOC_CCFLAGS'] = []
+main["TCMALLOC_CCFLAGS"] = []
 
-CXX_version = readCommand([main['CXX'], '--version'], exception=False)
+CXX_version = readCommand([main["CXX"], "--version"], exception=False)
 
-main['GCC'] = CXX_version and CXX_version.find('g++') >= 0
-main['CLANG'] = CXX_version and CXX_version.find('clang') >= 0
-if main['GCC'] + main['CLANG'] > 1:
-    error('Two compilers enabled at once?')
+main["GCC"] = CXX_version and CXX_version.find("g++") >= 0
+main["CLANG"] = CXX_version and CXX_version.find("clang") >= 0
+if main["GCC"] + main["CLANG"] > 1:
+    error("Two compilers enabled at once?")
 
 # Find the gem5 binary target architecture (usually host architecture). The
 # "Target: <target>" is consistent accross gcc and clang at the time of
 # writting this.
-bin_target_arch = readCommand([main['CXX'], '--verbose'], exception=False)
+bin_target_arch = readCommand([main["CXX"], "--verbose"], exception=False)
 main["BIN_TARGET_ARCH"] = (
     "x86_64"
     if bin_target_arch.find("Target: x86_64") != -1
-    else "aarch64"
-    if bin_target_arch.find("Target: aarch64") != -1
-    else "unknown"
+    else (
+        "aarch64"
+        if bin_target_arch.find("Target: aarch64") != -1
+        else "unknown"
+    )
 )
 
 ########################################################################
@@ -517,7 +616,8 @@ main["BIN_TARGET_ARCH"] = (
 #
 ########################################################################
 
-main['USE_PYTHON'] = not GetOption('without_python')
+main["USE_PYTHON"] = not GetOption("without_python")
+
 
 def config_embedded_python(env):
     # Find Python include and library directories for embedding the
@@ -525,57 +625,65 @@ def config_embedded_python(env):
     # includes and linker flags. If you want to link in an alternate version
     # of python, override the PYTHON_CONFIG variable.
 
-    python_config = env.Detect(env['PYTHON_CONFIG'])
+    python_config = env.Detect(env["PYTHON_CONFIG"])
     if python_config is None:
-        error("Can't find a suitable python-config, tried "
-              f"{env['PYTHON_CONFIG']}")
+        error(
+            "Can't find a suitable python-config, tried "
+            f"{env['PYTHON_CONFIG']}"
+        )
 
     print(f"Info: Using Python config: {python_config}")
 
-    cmd = [python_config, '--ldflags', '--includes']
+    cmd = [python_config, "--ldflags", "--includes"]
 
     # Starting in Python 3.8 the --embed flag is required. Use it if supported.
     with gem5_scons.Configure(env) as conf:
-        if conf.TryAction(f'@{python_config} --embed')[0]:
-            cmd.append('--embed')
+        if conf.TryAction(f"@{python_config} --embed")[0]:
+            cmd.append("--embed")
 
     def flag_filter(env, cmd_output, unique=True):
         # Since this function does not use the `unique` param, one should not
         # pass any value to this param.
-        assert(unique==True)
+        assert unique == True
         flags = cmd_output.split()
-        prefixes = ('-l', '-L', '-I')
+        prefixes = ("-l", "-L", "-I")
         is_useful = lambda x: any(x.startswith(prefix) for prefix in prefixes)
         useful_flags = list(filter(is_useful, flags))
-        env.MergeFlags(' '.join(useful_flags))
+        env.MergeFlags(" ".join(useful_flags))
 
     env.ParseConfig(cmd, flag_filter)
 
-    env.Prepend(CPPPATH=Dir('ext/pybind11/include/'))
+    env.Prepend(CPPPATH=Dir("ext/pybind11/include/"))
 
     with gem5_scons.Configure(env) as conf:
         # verify that this stuff works
-        if not conf.CheckHeader('Python.h', '<>'):
-            error("Check failed for Python.h header.\n",
-                  "Two possible reasons:\n"
-                  "1. Python headers are not installed (You can install the "
-                  "package python-dev on Ubuntu and RedHat)\n"
-                  "2. SCons is using a wrong C compiler. This can happen if "
-                  "CC has the wrong value.\n"
-                  f"CC = {env['CC']}")
+        if not conf.CheckHeader("Python.h", "<>"):
+            error(
+                "Check failed for Python.h header.\n",
+                "Two possible reasons:\n"
+                "1. Python headers are not installed (You can install the "
+                "package python-dev on Ubuntu and RedHat)\n"
+                "2. SCons is using a wrong C compiler. This can happen if "
+                "CC has the wrong value.\n"
+                f"CC = {env['CC']}",
+            )
         py_version = conf.CheckPythonLib()
         if not py_version:
             error("Can't find a working Python installation")
 
     # Found a working Python installation. Check if it meets minimum
     # requirements.
-    ver_string = '.'.join(map(str, py_version))
+    ver_string = ".".join(map(str, py_version))
     if py_version[0] < 3 or (py_version[0] == 3 and py_version[1] < 6):
-        error('Embedded python library 3.6 or newer required, found '
-              f'{ver_string}.')
+        error(
+            "Embedded python library 3.6 or newer required, found "
+            f"{ver_string}."
+        )
     elif py_version[0] > 3:
-        warning('Embedded python library too new. '
-                f'Python 3 expected, found {ver_string}.')
+        warning(
+            "Embedded python library too new. "
+            f"Python 3 expected, found {ver_string}."
+        )
 
 
 ########################################################################
@@ -587,17 +695,17 @@ def config_embedded_python(env):
 for variant_path in variant_paths:
     # Make a copy of the build-root environment to use for this config.
     env = main.Clone()
-    env['BUILDDIR'] = variant_path
+    env["BUILDDIR"] = variant_path
 
     try:
         # try-except section is required because
         # SConsEnvironmentError/UserError exception raises if FindTool
         # can't find a tool module. This exeption rises BEFORE check
         # that tool exists and makes FindTool function useless in some way.
-        cdb_tool = SCons.Tool.FindTool(['compilation_db'], env)
+        cdb_tool = SCons.Tool.FindTool(["compilation_db"], env)
 
         if cdb_tool:
-            env['COMPILATIONDB_USE_ABSPATH'] = True
+            env["COMPILATIONDB_USE_ABSPATH"] = True
             env.Tool(cdb_tool)
 
             cdb_path = f"{variant_path}/compile_commands.json"
@@ -606,184 +714,226 @@ for variant_path in variant_paths:
         # Looks like different scons versions raise different exeptions
         pass
 
-    gem5_build = os.path.join(variant_path, 'gem5.build')
-    env['GEM5BUILD'] = gem5_build
+    gem5_build = os.path.join(variant_path, "gem5.build")
+    env["GEM5BUILD"] = gem5_build
     Execute(Mkdir(gem5_build))
 
-    config_file = Dir(gem5_build).File('config')
-    kconfig_file = Dir(gem5_build).File('Kconfig')
-    gem5_kconfig_file = Dir('#src').File('Kconfig')
+    config_file = Dir(gem5_build).File("config")
+    kconfig_file = Dir(gem5_build).File("Kconfig")
+    gem5_kconfig_file = Dir("#src").File("Kconfig")
 
-    env.SConsignFile(os.path.join(gem5_build, 'sconsign'))
+    env.SConsignFile(os.path.join(gem5_build, "sconsign"))
 
     # Set up default C++ compiler flags
-    if env['GCC'] or env['CLANG']:
+    if env["GCC"] or env["CLANG"]:
         # As gcc and clang share many flags, do the common parts here
-        env.Append(CCFLAGS=['-pipe'])
-        env.Append(CCFLAGS=['-fno-strict-aliasing'])
+        env.Append(CCFLAGS=["-pipe"])
+        env.Append(CCFLAGS=["-fno-strict-aliasing"])
 
         # Enable -Wall and -Wextra and then disable the few warnings that
         # we consistently violate
-        env.Append(CCFLAGS=['-Wall', '-Wundef', '-Wextra',
-                            '-Wno-sign-compare', '-Wno-unused-parameter'])
+        env.Append(
+            CCFLAGS=[
+                "-Wall",
+                "-Wundef",
+                "-Wextra",
+                "-Wno-sign-compare",
+                "-Wno-unused-parameter",
+            ]
+        )
 
         # We always compile using C++17
-        env.Append(CXXFLAGS=['-std=c++17'])
+        env.Append(CXXFLAGS=["-std=c++17"])
 
-        if sys.platform.startswith('freebsd'):
-            env.Append(CCFLAGS=['-I/usr/local/include'])
-            env.Append(CXXFLAGS=['-I/usr/local/include'])
+        if sys.platform.startswith("freebsd"):
+            env.Append(CCFLAGS=["-I/usr/local/include"])
+            env.Append(CXXFLAGS=["-I/usr/local/include"])
             # On FreeBSD we need libthr.
-            env.Append(LIBS=['thr'])
+            env.Append(LIBS=["thr"])
 
         with gem5_scons.Configure(env) as conf:
-            conf.CheckLinkFlag('-Wl,--as-needed')
+            conf.CheckLinkFlag("-Wl,--as-needed")
 
-        want_libcxx = GetOption('with_libcxx')
+        want_libcxx = GetOption("with_libcxx")
         if want_libcxx:
             with gem5_scons.Configure(env) as conf:
                 # Try using libc++ if it supports the <filesystem> library.
-                code = '#include <filesystem>\nint main() { return 0; }'
-                if (not conf.CheckCxxFlag('-stdlib=libc++') or
-                    not conf.CheckLinkFlag('-stdlib=libc++', code=code)
-                ):
-                    error('Requested libc++ but it is not usable')
+                code = "#include <filesystem>\nint main() { return 0; }"
+                if not conf.CheckCxxFlag(
+                    "-stdlib=libc++"
+                ) or not conf.CheckLinkFlag("-stdlib=libc++", code=code):
+                    error("Requested libc++ but it is not usable")
 
-        linker = GetOption('linker')
+        linker = GetOption("linker")
         if linker:
             with gem5_scons.Configure(env) as conf:
-                if not conf.CheckLinkFlag(f'-fuse-ld={linker}'):
+                if not conf.CheckLinkFlag(f"-fuse-ld={linker}"):
                     # check mold support for gcc older than 12.1.0
-                    if linker == 'mold' and \
-                       (env['GCC'] and \
-                           compareVersions(env['CXXVERSION'],
-                                           "12.1.0") < 0) and \
-                       ((isdir('/usr/libexec/mold') and \
-                           conf.CheckLinkFlag('-B/usr/libexec/mold')) or \
-                       (isdir('/usr/local/libexec/mold') and \
-                           conf.CheckLinkFlag('-B/usr/local/libexec/mold'))):
-                        pass # support mold
+                    if (
+                        linker == "mold"
+                        and (
+                            env["GCC"]
+                            and compareVersions(env["CXXVERSION"], "12.1.0")
+                            < 0
+                        )
+                        and (
+                            (
+                                isdir("/usr/libexec/mold")
+                                and conf.CheckLinkFlag("-B/usr/libexec/mold")
+                            )
+                            or (
+                                isdir("/usr/local/libexec/mold")
+                                and conf.CheckLinkFlag(
+                                    "-B/usr/local/libexec/mold"
+                                )
+                            )
+                        )
+                    ):
+                        pass  # support mold
                     else:
                         error(f'Linker "{linker}" is not supported')
-                if linker == 'gold' and not GetOption('with_lto'):
+                if linker == "gold" and not GetOption("with_lto"):
                     # Tell the gold linker to use threads. The gold linker
                     # segfaults if both threads and LTO are enabled.
-                    conf.CheckLinkFlag('-Wl,--threads')
+                    conf.CheckLinkFlag("-Wl,--threads")
                     conf.CheckLinkFlag(
-                            '-Wl,--thread-count=%d' % GetOption('num_jobs'))
+                        "-Wl,--thread-count=%d" % GetOption("num_jobs")
+                    )
 
         with gem5_scons.Configure(env) as conf:
-            ld_optimize_memory_usage = GetOption('limit_ld_memory_usage')
+            ld_optimize_memory_usage = GetOption("limit_ld_memory_usage")
             if ld_optimize_memory_usage:
-                if conf.CheckLinkFlag('-Wl,--no-keep-memory'):
-                    env.Append(LINKFLAGS=['-Wl,--no-keep-memory'])
+                if conf.CheckLinkFlag("-Wl,--no-keep-memory"):
+                    env.Append(LINKFLAGS=["-Wl,--no-keep-memory"])
                 else:
                     error("Unable to use --no-keep-memory with the linker")
 
-        debug_fission = GetOption('debug_fission')
+        debug_fission = GetOption("debug_fission")
         if debug_fission:
             with gem5_scons.Configure(env) as conf:
                 if not conf.CheckCxxFlag(
-                    '-gsplit-dwarf'
-                ) or not conf.CheckLinkFlag('-gsplit-dwarf'):
-                    error('Debug fission is not supported in the toolchain')
+                    "-gsplit-dwarf"
+                ) or not conf.CheckLinkFlag("-gsplit-dwarf"):
+                    error("Debug fission is not supported in the toolchain")
 
         # Treat warnings as errors but white list some warnings that we
         # want to allow (e.g., deprecation warnings).
-        env.Append(CCFLAGS=['-Werror',
-                             '-Wno-error=deprecated-declarations',
-                             '-Wno-error=deprecated',
-                            ])
+        env.Append(
+            CCFLAGS=[
+                "-Werror",
+                "-Wno-error=deprecated-declarations",
+                "-Wno-error=deprecated",
+            ]
+        )
     else:
-        error('\n'.join((
-              "Don't know what compiler options to use for your compiler.",
-              "compiler: " + env['CXX'],
-              "version: " + CXX_version.replace('\n', '<nl>') if
-                    CXX_version else 'COMMAND NOT FOUND!',
-              "If you're trying to use a compiler other than GCC",
-              "or clang, there appears to be something wrong with your",
-              "environment.",
-              "",
-              "If you are trying to use a compiler other than those listed",
-              "above you will need to ease fix SConstruct and ",
-              "src/SConscript to support that compiler.")))
+        error(
+            "\n".join(
+                (
+                    "Don't know what options to use for your compiler",
+                    "Compiler: " + env["CXX"],
+                    (
+                        "version: " + CXX_version.replace("\n", "<nl>")
+                        if CXX_version
+                        else "COMMAND NOT FOUND!"
+                    ),
+                    "If you're trying to use a compiler other than GCC",
+                    "or clang, there appears to be something wrong with your",
+                    "environment.",
+                    "",
+                    "If you're trying to use a compiler other than those",
+                    "listed above you will need to ease fix SConstruct and ",
+                    "src/SConscript to support that compiler.",
+                )
+            )
+        )
 
-    if env['GCC']:
+    if env["GCC"]:
         gcc_min_version = "11"
         gcc_max_version = "14.2"
-        gcc_version = env['CXXVERSION']
-        if compareVersions(gcc_version, gcc_min_version) < 0 or \
-              compareVersions(gcc_version, gcc_max_version) > 0:
+        gcc_version = env["CXXVERSION"]
+        if (
+            compareVersions(gcc_version, gcc_min_version) < 0
+            or compareVersions(gcc_version, gcc_max_version) > 0
+        ):
             warning(
-                f'Detected GCC version {gcc_version} is not officially '
-                f'supported.\n'f'gem5 supports GCC v{gcc_min_version} up '
-                f'to v{gcc_max_version}.\n'
+                f"Detected GCC version {gcc_version} is not officially "
+                f"supported.\n"
+                f"gem5 supports GCC v{gcc_min_version} up "
+                f"to v{gcc_max_version}.\n"
             )
-
 
         # Add the appropriate Link-Time Optimization (LTO) flags if
         # `--with-lto` is set.
-        if GetOption('with_lto'):
+        if GetOption("with_lto"):
             # g++ uses "make" to parallelize LTO. The program can be overriden
             # with the environment variable "MAKE", but we currently make no
             # attempt to plumb that variable through.
-            parallelism = ''
-            if env.Detect('make'):
-                parallelism = '=%d' % GetOption('num_jobs')
+            parallelism = ""
+            if env.Detect("make"):
+                parallelism = "=%d" % GetOption("num_jobs")
             else:
-                warning('"make" not found, link time optimization will be '
-                        'single threaded.')
+                warning(
+                    '"make" not found, link time optimization will be '
+                    "single threaded."
+                )
 
-            for var in 'LTO_CCFLAGS', 'LTO_LINKFLAGS':
+            for var in "LTO_CCFLAGS", "LTO_LINKFLAGS":
                 # Use the same amount of jobs for LTO as scons.
-                env[var] = ['-flto%s' % parallelism]
+                env[var] = ["-flto%s" % parallelism]
 
-        env.Append(TCMALLOC_CCFLAGS=[
-            '-fno-builtin-malloc', '-fno-builtin-calloc',
-            '-fno-builtin-realloc', '-fno-builtin-free'])
+        env.Append(
+            TCMALLOC_CCFLAGS=[
+                "-fno-builtin-malloc",
+                "-fno-builtin-calloc",
+                "-fno-builtin-realloc",
+                "-fno-builtin-free",
+            ]
+        )
 
-    elif env['CLANG']:
+    elif env["CLANG"]:
         clang_min_version = "14"
         clang_max_version = "19"
-        clang_version = env['CXXVERSION']
-        if compareVersions(clang_version, clang_min_version) < 0 or \
-              compareVersions(clang_version, clang_max_version) > 0:
+        clang_version = env["CXXVERSION"]
+        if (
+            compareVersions(clang_version, clang_min_version) < 0
+            or compareVersions(clang_version, clang_max_version) > 0
+        ):
             warning(
-                f'Detected Clang version {clang_version} is not officially '
-                f'supported.\n'f'gem5 supports Clang v{clang_min_version} up '
-                f'to v{clang_max_version}.\n'
+                f"Detected Clang version {clang_version} is not officially "
+                f"supported.\n"
+                f"gem5 supports Clang v{clang_min_version} up "
+                f"to v{clang_max_version}.\n"
             )
         # Set the Link-Time Optimization (LTO) flags if enabled.
-        if GetOption('with_lto'):
-            for var in 'LTO_CCFLAGS', 'LTO_LINKFLAGS':
-                env[var] = ['-flto']
+        if GetOption("with_lto"):
+            for var in "LTO_CCFLAGS", "LTO_LINKFLAGS":
+                env[var] = ["-flto"]
 
         # clang has a few additional warnings that we disable.
         with gem5_scons.Configure(env) as conf:
-            conf.CheckCxxFlag('-Wno-c99-designator')
-            conf.CheckCxxFlag('-Wno-defaulted-function-deleted')
+            conf.CheckCxxFlag("-Wno-c99-designator")
+            conf.CheckCxxFlag("-Wno-defaulted-function-deleted")
 
-        env.Append(TCMALLOC_CCFLAGS=['-fno-builtin'])
+        env.Append(TCMALLOC_CCFLAGS=["-fno-builtin"])
 
         # On Mac OS X/Darwin we need to also use libc++ (part of XCode) as
         # opposed to libstdc++, as the later is dated.
         if not want_libcxx and sys.platform == "darwin":
-            env.Append(CXXFLAGS=['-stdlib=libc++'])
-            env.Append(LIBS=['c++'])
+            env.Append(CXXFLAGS=["-stdlib=libc++"])
+            env.Append(LIBS=["c++"])
 
-    if sys.platform == 'cygwin':
+    if sys.platform == "cygwin":
         # cygwin has some header file issues...
         env.Append(CCFLAGS=["-Wno-uninitialized"])
 
-
-    if not GetOption('no_compress_debug'):
+    if not GetOption("no_compress_debug"):
         with gem5_scons.Configure(env) as conf:
-            if not conf.CheckCxxFlag('-gz'):
+            if not conf.CheckCxxFlag("-gz"):
                 warning("Can't enable object file debug section compression")
-            if not conf.CheckLinkFlag('-gz'):
+            if not conf.CheckLinkFlag("-gz"):
                 warning("Can't enable executable debug section compression")
 
-    if env['USE_PYTHON']:
+    if env["USE_PYTHON"]:
         config_embedded_python(env)
         gem5py_env = env.Clone()
     else:
@@ -791,41 +941,51 @@ for variant_path in variant_paths:
         config_embedded_python(gem5py_env)
 
     # Add sanitizers flags
-    sanitizers=[]
-    if GetOption('with_ubsan'):
-        sanitizers.append('undefined')
-    if GetOption('with_asan'):
-        if env['GCC']:
+    sanitizers = []
+    if GetOption("with_ubsan"):
+        sanitizers.append("undefined")
+    if GetOption("with_asan"):
+        if env["GCC"]:
             # Address sanitizer is not supported with GCC. Please see Github
             # Issue https://github.com/gem5/gem5/issues/916 for more details.
-            warning("Address Sanitizer is not supported with GCC. "
-                    "This option will be ignored.")
+            warning(
+                "Address Sanitizer is not supported with GCC. "
+                "This option will be ignored."
+            )
         else:
             # Available for llvm >= 3.1. A requirement by the build system.
-            sanitizers.append('address')
-            suppressions_file = Dir('util').File('lsan-suppressions')\
-                                .get_abspath()
-            suppressions_opt = 'suppressions=%s' % suppressions_file
-            suppressions_opts = ':'.join([suppressions_opt,
-                                        'print_suppressions=0'])
-            env['ENV']['LSAN_OPTIONS'] = suppressions_opts
+            sanitizers.append("address")
+            suppressions_file = (
+                Dir("util").File("lsan-suppressions").get_abspath()
+            )
+            suppressions_opt = "suppressions=%s" % suppressions_file
+            suppressions_opts = ":".join(
+                [suppressions_opt, "print_suppressions=0"]
+            )
+            env["ENV"]["LSAN_OPTIONS"] = suppressions_opts
             print()
-            warning('To suppress false positive leaks, set the LSAN_OPTIONS '
-                    'environment variable to "%s" when running gem5' %
-                    suppressions_opts)
-            warning('LSAN_OPTIONS=%s' % suppressions_opts)
+            warning(
+                "To suppress false positive leaks, set the LSAN_OPTIONS "
+                'environment variable to "%s" when running gem5'
+                % suppressions_opts
+            )
+            warning("LSAN_OPTIONS=%s" % suppressions_opts)
             print()
     if sanitizers:
-        sanitizers = ','.join(sanitizers)
-        if env['GCC'] or env['CLANG']:
+        sanitizers = ",".join(sanitizers)
+        if env["GCC"] or env["CLANG"]:
             libsan = (
-                ['-static-libubsan', '-static-libasan']
-                if env['GCC']
-                else ['-static-libsan']
+                ["-static-libubsan", "-static-libasan"]
+                if env["GCC"]
+                else ["-static-libsan"]
             )
-            env.Append(CCFLAGS=['-fsanitize=%s' % sanitizers,
-                                 '-fno-omit-frame-pointer'],
-                       LINKFLAGS=['-fsanitize=%s' % sanitizers] + libsan)
+            env.Append(
+                CCFLAGS=[
+                    "-fsanitize=%s" % sanitizers,
+                    "-fno-omit-frame-pointer",
+                ],
+                LINKFLAGS=["-fsanitize=%s" % sanitizers] + libsan,
+            )
 
             if main["BIN_TARGET_ARCH"] == "x86_64":
                 # Sanitizers can enlarge binary size drammatically, north of
@@ -839,8 +999,8 @@ for variant_path in variant_paths:
                 # performance cost so it should not be enabled in all cases.
                 # This should still be a very happy medium for
                 # non-perf-critical sanitized builds.
-                env.Append(CCFLAGS='-mcmodel=medium')
-                env.Append(LINKFLAGS='-mcmodel=medium')
+                env.Append(CCFLAGS="-mcmodel=medium")
+                env.Append(LINKFLAGS="-mcmodel=medium")
             elif main["BIN_TARGET_ARCH"] == "aarch64":
                 # aarch64 default code model is small but with different
                 # constrains than for x86_64. With aarch64, the small code
@@ -857,49 +1017,57 @@ for variant_path in variant_paths:
                     "(e.g., ALL/gem5.debug with sanitizers enabled)."
                 )
         else:
-            warning("Don't know how to enable %s sanitizer(s) for your "
-                    "compiler." % sanitizers)
+            warning(
+                "Don't know how to enable %s sanitizer(s) for your "
+                "compiler." % sanitizers
+            )
 
     # Bare minimum environment that only includes python
-    gem5py_env.Append(CCFLAGS=['${GEM5PY_CCFLAGS_EXTRA}'])
-    gem5py_env.Append(LINKFLAGS=['${GEM5PY_LINKFLAGS_EXTRA}'])
+    gem5py_env.Append(CCFLAGS=["${GEM5PY_CCFLAGS_EXTRA}"])
+    gem5py_env.Append(LINKFLAGS=["${GEM5PY_LINKFLAGS_EXTRA}"])
 
-    if GetOption('gprof') and GetOption('pprof'):
-        error('Only one type of profiling should be enabled at a time')
-    if GetOption('gprof'):
-        env.Append(CCFLAGS=['-g', '-pg'], LINKFLAGS=['-pg'])
-    if GetOption('pprof'):
-        env.Append(CCFLAGS=['-g'],
-                LINKFLAGS=['-Wl,--no-as-needed', '-lprofiler',
-                    '-Wl,--as-needed'])
+    if GetOption("gprof") and GetOption("pprof"):
+        error("Only one type of profiling should be enabled at a time")
+    if GetOption("gprof"):
+        env.Append(CCFLAGS=["-g", "-pg"], LINKFLAGS=["-pg"])
+    if GetOption("pprof"):
+        env.Append(
+            CCFLAGS=["-g"],
+            LINKFLAGS=["-Wl,--no-as-needed", "-lprofiler", "-Wl,--as-needed"],
+        )
 
-    env['HAVE_PKG_CONFIG'] = env.Detect('pkg-config') == 'pkg-config'
+    env["HAVE_PKG_CONFIG"] = env.Detect("pkg-config") == "pkg-config"
 
     with gem5_scons.Configure(env) as conf:
         # On Solaris you need to use libsocket for socket ops
         if not conf.CheckLibWithHeader(
-                [None, 'socket'], 'sys/socket.h', 'C++',
-                call='accept(0,0,0);'):
-           error("Can't find library with socket calls (e.g. accept()).")
+            [None, "socket"], "sys/socket.h", "C++", call="accept(0,0,0);"
+        ):
+            error("Can't find library with socket calls (e.g. accept()).")
 
-        if not conf.CheckLibWithHeader('z', 'zlib.h', 'C++',
-                                       call='zlibVersion();'):
-            error('Did not find needed zlib compression library '
-                  'and/or zlib.h header file.\n'
-                  'Please install zlib and try again.')
+        if not conf.CheckLibWithHeader(
+            "z", "zlib.h", "C++", call="zlibVersion();"
+        ):
+            error(
+                "Did not find needed zlib compression library "
+                "and/or zlib.h header file.\n"
+                "Please install zlib and try again."
+            )
 
-    if not GetOption('without_tcmalloc'):
+    if not GetOption("without_tcmalloc"):
         with gem5_scons.Configure(env) as conf:
-            if conf.CheckLib('tcmalloc_minimal'):
-                conf.env.Append(CCFLAGS=conf.env['TCMALLOC_CCFLAGS'])
-            elif conf.CheckLib('tcmalloc'):
-                conf.env.Append(CCFLAGS=conf.env['TCMALLOC_CCFLAGS'])
+            if conf.CheckLib("tcmalloc_minimal"):
+                conf.env.Append(CCFLAGS=conf.env["TCMALLOC_CCFLAGS"])
+            elif conf.CheckLib("tcmalloc"):
+                conf.env.Append(CCFLAGS=conf.env["TCMALLOC_CCFLAGS"])
             else:
-                warning("You can get a 12% performance improvement by "
-                        "installing tcmalloc (libgoogle-perftools-dev package "
-                        "on Ubuntu or RedHat).")
+                warning(
+                    "You can get a 12% performance improvement by "
+                    "installing tcmalloc (libgoogle-perftools-dev package "
+                    "on Ubuntu or RedHat)."
+                )
 
-    if not GetOption('silent'):
+    if not GetOption("silent"):
         print("Building in", variant_path)
 
     # variant_dir is the tail component of build path, and is used to
@@ -915,56 +1083,60 @@ for variant_path in variant_paths:
 
     # Register a callback to call after all SConsopts files have been read.
     after_sconsopts_callbacks = []
+
     def AfterSConsopts(cb):
         after_sconsopts_callbacks.append(cb)
-    Export('AfterSConsopts')
 
-    extras_file = os.path.join(gem5_build, 'extras')
+    Export("AfterSConsopts")
+
+    extras_file = os.path.join(gem5_build, "extras")
     extras_var = Variables(extras_file, args=ARGUMENTS)
 
-    extras_var.Add(('EXTRAS', 'Add extra directories to the compilation', ''))
+    extras_var.Add(("EXTRAS", "Add extra directories to the compilation", ""))
 
     # Apply current settings for EXTRAS to env.
     extras_var.Update(env)
 
     # Parse EXTRAS variable to build list of all directories where we're
     # look for sources etc.  This list is exported as extras_dir_list.
-    if env['EXTRAS']:
-        extras_dir_list = makePathListAbsolute(env['EXTRAS'].split(':'))
+    if env["EXTRAS"]:
+        extras_dir_list = makePathListAbsolute(env["EXTRAS"].split(":"))
     else:
         extras_dir_list = []
 
-    Export('extras_dir_list')
+    Export("extras_dir_list")
 
     # Generate a Kconfig that will source the main gem5 one, and any in any
     # EXTRAS directories.
-    kconfig_base_py = Dir('#build_tools').File('kconfig_base.py')
-    kconfig_base_cmd_parts = [f'"{kconfig_base_py}" "{kconfig_file.abspath}"',
-            f'"{gem5_kconfig_file.abspath}"']
+    kconfig_base_py = Dir("#build_tools").File("kconfig_base.py")
+    kconfig_base_cmd_parts = [
+        f'"{kconfig_base_py}" "{kconfig_file.abspath}"',
+        f'"{gem5_kconfig_file.abspath}"',
+    ]
     for ed in extras_dir_list:
         kconfig_base_cmd_parts.append(f'"{ed}"')
-    kconfig_base_cmd = ' '.join(kconfig_base_cmd_parts)
+    kconfig_base_cmd = " ".join(kconfig_base_cmd_parts)
     if env.Execute(kconfig_base_cmd) != 0:
         error("Failed to build base Kconfig file")
 
     # Variables which were determined with Configure.
-    env['CONF'] = {}
+    env["CONF"] = {}
 
     # Walk the tree and execute all SConsopts scripts that wil add to the
     # above variables
-    if GetOption('verbose'):
+    if GetOption("verbose"):
         print("Reading SConsopts")
 
     def trySConsopts(dir):
-        sconsopts_path = os.path.join(dir, 'SConsopts')
+        sconsopts_path = os.path.join(dir, "SConsopts")
         if not isfile(sconsopts_path):
             return
-        if GetOption('verbose'):
+        if GetOption("verbose"):
             print("Reading", sconsopts_path)
-        SConscript(sconsopts_path, exports={'main': env})
+        SConscript(sconsopts_path, exports={"main": env})
 
-    trySConsopts(Dir('#').abspath)
-    for bdir in [ base_dir ] + extras_dir_list:
+    trySConsopts(Dir("#").abspath)
+    for bdir in [base_dir] + extras_dir_list:
         if not isdir(bdir):
             error("Directory '%s' does not exist." % bdir)
         for root, dirs, files in os.walk(bdir):
@@ -976,81 +1148,97 @@ for variant_path in variant_paths:
 
     # Handle any requested kconfig action, then exit.
     if kconfig_action:
-        if kconfig_action == 'defconfig':
+        if kconfig_action == "defconfig":
             if len(kconfig_args) != 1:
-                error('Usage: scons defconfig <build dir> <defconfig file>')
+                error("Usage: scons defconfig <build dir> <defconfig file>")
             defconfig_path = makePathAbsolute(kconfig_args[0])
-            kconfig.defconfig(env, kconfig_file.abspath,
-                    defconfig_path, config_file.abspath)
-        elif kconfig_action == 'guiconfig':
-            kconfig.guiconfig(env, kconfig_file.abspath, config_file.abspath,
-                    variant_path)
-        elif kconfig_action == 'listnewconfig':
-            kconfig.listnewconfig(env, kconfig_file.abspath,
-                    config_file.abspath)
-        elif kconfig_action == 'menuconfig':
-            kconfig.menuconfig(env, kconfig_file.abspath, config_file.abspath,
-                    variant_path)
-        elif kconfig_action == 'oldconfig':
+            kconfig.defconfig(
+                env, kconfig_file.abspath, defconfig_path, config_file.abspath
+            )
+        elif kconfig_action == "guiconfig":
+            kconfig.guiconfig(
+                env, kconfig_file.abspath, config_file.abspath, variant_path
+            )
+        elif kconfig_action == "listnewconfig":
+            kconfig.listnewconfig(
+                env, kconfig_file.abspath, config_file.abspath
+            )
+        elif kconfig_action == "menuconfig":
+            kconfig.menuconfig(
+                env, kconfig_file.abspath, config_file.abspath, variant_path
+            )
+        elif kconfig_action == "oldconfig":
             kconfig.oldconfig(env, kconfig_file.abspath, config_file.abspath)
-        elif kconfig_action == 'olddefconfig':
-            kconfig.olddefconfig(env, kconfig_file.abspath,
-                    config_file.abspath)
-        elif kconfig_action == 'savedefconfig':
+        elif kconfig_action == "olddefconfig":
+            kconfig.olddefconfig(
+                env, kconfig_file.abspath, config_file.abspath
+            )
+        elif kconfig_action == "savedefconfig":
             if len(kconfig_args) != 1:
-                error('Usage: scons defconfig <build dir> <defconfig file>')
+                error("Usage: scons defconfig <build dir> <defconfig file>")
             defconfig_path = makePathAbsolute(kconfig_args[0])
-            kconfig.savedefconfig(env, kconfig_file.abspath,
-                    config_file.abspath, defconfig_path)
-        elif kconfig_action == 'setconfig':
-            kconfig.setconfig(env, kconfig_file.abspath, config_file.abspath,
-                    ARGUMENTS)
+            kconfig.savedefconfig(
+                env, kconfig_file.abspath, config_file.abspath, defconfig_path
+            )
+        elif kconfig_action == "setconfig":
+            kconfig.setconfig(
+                env, kconfig_file.abspath, config_file.abspath, ARGUMENTS
+            )
         Exit(0)
 
     # If no config exists yet, see if we know how to make one?
     if not isfile(config_file.abspath):
-        buildopts_file = Dir('#build_opts').File(variant_dir)
+        buildopts_file = Dir("#build_opts").File(variant_dir)
         if not isfile(buildopts_file.abspath):
-            error('No config found, and no implicit config recognized')
-        kconfig.defconfig(env, kconfig_file.abspath, buildopts_file.abspath,
-                config_file.abspath)
+            error("No config found, and no implicit config recognized")
+        kconfig.defconfig(
+            env,
+            kconfig_file.abspath,
+            buildopts_file.abspath,
+            config_file.abspath,
+        )
 
     kconfig.update_env(env, kconfig_file.abspath, config_file.abspath)
 
     # Do this after we save setting back, or else we'll tack on an
     # extra 'qdo' every time we run scons.
-    if env['CONF']['BATCH']:
-        env['CC']     = env['CONF']['BATCH_CMD'] + ' ' + env['CC']
-        env['CXX']    = env['CONF']['BATCH_CMD'] + ' ' + env['CXX']
-        env['AS']     = env['CONF']['BATCH_CMD'] + ' ' + env['AS']
-        env['AR']     = env['CONF']['BATCH_CMD'] + ' ' + env['AR']
-        env['RANLIB'] = env['CONF']['BATCH_CMD'] + ' ' + env['RANLIB']
+    if env["CONF"]["BATCH"]:
+        env["CC"] = env["CONF"]["BATCH_CMD"] + " " + env["CC"]
+        env["CXX"] = env["CONF"]["BATCH_CMD"] + " " + env["CXX"]
+        env["AS"] = env["CONF"]["BATCH_CMD"] + " " + env["AS"]
+        env["AR"] = env["CONF"]["BATCH_CMD"] + " " + env["AR"]
+        env["RANLIB"] = env["CONF"]["BATCH_CMD"] + " " + env["RANLIB"]
 
     # Cache build files in the supplied directory.
-    if env['CONF']['M5_BUILD_CACHE']:
-        print('Using build cache located at', env['CONF']['M5_BUILD_CACHE'])
-        CacheDir(env['CONF']['M5_BUILD_CACHE'])
+    if env["CONF"]["M5_BUILD_CACHE"]:
+        print("Using build cache located at", env["CONF"]["M5_BUILD_CACHE"])
+        CacheDir(env["CONF"]["M5_BUILD_CACHE"])
 
+    env.Append(CCFLAGS="$CCFLAGS_EXTRA")
+    env.Append(LINKFLAGS="$LINKFLAGS_EXTRA")
 
-    env.Append(CCFLAGS='$CCFLAGS_EXTRA')
-    env.Append(LINKFLAGS='$LINKFLAGS_EXTRA')
+    exports = ["env", "gem5py_env"]
 
-    exports=['env', 'gem5py_env']
-
-    ext_dir = Dir('#ext').abspath
-    variant_ext = os.path.join(variant_path, 'ext')
+    ext_dir = Dir("#ext").abspath
+    variant_ext = os.path.join(variant_path, "ext")
     for root, dirs, files in os.walk(ext_dir):
-        if 'SConscript' in files:
+        if "SConscript" in files:
             build_dir = os.path.relpath(root, ext_dir)
-            SConscript(os.path.join(root, 'SConscript'),
-                       variant_dir=os.path.join(variant_ext, build_dir),
-                       exports=exports,
-                       duplicate=GetOption('duplicate_sources'))
+            SConscript(
+                os.path.join(root, "SConscript"),
+                variant_dir=os.path.join(variant_ext, build_dir),
+                exports=exports,
+                duplicate=GetOption("duplicate_sources"),
+            )
 
     # The src/SConscript file sets up the build rules in 'env' according
     # to the configured variables.  It returns a list of environments,
     # one for each variant build (debug, opt, etc.)
-    SConscript('src/SConscript', variant_dir=variant_path, exports=exports,
-               duplicate=GetOption('duplicate_sources'))
+    SConscript(
+        "src/SConscript",
+        variant_dir=variant_path,
+        exports=exports,
+        duplicate=GetOption("duplicate_sources"),
+    )
 
 atexit.register(summarize_warnings)

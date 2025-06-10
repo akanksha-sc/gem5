@@ -1,17 +1,19 @@
 #ifndef __HWACC_LLVM_INSTRUCTION_HH__
 #define __HWACC_LLVM_INSTRUCTION_HH__
 
-#include <cstdlib>
-#include <iostream>
-#include <llvm/IR/Value.h>
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/Instructions.h>
-#include "basic_block.hh"
-#include "operand.hh"
-#include "debug_flags.hh"
-#include "value.hh"
-#include "mem_request.hh"
+#include <llvm/IR/Value.h>
+
+#include <cstdlib>
+#include <iostream>
+
 #include "../../HWModeling/src/hw_interface.hh"
+#include "basic_block.hh"
+#include "debug_flags.hh"
+#include "mem_request.hh"
+#include "operand.hh"
+#include "value.hh"
 
 namespace SALAM {
 
@@ -114,7 +116,8 @@ class Instruction : public Value
 //---------------------------------------------------------------------------//
 
 // SALAM-BadInstruction // --------------------------------------------------//
-class BadInstruction : public Instruction {
+class BadInstruction : public Instruction
+{
     // Used to draw hard dependencies, ie: ret
     private:
         std::vector< std::vector<uint64_t> > conditions;
@@ -149,7 +152,8 @@ createBadInst(uint64_t id, gem5::SimObject * owner, bool dbg,
 
 // SALAM-Ret // -------------------------------------------------------------//
 
-class Ret : public Instruction {
+class Ret : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -183,7 +187,8 @@ createRetInst(uint64_t id, gem5::SimObject * owner, bool dbg,
 
 // SALAM-Br // --------------------------------------------------------------//
 
-class Br : public Instruction {
+class Br : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -232,7 +237,8 @@ createBrInst(uint64_t id, gem5::SimObject * owner, bool dbg,
 typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::BasicBlock>> caseArgs;
 typedef std::vector< caseArgs> switchArgs;
 
-class Switch : public Instruction {
+class Switch : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -309,7 +315,8 @@ createAddInst(uint64_t id, gem5::SimObject * owner, bool dbg,
 
 // SALAM-FAdd // ------------------------------------------------------------//
 
-class FAdd : public Instruction {
+class FAdd : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -341,7 +348,8 @@ createFAddInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-Sub // -------------------------------------------------------------//
 
-class Sub : public Instruction {
+class Sub : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -373,7 +381,8 @@ createSubInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-FSub // -------------------------------------------------------------//
 
-class FSub : public Instruction {
+class FSub : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -405,7 +414,8 @@ createFSubInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-Mul // -------------------------------------------------------------//
 
-class Mul : public Instruction {
+class Mul : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -438,7 +448,8 @@ createMulInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-FMul // ------------------------------------------------------------//
 
-class FMul : public Instruction {
+class FMul : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -470,7 +481,8 @@ createFMulInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-UDiv // ------------------------------------------------------------//
 
-class UDiv : public Instruction {
+class UDiv : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -502,7 +514,8 @@ createUDivInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-SDiv // ------------------------------------------------------------//
 
-class SDiv : public Instruction {
+class SDiv : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -534,7 +547,8 @@ createSDivInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-FDiv // ------------------------------------------------------------//
 
-class FDiv : public Instruction {
+class FDiv : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -566,7 +580,8 @@ createFDivInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-URem // ------------------------------------------------------------//
 
-class URem : public Instruction {
+class URem : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -598,7 +613,8 @@ createURemInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-SRem // ------------------------------------------------------------//
 
-class SRem : public Instruction {
+class SRem : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -630,7 +646,8 @@ createSRemInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-FRem // ------------------------------------------------------------//
 
-class FRem : public Instruction {
+class FRem : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -666,7 +683,8 @@ createFRemInst(uint64_t id, gem5::SimObject * owner, bool dbg,
 
 // SALAM-Shl // -------------------------------------------------------------//
 
-class Shl : public Instruction {
+class Shl : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -698,7 +716,8 @@ createShlInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-LShr // ------------------------------------------------------------//
 
-class LShr : public Instruction {
+class LShr : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -730,7 +749,8 @@ createLShrInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-AShr // ------------------------------------------------------------//
 
-class AShr : public Instruction {
+class AShr : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -762,7 +782,8 @@ createAShrInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-And // -------------------------------------------------------------//
 
-class And : public Instruction {
+class And : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -794,7 +815,8 @@ createAndInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-Or // --------------------------------------------------------------//
 
-class Or : public Instruction {
+class Or : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -826,7 +848,8 @@ createOrInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-Xor // -------------------------------------------------------------//
 
-class Xor : public Instruction {
+class Xor : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -862,7 +885,8 @@ createXorInst(uint64_t id, gem5::SimObject * owner, bool dbg,
 
 // SALAM-Load // ------------------------------------------------------------//
 
-class Load : public Instruction {
+class Load : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -901,7 +925,8 @@ createLoadInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-Store // -----------------------------------------------------------//
 
-class Store : public Instruction {
+class Store : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -944,7 +969,8 @@ The GEP indecies will by APSInts, so cast to int64_t for calculating offset insi
 
 */
 
-class GetElementPtr : public Instruction {
+class GetElementPtr : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         std::vector<int64_t> offsets;
@@ -986,7 +1012,8 @@ createGetElementPtrInst(uint64_t id, gem5::SimObject * owner, bool dbg,
 
 // SALAM-Trunc // -----------------------------------------------------------//
 
-class Trunc : public Instruction {
+class Trunc : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1018,7 +1045,8 @@ createTruncInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-ZExt // ------------------------------------------------------------//
 
-class ZExt : public Instruction {
+class ZExt : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1050,7 +1078,8 @@ createZExtInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-SExt // ------------------------------------------------------------//
 
-class SExt : public Instruction {
+class SExt : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1084,7 +1113,8 @@ createSExtInst(uint64_t id, gem5::SimObject * owner, bool dbg,
 class FPToUI;
 void initializeFPToUIInst(SALAM::FPToUI &salamInstruction);
 
-class FPToUI : public Instruction {
+class FPToUI : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1116,7 +1146,8 @@ createFPToUIInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-FPToSI // ----------------------------------------------------------//
 
-class FPToSI : public Instruction {
+class FPToSI : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1149,7 +1180,8 @@ createFPToSIInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-UIToFP // ----------------------------------------------------------//
 
-class UIToFP : public Instruction {
+class UIToFP : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1181,7 +1213,8 @@ createUIToFPInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-SIToFP // ----------------------------------------------------------//
 
-class SIToFP : public Instruction {
+class SIToFP : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1213,7 +1246,8 @@ createSIToFPInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-FPTrunc // ---------------------------------------------------------//
 
-class FPTrunc : public Instruction {
+class FPTrunc : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1245,7 +1279,8 @@ createFPTruncInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-FPExt // -----------------------------------------------------------//
 
-class FPExt : public Instruction {
+class FPExt : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1277,7 +1312,8 @@ createFPExtInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-PtrToInt // --------------------------------------------------------//
 
-class PtrToInt : public Instruction {
+class PtrToInt : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1310,7 +1346,8 @@ createPtrToIntInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-IntToPtr // --------------------------------------------------------//
 
-class IntToPtr : public Instruction {
+class IntToPtr : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1341,7 +1378,8 @@ createIntToPtrInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t cycles,
               uint64_t fu);
 
-class BitCast : public Instruction {
+class BitCast : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1378,7 +1416,8 @@ createBitCastInst(uint64_t id, gem5::SimObject * owner, bool dbg,
 
 // SALAM-ICmp // ------------------------------------------------------------//
 
-class ICmp : public Instruction {
+class ICmp : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         uint64_t predicate;
@@ -1412,7 +1451,8 @@ createICmpInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-FCmp // ------------------------------------------------------------//
 
-class FCmp : public Instruction {
+class FCmp : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         uint64_t predicate;
@@ -1455,7 +1495,8 @@ typedef std::pair<std::shared_ptr<SALAM::BasicBlock>, std::shared_ptr<SALAM::Val
 //typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::Value> > phiNode;
 typedef std::map<std::shared_ptr<SALAM::BasicBlock>, std::shared_ptr<SALAM::Value>> phiArgsTy;
 
-class Phi : public Instruction {
+class Phi : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1495,7 +1536,8 @@ createPHIInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-Call // ------------------------------------------------------------//
 
-class Call : public Instruction {
+class Call : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
@@ -1529,7 +1571,8 @@ createCallInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 // SALAM-Select // ----------------------------------------------------------//
 
-class Select : public Instruction {
+class Select : public Instruction
+{
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params

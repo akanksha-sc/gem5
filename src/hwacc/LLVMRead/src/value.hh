@@ -1,18 +1,19 @@
 #ifndef __SALAM_VALUE_HH__
 #define __SALAM_VALUE_HH__
 
-#include "debug_flags.hh"
-#include "registers.hh"
-#include "llvm/IR/Value.h"
-#include "llvm/IR/GlobalVariable.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/ADT/APSInt.h"
-#include "llvm/ADT/APFloat.h"
 #include <llvm-c/Core.h>
 
 #include <map>
 #include <memory>
 #include <vector>
+
+#include "debug_flags.hh"
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/APSInt.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/Value.h"
+#include "registers.hh"
 
 namespace gem5
 {
@@ -62,7 +63,7 @@ class Value
                 Value_Debugger();
                 ~Value_Debugger() = default;
                 virtual void dumper(SALAM::Value * value);
-        }; 
+        };
 
         Value_Debugger* value_dbg;
         Value(const SALAM::Value &copy_val);
@@ -70,7 +71,7 @@ class Value
 
     public:
         /** Class Constructor.
-         * @param id 
+         * @param id
          */
         Value(uint64_t id, gem5::SimObject * _owner, bool _dbg);
         Value& operator = (Value &copy_val);

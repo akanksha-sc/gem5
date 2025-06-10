@@ -14,7 +14,8 @@ class StreamRequestPort;
  * functionality similar to the master port in the AXI-Stream specification.
  * This serves only as a base class.
  */
-class StreamResponsePort : public SimpleTimingPort {
+class StreamResponsePort : public SimpleTimingPort
+{
   friend class StreamRequestPort;
   private:
   protected:
@@ -77,7 +78,7 @@ class StreamResponsePortT : public StreamResponsePort
           return false;
         }
         // Make sure that the transfer is valid
-        if(!tvalid(pkt))
+        if (!tvalid(pkt))
           return false;
         // the SimpleTimingPort should not be used anywhere where there is
         // a need to deal with snoop responses and their flow control
@@ -140,7 +141,8 @@ class StreamResponsePortT : public StreamResponsePort
  * StreamResponsePort before initiating a transfer. Otherwise it functions like
  * a standard RequestPort.
  */
-class StreamRequestPort : public RequestPort {
+class StreamRequestPort : public RequestPort
+{
   private:
     StreamResponsePort *_stream_slave;
 

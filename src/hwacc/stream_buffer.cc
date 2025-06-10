@@ -1,9 +1,9 @@
 #include "hwacc/stream_buffer.hh"
-#include "debug/StreamBuffer.hh"
 
-#include "sim/system.hh"
-#include "mem/packet_access.hh"
 #include "debug/AddrRanges.hh"
+#include "debug/StreamBuffer.hh"
+#include "mem/packet_access.hh"
+#include "sim/system.hh"
 
 using namespace std;
 

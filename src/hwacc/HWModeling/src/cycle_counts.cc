@@ -1,5 +1,6 @@
 //------------------------------------------//
 #include "cycle_counts.hh"
+
 //------------------------------------------//
 
 CycleCounts::CycleCounts(const CycleCountsParams &p):

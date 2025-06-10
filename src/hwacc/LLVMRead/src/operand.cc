@@ -1,7 +1,6 @@
 #include "operand.hh"
 #include "sim/sim_object.hh"
 
-
 SALAM::Constant::Constant(uint64_t id, gem5::SimObject * owner, bool dbg) :
                           Value(id, owner, dbg)
 {

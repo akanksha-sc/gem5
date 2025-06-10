@@ -78,7 +78,8 @@
 
 namespace SALAM {
     // LLVM comparison codes
-    enum Predicate : unsigned {
+    enum Predicate : unsigned
+    {
         FCMP_FALSE = 0, FCMP_OEQ = 1, FCMP_OGT = 2, FCMP_OGE = 3,
         FCMP_OLT = 4, FCMP_OLE = 5, FCMP_ONE = 6, FCMP_ORD = 7,
         FCMP_UNO = 8, FCMP_UEQ = 9, FCMP_UGT = 10, FCMP_UGE = 11,

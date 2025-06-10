@@ -1,14 +1,15 @@
 #include "hwacc/scratchpad_memory.hh"
+
+#include <cstdio>
+#include <cstdlib>
+#include <iomanip>
+
 #include "base/random.hh"
 #include "base/trace.hh"
+#include "debug/Drain.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 #include "sim/system.hh"
-#include "debug/Drain.hh"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <iomanip>
 
 using namespace std;
 
@@ -68,7 +69,7 @@ ScratchpadMemory::isReady(Addr ad, size_t size, bool read) {
         Addr start_offset = ad - range.start();
         Addr end_offset = start_offset + size;
         for (auto i=start_offset; i<end_offset; i++) {
-            if (ready[i] == true) return false;
+            if (ready[i]) return false;
         }
     }
     return true;

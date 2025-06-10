@@ -1,10 +1,11 @@
 #ifndef __DATA_COLLECTION_HH__
 #define __DATA_COLLECTION_HH__
-#include <iostream>
-#include <iomanip>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
 
-class Results {
+class Results
+{
 
     private:
         //Performance
@@ -30,7 +31,7 @@ class Results {
         int loadStoreStall; //
         int loadCompStall;
         int loadStoreCompStall;
-        int storeCompStall;        
+        int storeCompStall;
         //Memory Stats
         int cache_ports;
         int local_ports;
@@ -320,10 +321,8 @@ class Results {
         void print();
         void simpleStats();
         void unitCorrections();
-                
+
 };
 
 
 #endif //__DATA_COLLECTION_HH__
-
-

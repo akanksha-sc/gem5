@@ -1,14 +1,15 @@
 #ifndef __HWACC_STREAM_DMA_HH__
 #define __HWACC_STREAM_DMA_HH__
 //------------------------------------------//
+#include "dev/arm/base_gic.hh"
+#include "dev/dma_device.hh"
 #include "hwacc/LLVMRead/src/debug_flags.hh"
 #include "hwacc/dma_write_fifo.hh"
-#include "params/StreamDma.hh"
-#include "dev/dma_device.hh"
-#include "dev/arm/base_gic.hh"
 #include "hwacc/stream_port.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
+#include "params/StreamDma.hh"
+
 //------------------------------------------//
 
 /*
@@ -75,7 +76,8 @@
 #define RD_INT_MASK             0x10
 #define WR_INT_MASK             0x20
 
-class StreamDma : public DmaDevice {
+class StreamDma : public DmaDevice
+{
   private:
     std::string devname;
     StreamResponsePortT<StreamDma> streamIn;
@@ -90,7 +92,7 @@ class StreamDma : public DmaDevice {
     Addr streamAddr;
     Addr streamSize;
     Addr statusAddr;
-	  Addr statusSize;
+          Addr statusSize;
     Tick memDelay;
     size_t rdBufferSize;
     size_t wrBufferSize;

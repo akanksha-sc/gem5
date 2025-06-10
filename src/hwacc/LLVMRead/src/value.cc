@@ -1,7 +1,7 @@
-#include "value.hh"
-#include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/Instruction.h"
+#include "llvm/Support/raw_ostream.h"
 #include "sim/sim_object.hh"
+#include "value.hh"
 
 SALAM::Value::Value(uint64_t id, gem5::SimObject * _owner, bool _dbg) {
     uid = id;

@@ -67,7 +67,8 @@ class LLVMInterface : public AccComputeUnit
     std::chrono::high_resolution_clock::time_point timeStart;
 
 
-    class ActiveFunction {
+    class ActiveFunction
+    {
       friend class LLVMInterface;
     private:
         LLVMInterface * owner;

@@ -1,26 +1,26 @@
 #ifndef __HWMODEL_HW_MODEL_HH__
 #define __HWMODEL_HW_MODEL_HH__
 
-#include "params/HWInterface.hh"
-#include "sim/sim_object.hh"
-
 #include "../../common/src/macros.hh"
-
 #include "cycle_counts.hh"
 #include "functional_units.hh"
 #include "instruction_config.hh"
+#include "params/HWInterface.hh"
 #include "salam_power_model.hh"
+#include "sim/sim_object.hh"
+
 //#include "cacti_wrapper.hh"
-#include "hw_statistics.hh"
-#include "simulator_config.hh"
-#include "opcodes.hh"
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
 #include <vector>
+
+#include "hw_statistics.hh"
+#include "opcodes.hh"
+#include "simulator_config.hh"
 
 using namespace gem5;
 
-class HWInterface : public SimObject 
+class HWInterface : public SimObject
 {
     friend class LLVMInterface;
     private:
@@ -38,7 +38,7 @@ class HWInterface : public SimObject
         HWInterface(const HWInterfaceParams &params);
         bool availableFunctionalUnit(uint64_t functional_unit);
         void clearFunctionalUnit(uint64_t functional_unit);
-        
+
 
 };
 

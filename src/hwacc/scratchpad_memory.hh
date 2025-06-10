@@ -1,10 +1,10 @@
 #ifndef __HWACC_SCRATCHPAD_MEMORY_HH__
 #define __HWACC_SCRATCHPAD_MEMORY_HH__
 
+#include <vector>
+
 #include "mem/abstract_mem.hh"
 #include "mem/port.hh"
-
-#include <vector>
 
 using namespace gem5;
 using namespace memory;

@@ -1,5 +1,6 @@
 //------------------------------------------//
 #include "hwacc/noncoherent_dma.hh"
+
 //------------------------------------------//
 
 NoncoherentDma::NoncoherentDma(const NoncoherentDmaParams &p)
@@ -108,7 +109,7 @@ NoncoherentDma::tick() {
             }
         }
     }
-	last_flag = *FLAGS;
+        last_flag = *FLAGS;
     if (!tickEvent.scheduled() && running) {
         schedule(tickEvent, curTick() + clock_period*1000);
     }

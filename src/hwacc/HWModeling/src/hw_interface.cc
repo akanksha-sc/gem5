@@ -10,7 +10,7 @@ HWInterface::HWInterface(const HWInterfaceParams &params) :
     salam_power_model(params.salam_power_model),
     simulator_config(params.simulator_config) { }
 
-bool 
+bool
 HWInterface::availableFunctionalUnit(uint64_t functional_unit) {
     //std::cout << "\n\n\nTest 1 - " <<  functional_unit << "\n\n\n";
     switch(functional_unit) {
@@ -31,7 +31,7 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit) {
                 functional_units->_bit_shifter->use_functional_unit();
                 return true;
             } break;
-        } 
+        }
         case INTBITWISE : {
             //std::cout << "\n\n\nTest 1 - 1 -";
             //std::cout << functional_units->_bitwise_operations->get_alias() << "\n\n\n";
@@ -89,8 +89,8 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit) {
             } break;
         }
         case COUNTER : { break; }
-        default: { 
-            // assert() 
+        default: {
+            // assert()
             return false;
         }
     }
@@ -100,43 +100,43 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit) {
 void
 HWInterface::clearFunctionalUnit(uint64_t unit) {
     switch(unit) {
-        case INTADDER : { 
+        case INTADDER : {
                 functional_units->_integer_adder->clear_functional_unit();
                 break;
-            } 
-        case INTMULTI : { 
+            }
+        case INTMULTI : {
                 functional_units->_integer_multiplier->clear_functional_unit();
                 break;
             }
-        case INTSHIFTER : { 
+        case INTSHIFTER : {
                 functional_units->_bit_shifter->clear_functional_unit();
                 break;
             }
-        case INTBITWISE : { 
+        case INTBITWISE : {
                 functional_units->_bitwise_operations->clear_functional_unit();
                 break;
             }
-        case FPSPADDER : { 
+        case FPSPADDER : {
                 functional_units->_float_adder->clear_functional_unit();
                 break;
             }
-        case FPDPADDER : { 
+        case FPDPADDER : {
                 functional_units->_double_adder->clear_functional_unit();
                 break;
             }
-        case FPSPMULTI : { 
+        case FPSPMULTI : {
                 functional_units->_float_multiplier->clear_functional_unit();
                 break;
             }
-        case FPSPDIVID : { 
+        case FPSPDIVID : {
                 functional_units->_float_divider->clear_functional_unit();
                 break;
             }
-        case FPDPMULTI : { 
+        case FPDPMULTI : {
                 functional_units->_double_multiplier->clear_functional_unit();
                 break;
             }
-        case FPDPDIVID : { 
+        case FPDPDIVID : {
                 functional_units->_double_divider->clear_functional_unit();
                 break;
             }
@@ -144,13 +144,13 @@ HWInterface::clearFunctionalUnit(uint64_t unit) {
         case GETELEMENTPTR : { break; }
         case CONVERSION : { break; }
         case OTHERINST : { break; }
-        case REGISTER : { 
+        case REGISTER : {
                 functional_units->_bit_register->clear_functional_unit();
                 break;
             }
         case COUNTER : { break; }
-        default: { 
-            // assert() 
+        default: {
+            // assert()
         }
     }
 }
