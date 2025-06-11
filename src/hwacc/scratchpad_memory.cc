@@ -13,11 +13,11 @@
 
 using namespace std;
 
-/***************************************************************************************
+/*****************************************************************************
  * Scratchpad Scratchpad Device for Accelerators using CommMemInterface
  * Acts as a simple memory for external devices
  * Enables specialization of access for parent device
- **************************************************************************************/
+ ****************************************************************************/
 #include "debug/MemoryAccess.hh"
 
 ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams &p) :
@@ -42,7 +42,8 @@ ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams &p) :
     // Adding these events and signals for ".port"
     // const std::string releaseEventName = csprintf("%s_release[0]", name());
     const std::string releaseEventName = name() + "_release[0]";
-    releaseEvent.push_back(EventFunctionWrapper([this]{ release(); }, releaseEventName));
+    releaseEvent.push_back(EventFunctionWrapper([this]{ release(); },
+        releaseEventName));
     releaseTick.push_back(0);
     isBusy.push_back(false);
     retryReq.push_back(false);
@@ -91,7 +92,8 @@ tracePacket(System *sys, const char *label, PacketPtr pkt)
     int size = pkt->getSize();
     if (size == 1 || size == 2 || size == 4 || size == 8) {
         DPRINTF(MemoryAccess,"%s from %s of size %i on address %#x data "
-                "%#x %c\n", label, sys->getRequestorName(pkt->req->requestorId()),
+                "%#x %c\n", label,
+                sys->getRequestorName(pkt->req->requestorId()),
                 size, pkt->getAddr(), pkt->getUintX(ByteOrder::little),
                 pkt->req->isUncacheable() ? 'U' : 'C');
         return;
@@ -179,7 +181,8 @@ ScratchpadMemory::scratchpadAccess(PacketPtr pkt, bool validateAccess)
         }
         if (validateAccess) {
             if (!isReady(pkt->getAddr(),pkt->getSize(), true)) {
-                panic("Scratchpad read at address: 0x%lx is invalid! Sector has not been written yet!\n", pkt->getAddr());
+                panic("Scratchpad read at address: 0x%lx is invalid! "
+                "Sector has not been written yet!\n", pkt->getAddr());
             }
             if (resetOnScratchpadRead) {
                 Addr start_offset = pkt->getAddr() - range.start();
@@ -217,7 +220,8 @@ ScratchpadMemory::scratchpadAccess(PacketPtr pkt, bool validateAccess)
         }
         if (validateAccess) {
             if (!isReady(pkt->getAddr(),pkt->getSize(), false)) {
-                panic("Scratchpad write at address: 0x%lx is invalid! Sector has not been cleared yet!\n", pkt->getAddr());
+                panic("Scratchpad write at address: 0x%lx is invalid! "
+                "Sector has not been cleared yet!\n", pkt->getAddr());
             }
         }
         // Set ready bits on external writes
@@ -287,7 +291,8 @@ ScratchpadMemory::recvFunctional(PacketPtr pkt)
 }
 
 bool
-ScratchpadMemory::recvTimingReq(PacketPtr pkt, PortID recvPort, bool validateAccess)
+ScratchpadMemory::recvTimingReq(PacketPtr pkt, PortID recvPort,
+bool validateAccess)
 {
     panic_if(pkt->cacheResponding(), "Should not see packets where cache "
              "is responding");
@@ -445,17 +450,22 @@ ScratchpadMemory::getPort(const std::string &if_name, PortID idx)
     } else if (if_name == "spm_ports") {
         if (idx >= spm_ports.size()) {
             spm_ports.resize((idx+1), nullptr);
-            // const std::string releaseEventName = csprintf("%s_release[%d]", name(), (idx+1));
-            const std::string releaseEventName = name() + "_release[" + std::to_string(idx+1) + "]";
-            releaseEvent.resize((idx+2), EventFunctionWrapper([this]{ release(); }, releaseEventName));
+            // const std::string releaseEventName =
+            // csprintf("%s_release[%d]", name(), (idx+1));
+            const std::string releaseEventName = name() + "_release[" +
+                    std::to_string(idx+1) + "]";
+            releaseEvent.resize((idx+2),
+                EventFunctionWrapper([this]{ release(); }, releaseEventName));
             releaseTick.resize((idx+2), 0);
             isBusy.resize((idx+2), false);
             retryReq.resize((idx+2), false);
             retryResp.resize((idx+2), false);
         }
         if (spm_ports[idx] == nullptr) {
-            // const std::string portName = csprintf("%s.spm_ports[%d]", name(), idx);
-            const std::string portName = name() + ".spm_ports[" + std::to_string(idx) + "]";
+            // const std::string portName =
+            // csprintf("%s.spm_ports[%d]", name(), idx);
+            const std::string portName = name() + ".spm_ports[" +
+                    std::to_string(idx) + "]";
             spm_ports[idx] = new SPMPort(portName, this, idx);
         }
         return *spm_ports[idx];
@@ -467,7 +477,8 @@ DrainState
 ScratchpadMemory::drain()
 {
     if (!packetQueue.empty()) {
-        DPRINTF(Drain, "ScratchpadMemory Queue has requests, waiting to drain\n");
+        DPRINTF(Drain, "ScratchpadMemory Queue has requests, "
+                        "waiting to drain\n");
         return DrainState::Draining;
     } else {
         return DrainState::Drained;
@@ -517,9 +528,3 @@ ScratchpadMemory::MemoryPort::recvRespRetry()
 {
     memory.recvRespRetry(id);
 }
-
-// ScratchpadMemory*
-// ScratchpadMemoryParams::create()
-// {
-//     return new ScratchpadMemory(this);
-// }

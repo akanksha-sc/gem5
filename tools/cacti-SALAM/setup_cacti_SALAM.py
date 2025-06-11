@@ -25,7 +25,8 @@ def main():
     acc_bench_path = os.environ.get(ACC_BENCH_PATH_ENV_VAR)
     if not m5_path or not acc_bench_path:
         print(
-            f"Error: Environment variables M5_PATH and/or ACC_BENCH_PATH not set.",
+            f"Error: Environment variables M5_PATH and/or "
+            f"ACC_BENCH_PATH not set.",
             file=os.sys.stderr,
         )
         exit(1)
@@ -57,7 +58,8 @@ def main():
     print("Next, to run cacti-SALAM use run_cacti_salam.py\n")
     print("Usage: ./run_cacti_salam.py <path to benchmark configs list>")
     print(
-        "Each line of benchmark configs list contains </path/to/config> <benchmark name> <config>"
+        "Each line of benchmark configs list contains"
+        " </path/to/config> <benchmark name> <config>"
     )
     print("<benchmark name> and <config> are only used for grouping")
     print("==================================================================")

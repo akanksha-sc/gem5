@@ -10,7 +10,7 @@ using namespace gem5;
 class StreamRequestPort;
 
 /**
- * A StreamResponsePort is a specialization of a SimpleTimingPort meant to enable
+ * StreamResponsePort is a specialization of a SimpleTimingPort meant to enable
  * functionality similar to the master port in the AXI-Stream specification.
  * This serves only as a base class.
  */
@@ -35,7 +35,8 @@ class StreamResponsePort : public SimpleTimingPort
 };
 
 /**
- * Templated StreamResponsePort that functions similarly to the pio port on PioDevices.
+ * Templated StreamResponsePort that functions similarly to the pio port
+ * on PioDevices.
  */
 template <class Device>
 class StreamResponsePortT : public StreamResponsePort
@@ -62,7 +63,9 @@ class StreamResponsePortT : public StreamResponsePort
   Device *device;
 
     virtual bool tvalid(PacketPtr pkt) { return device->tvalid(pkt); }
-    virtual bool tvalid(size_t len, bool isRead) { return device->tvalid(len, isRead); }
+    virtual bool tvalid(size_t len, bool isRead) {
+            return device->tvalid(len, isRead);
+    }
 
     bool
     recvTimingReq(PacketPtr pkt) override {
@@ -210,7 +213,8 @@ class StatusPort : public SimpleTimingPort
 
   public:
     StatusPort(Device *dev, bool _read=true) :
-        SimpleTimingPort(dev->name() + ".status", dev), device(dev), read(_read)
+        SimpleTimingPort(dev->name() + ".status", dev), device(dev),
+        read(_read)
     {}
 };
 

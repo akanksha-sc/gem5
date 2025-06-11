@@ -89,11 +89,13 @@ class LLVMInterface : public AccComputeUnit
         bool dbg;
 
         inline bool uidActive(uint64_t id) {
-          return computeUIDActive(id) || readUIDActive(id) || writeUIDActive(id);
+          return computeUIDActive(id) || readUIDActive(id) ||
+                  writeUIDActive(id);
         }
 
         std::map<Addr, std::shared_ptr<SALAM::Instruction>> activeWrites;
-        inline void trackWrite(Addr writeAddr, std::shared_ptr<SALAM::Instruction> writeInst) {
+        inline void trackWrite(Addr writeAddr,
+        std::shared_ptr<SALAM::Instruction> writeInst) {
           activeWrites.insert({writeAddr, writeInst});
         }
         inline void untrackWrite(uint64_t writeAddr) {
@@ -104,11 +106,13 @@ class LLVMInterface : public AccComputeUnit
           return (activeWrites.find(writeAddr) != activeWrites.end());
         }
 
-        inline std::shared_ptr<SALAM::Instruction> getActiveWrite(uint64_t writeAddr) {
+        inline std::shared_ptr<SALAM::Instruction>
+        getActiveWrite(uint64_t writeAddr) {
           return activeWrites.find(writeAddr)->second;
         }
         // std::map<Addr, std::shared_ptr<SALAM::Instruction>> activeReads;
-        // inline void trackRead(Addr readAddr, std::shared_ptr<SALAM::Instruction> readInst) {
+        // inline void trackRead(Addr readAddr,
+        // std::shared_ptr<SALAM::Instruction> readInst) {
         //   activeReads.insert({readAddr, readInst});
         // }
         // inline void untrackRead(uint64_t readAddr) {
@@ -118,7 +122,8 @@ class LLVMInterface : public AccComputeUnit
         // inline bool readActive(uint64_t readAddr) {
         //   return (activeReads.find(readAddr) != activeReads.end());
         // }
-        // inline std::shared_ptr<SALAM::Instruction> getActiveRead(uint64_t readAddr) {
+        // inline std::shared_ptr<SALAM::Instruction>
+        // getActiveRead(uint64_t readAddr) {
         //   return activeReads.find(readAddr)->second;
         // }
         inline bool writeUIDActive(uint64_t uid) {
@@ -131,11 +136,13 @@ class LLVMInterface : public AccComputeUnit
           return (computeQueue.find(uid) != computeQueue.end());
         }
     public:
-        ActiveFunction(LLVMInterface * _owner, std::shared_ptr<SALAM::Function> _func,
+        ActiveFunction(LLVMInterface * _owner,
+                       std::shared_ptr<SALAM::Function> _func,
                        std::shared_ptr<SALAM::Instruction> _caller):
                        owner(_owner), func(_func), caller(_caller),
                        previousBB(nullptr) {
-                          scheduling_threshold = owner->getSchedulingThreshold();
+                          scheduling_threshold =
+                                  owner->getSchedulingThreshold();
                           lockstep = (owner->getLockstepStatus());
                           dbg = owner->debug();
                        }
@@ -146,7 +153,8 @@ class LLVMInterface : public AccComputeUnit
         void processQueues();
         void launch();
         inline bool queuesClear() {
-          return readQueue.empty() && writeQueue.empty() && computeQueue.empty();
+          return readQueue.empty() && writeQueue.empty() &&
+                  computeQueue.empty();
         }
         inline bool lockstepReady() {
           return !lockstep || queuesClear();
@@ -189,14 +197,23 @@ class LLVMInterface : public AccComputeUnit
     void endFunction(ActiveFunction * afunc);
     void launchRead(MemoryRequest * memReq, ActiveFunction * func);
     void launchWrite(MemoryRequest * memReq, ActiveFunction * func);
-    std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction *inst,
-                                                          uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createInstruction(
+            llvm::Instruction *inst, uint64_t id
+    );
     void dumpQueues();
     uint32_t getSchedulingThreshold() { return scheduling_threshold; }
-    void addSchedulingTime(std::chrono::duration<float> timeDelta) { schedulingTime = schedulingTime + timeDelta; }
-    void addQueueTime(std::chrono::duration<float> timeDelta) { queueProcessTime = queueProcessTime + timeDelta; }
-    void addComputeTime(std::chrono::duration<float> timeDelta) { computeTime = computeTime + timeDelta; }
-    void addHWTime(std::chrono::duration<float> timeDelta) { hwTime = hwTime + timeDelta; }
+    void addSchedulingTime(std::chrono::duration<float> timeDelta) {
+            schedulingTime = schedulingTime + timeDelta;
+    }
+    void addQueueTime(std::chrono::duration<float> timeDelta) {
+            queueProcessTime = queueProcessTime + timeDelta;
+    }
+    void addComputeTime(std::chrono::duration<float> timeDelta) {
+            computeTime = computeTime + timeDelta;
+    }
+    void addHWTime(std::chrono::duration<float> timeDelta) {
+            hwTime = hwTime + timeDelta;
+    }
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__

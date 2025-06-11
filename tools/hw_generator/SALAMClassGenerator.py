@@ -255,7 +255,8 @@ class FunctionalUnitGenerator:
                 "// GENERATED CONSTRUCTOR - DO NOT MODIFY\n"
             )
             self.fu_list_source_file.write(
-                "FunctionalUnits::FunctionalUnits(const FunctionalUnitsParams &params) :\n"
+                "FunctionalUnits::FunctionalUnits("
+                "const FunctionalUnitsParams &params) :\n"
             )
             self.fu_list_source_file.write("    SimObject(params),\n")
             for idx, fu_alias in enumerate(fu_list):
@@ -500,7 +501,8 @@ class FunctionalUnitGenerator:
                 "\t\tstd::string get_power_units() { return _power_units; }\n"
             )
             self.base_header_file.write(
-                "\t\tstd::string get_energy_units() { return _energy_units; }\n"
+                "\t\tstd::string get_energy_units()"
+                "{ return _energy_units; }\n"
             )
             self.base_header_file.write(
                 "\t\tstd::string get_time_units() { return _time_units; }\n"
@@ -542,13 +544,15 @@ class FunctionalUnitGenerator:
                 "\t\tvoid clear_functional_unit() { _in_use--; }\n"
             )
             self.base_header_file.write(
-                "\t\tvoid set_functional_unit_limit(uint64_t available) { _available = available; }\n"
+                "\t\tvoid set_functional_unit_limit(uint64_t available)"
+                "{ _available = available; }\n"
             )
             self.base_header_file.write(
                 "\t\tvoid inc_functional_unit_limit() { _available++; }\n"
             )
             self.base_header_file.write(
-                "\t\tuint64_t get_functional_unit_limit() { return _available; }\n\n"
+                "\t\tuint64_t get_functional_unit_limit()"
+                "{ return _available; }\n\n"
             )
             self.base_header_file.write(
                 "\t\tuint64_t get_in_use() { return _in_use; }\n"
@@ -872,7 +876,8 @@ class InstConfigGenerator:
             self.simobject_file.write("\ttype = 'InstConfig'\n")
             self.simobject_file.write("\t# gem5-SALAM attached header\n")
             self.simobject_file.write(
-                '\tcxx_header = "hwacc/HWModeling/src/instruction_config.hh"\n\n'
+                "\tcxx_header ="
+                '"hwacc/HWModeling/src/instruction_config.hh"\n\n'
             )
             for inst_name in self.inst_dict["instructions"].keys():
                 self.simobject_file.write(
@@ -1189,16 +1194,19 @@ class InstConfigGenerator:
 
             # Getters / Setters
             self.base_header_file.write(
-                "\t\tuint32_t get_functional_unit() { return _functional_unit; }\n"
+                "\t\tuint32_t get_functional_unit()"
+                "{ return _functional_unit; }\n"
             )
             self.base_header_file.write(
-                "\t\tuint32_t get_functional_unit_limit() { return _functional_unit_limit; }\n"
+                "\t\tuint32_t get_functional_unit_limit()"
+                "{ return _functional_unit_limit; }\n"
             )
             self.base_header_file.write(
                 "\t\tuint32_t get_opcode_num() { return _opcode_num; }\n"
             )
             self.base_header_file.write(
-                "\t\tuint32_t get_runtime_cycles() { return _runtime_cycles; }\n"
+                "\t\tuint32_t get_runtime_cycles()"
+                "{ return _runtime_cycles; }\n"
             )
 
             # end class body

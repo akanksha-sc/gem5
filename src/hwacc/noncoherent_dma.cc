@@ -17,10 +17,14 @@ NoncoherentDma::NoncoherentDma(const NoncoherentDmaParams &p)
     clock_period(p.clock_period),
     tickEvent([this]{tick();}, name()),
     accPort(this, sys, p.sid, p.ssid) {
-    memSideReadFifo = new DmaReadFifo(dmaPort, size_t(bufferSize/2), maxReqSize, maxPending);
-    memSideWriteFifo = new DmaWriteFifo(dmaPort, size_t(bufferSize/2), maxReqSize, maxPending);
-    accSideReadFifo = new DmaReadFifo(accPort, size_t(bufferSize/2), maxReqSize, maxPending);
-    accSideWriteFifo = new DmaWriteFifo(accPort, size_t(bufferSize/2), maxReqSize, maxPending);
+    memSideReadFifo = new DmaReadFifo(dmaPort, size_t(bufferSize/2),
+                    maxReqSize, maxPending);
+    memSideWriteFifo = new DmaWriteFifo(dmaPort, size_t(bufferSize/2),
+                    maxReqSize, maxPending);
+    accSideReadFifo = new DmaReadFifo(accPort, size_t(bufferSize/2),
+                    maxReqSize, maxPending);
+    accSideWriteFifo = new DmaWriteFifo(accPort, size_t(bufferSize/2),
+                    maxReqSize, maxPending);
     readFifo = nullptr;
     writeFifo = nullptr;
     mmreg = new uint8_t[pioSize];
@@ -75,7 +79,8 @@ NoncoherentDma::tick() {
         activeSrc = *SRC;
         activeDst = *DST;
         writesLeft = *LEN;
-        DPRINTF(NoncoherentDma, "SRC:0x%016x, DST:0x%016x, LEN:%d\n", activeSrc, activeDst, writesLeft);
+        DPRINTF(NoncoherentDma, "SRC:0x%016x, DST:0x%016x, LEN:%d\n",
+                activeSrc, activeDst, writesLeft);
         start_time = curTick();
         readFifo = getActiveReadFifo();
         writeFifo = getActiveWriteFifo();
@@ -105,7 +110,8 @@ NoncoherentDma::tick() {
                 //raise interrupts
                 gic->sendInt(intNum);
                 double xfer_time = (double)(curTick() - start_time) * (1e-6);
-                DPRINTF(NoncoherentDma, "Transfer completed in %f us\n", xfer_time);
+                DPRINTF(NoncoherentDma, "Transfer completed in %f us\n",
+                        xfer_time);
             }
         }
     }
@@ -117,7 +123,8 @@ NoncoherentDma::tick() {
 
 Tick
 NoncoherentDma::read(PacketPtr pkt) {
-    DPRINTF(DeviceMMR, "The address range associated with this DMA was read!\n");
+    DPRINTF(DeviceMMR,
+            "The address range associated with this DMA was read!\n");
 
     Addr offset = pkt->req->getPaddr() - pioAddr;
 
@@ -173,8 +180,3 @@ NoncoherentDma::getPort(const std::string &if_name, PortID idx)
     }
     return DmaDevice::getPort(if_name, idx);
 }
-
-// NoncoherentDma *
-// NoncoherentDmaParams::create() {
-//     return new NoncoherentDma(this);
-// }

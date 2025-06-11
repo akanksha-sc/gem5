@@ -11,7 +11,8 @@ class CycleCounts(SimObject):
     ### --- Do Not Modify Below This Line --- ###
     ### Templates
     ### YML Type: instruction
-    ## SALAM_OpCodeName = Param.UInt32(runtime_cycles, SALAM_OpCode " instruction runtime cycles.")
+    ## SALAM_OpCodeName = Param.UInt32(runtime_cycles,
+    ##     SALAM_OpCode " instruction runtime cycles.")
     ### -- Code Auto-Generated Below This Line -- ###
 
     counter = Param.UInt32(0, "Counter intructions runtime cycles.")

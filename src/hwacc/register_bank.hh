@@ -35,14 +35,19 @@ class RegisterBank : public AbstractMemory
       private:
         RegisterBank * memory;
       public:
-        RegPort(const std::string& _name, RegisterBank * _memory, PortID id=InvalidPortID) :
+        RegPort(const std::string& _name, RegisterBank * _memory,
+        PortID id=InvalidPortID) :
             ResponsePort(_name, id), memory(_memory) {}
       protected:
-        Tick recvAtomic(PacketPtr pkt) override { return memory->recvAtomic(pkt); };
+        Tick recvAtomic(PacketPtr pkt)
+                override { return memory->recvAtomic(pkt); };
         Tick recvAtomicBackdoor(
-                PacketPtr pkt, MemBackdoorPtr &_backdoor) override { return memory->recvAtomicBackdoor(pkt,_backdoor); };
-        void recvFunctional(PacketPtr pkt) override { memory->recvFunctional(pkt); };
-        bool recvTimingReq(PacketPtr pkt) override { return memory->recvTimingReq(pkt); };
+                PacketPtr pkt, MemBackdoorPtr &_backdoor)
+                override { return memory->recvAtomicBackdoor(pkt,_backdoor); };
+        void recvFunctional(PacketPtr pkt)
+                override { memory->recvFunctional(pkt); };
+        bool recvTimingReq(PacketPtr pkt)
+                override { return memory->recvTimingReq(pkt); };
         void recvRespRetry() override { memory->recvRespRetry(); };
         AddrRangeList getAddrRanges() const override {
             AddrRangeList ranges;
@@ -68,7 +73,8 @@ class RegisterBank : public AbstractMemory
             return ranges;
         }
       public:
-        LoadPort(const std::string& _name, RegisterBank * _memory, PortID id=InvalidPortID) :
+        LoadPort(const std::string& _name, RegisterBank * _memory,
+        PortID id=InvalidPortID) :
           SimpleTimingPort(_name, _memory), memory(_memory) {}
     };
 

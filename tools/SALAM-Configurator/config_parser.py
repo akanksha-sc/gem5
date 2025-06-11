@@ -226,7 +226,8 @@ class AccCluster:
                             # Don't need to change anything for cache
                             top_address = top_address
                         else:
-                            # Should never get here... but just in case throw an exception
+                            # Should never get here... but just in case
+                            # throw an exception
                             exceptionString = (
                                 "The Variable: "
                                 + name
@@ -261,7 +262,8 @@ class AccCluster:
     def genConfig(self):
         lines = []
         # Need to add some customization here. Consider this a placeholder
-        # Also need to edit AccCluster.py's addresses to match the gem5 supported ones
+        # Also need to edit AccCluster.py's addresses to match the gem5
+        # supported ones
         lines.append(
             "def build" + self.name + "(options, system, clstr):" + "\n"
         )
@@ -269,7 +271,8 @@ class AccCluster:
         lines.append("	local_high = " + hex(self.top_address))
         lines.append("	local_range = AddrRange(local_low, local_high)")
         lines.append(
-            "	external_range = [AddrRange(0x00000000, local_low-1), AddrRange(local_high+1, 0xFFFFFFFF)]"
+            "	external_range = [AddrRange(0x00000000, local_low-1),"
+            " AddrRange(local_high+1, 0xFFFFFFFF)]"
         )
         lines.append(
             "	system.iobus.mem_side_ports = clstr.local_bus.cpu_side_ports"
@@ -595,7 +598,8 @@ class Variable:
             self.resetOnRead = kwargs.get("ResetOnRead", True)
             self.readOnInvalid = kwargs.get("ReadOnInvalid", False)
             self.writeOnValid = kwargs.get("WriteOnValid", True)
-            # Append the default connection here... probably need to be more elegant
+            # Append the default connection here...
+            # probably need to be more elegant
             self.connections.append(PortedConnection(self.accName, self.ports))
             # Append other connections to the connections list
             if "Connections" in kwargs:
@@ -622,7 +626,8 @@ class Variable:
             self.accName = kwargs.get("AccName")
             self.size = kwargs.get("Size")
             self.address = kwargs.get("Address")
-            # Append the default connection here... probably need to be more elegant
+            # Append the default connection here...
+            # probably need to be more elegant
             self.connections.append(PortedConnection(self.accName, 1))
             # Append other connections to the connections list
             if "Connections" in kwargs:
@@ -684,7 +689,8 @@ class Variable:
             lines.append(
                 "spmRange = AddrRange(addr, addr + " + hex(self.size) + ")"
             )
-            # When appending convert all connections to lowercase for standardization
+            # When appending convert all connections to lowercase
+            # for standardization
             lines.append(
                 "clstr."
                 + self.name.lower()
@@ -754,7 +760,8 @@ class Variable:
             lines.append(
                 "regRange = AddrRange(addr, addr + " + hex(self.size) + ")"
             )
-            # When appending convert all connections to lowercase for standardization
+            # When appending convert all connections to lowercase
+            # for standardization
             lines.append(
                 "clstr."
                 + self.name.lower()

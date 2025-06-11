@@ -34,7 +34,8 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit) {
         }
         case INTBITWISE : {
             //std::cout << "\n\n\nTest 1 - 1 -";
-            //std::cout << functional_units->_bitwise_operations->get_alias() << "\n\n\n";
+            //std::cout << functional_units->_bitwise_operations->get_alias()
+            //<< "\n\n\n";
             if (functional_units->_bitwise_operations->is_available()) {
                 //std::cout << "\n\n\nTest 1 - 2\n\n\n";
                 functional_units->_bitwise_operations->use_functional_unit();

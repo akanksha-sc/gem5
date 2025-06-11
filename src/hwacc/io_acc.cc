@@ -1,7 +1,4 @@
-//------------------------------------------//
 #include "hwacc/io_acc.hh"
-
-//------------------------------------------//
 
 using namespace std;
 
@@ -54,7 +51,9 @@ IOAcc::MemSidePort::recvReqRetry() {
 void
 IOAcc::MemSidePort::sendPacket(PacketPtr pkt) {
     if (isStalled() || !sendTimingReq(pkt)) {
-        DPRINTF(IOAcc, "sendTiming failed in sendPacket(pkt->req->getPaddr()=0x%x)\n", (unsigned int)pkt->req->getPaddr());
+        DPRINTF(IOAcc,
+        "sendTiming failed in sendPacket(pkt->req->getPaddr()=0x%x)\n",
+        (unsigned int)pkt->req->getPaddr());
         setStalled(pkt);
     }
 }
@@ -62,7 +61,8 @@ IOAcc::MemSidePort::sendPacket(PacketPtr pkt) {
 void
 IOAcc::recvPacket(PacketPtr pkt) {
     if (pkt->isRead()) {
-        DPRINTF(IOAcc, "Done with a read. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
+        DPRINTF(IOAcc, "Done with a read. addr: 0x%x, size: %d\n",
+                pkt->req->getPaddr(), pkt->getSize());
         pkt->writeData(curData + (pkt->req->getPaddr() - beginAddr));
 
         for (int i = pkt->req->getPaddr() - beginAddr;
@@ -85,7 +85,8 @@ IOAcc::recvPacket(PacketPtr pkt) {
             processData();
         }
     } else {
-        DPRINTF(IOAcc, "Done with a write. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
+        DPRINTF(IOAcc, "Done with a write. addr: 0x%x, size: %d\n",
+                pkt->req->getPaddr(), pkt->getSize());
         writeDone += pkt->getSize();
         if (!(writeDone < totalLength)) {
             DPRINTF(IOAcc, "Done writing, completely done\n");
@@ -146,7 +147,8 @@ IOAcc::tryRead() {
     Request::Flags flags;
 
     if (readLeft <= 0) {
-        DPRINTF(IOAcc, "Something went wrong. Shouldn't try to read if there aren't reads left\n");
+        DPRINTF(IOAcc, "Something went wrong."
+        "Shouldn't try to read if there aren't reads left\n");
         return;
     }
 
@@ -158,8 +160,8 @@ IOAcc::tryRead() {
         size = cacheLineSize;
     }
     size = readLeft > (size - 1) ? size : readLeft;
-    //RequestPtr req = new Request(currentReadAddr, size, flags, masterId);
-    RequestPtr req = make_shared<Request>(currentReadAddr, size, flags, masterId);
+    RequestPtr req = make_shared<Request>(currentReadAddr, size, flags,
+                    masterId);
 
     DPRINTF(IOAcc, "Trying to read addr: 0x%x, %d bytes\n",
         req->getPaddr(), size);
@@ -188,7 +190,8 @@ IOAcc::tryRead() {
 void
 IOAcc::tryWrite() {
     if (writeLeft <= 0) {
-        DPRINTF(IOAcc, "Something went wrong. Shouldn't try to write if there aren't writes left\n");
+        DPRINTF(IOAcc, "Something went wrong."
+        "Shouldn't try to write if there aren't writes left\n");
         return;
     }
 
@@ -204,8 +207,8 @@ IOAcc::tryWrite() {
     Request::Flags flags;
     uint8_t *data = new uint8_t[size];
     std::memcpy(data, &curData[totalLength-writeLeft], size);
-    //RequestPtr req = new Request(currentWriteAddr, size, flags, masterId);
-    RequestPtr req = make_shared<Request>(currentWriteAddr, size, flags, masterId);
+    RequestPtr req = make_shared<Request>(currentWriteAddr, size, flags,
+        masterId);
     req->setExtraData((uint64_t)data);
 
 

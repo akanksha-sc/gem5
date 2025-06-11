@@ -16,23 +16,40 @@
     Steaming DMA device with 2 modes.
     1. Memory to Stream (MM2S)
     2. Stream to Memory (S2MM)
-    Data read from memory is stored in a FIFO buffer. Reads from the Buffer Access Range will read the FIFO, enabling use with
-    devices that make "addressable" memory requests. Writes to the Buffer Access Range will store into the write FIFO to be
-    writen back to memory later. Supports interrupts based on the number of Frames transmitted.
+    Data read from memory is stored in a FIFO buffer.
+    Reads from the Buffer Access Range will read the FIFO, enabling use with
+    devices that make "addressable" memory requests. Writes to the Buffer
+    Access Range will store into the write FIFO to be writen back to memory
+    later. Supports interrupts based on the number of Frames transmitted.
 
 
     Memory Mapped Register 32+N Bytes
-    | Buffer Access Range | WrFrameBuffSize | NumWrFrames | WrFrameSize | RdFrameBuffSize | NumRdFrames | RdFrameSize | Wr_Addr | Rd_Addr | Configs | Flags  |
-    |---------------------|-----------------|-------------|-------------|-----------------|-------------|-------------|---------|---------|---------|--------|
-    |       N Bytes       |     1 Bytes     |   1 Bytes   |   4 Bytes   |     1 Bytes     |   1 Bytes   |   4 Bytes   | 8 Bytes | 8 Bytes | 3 Bytes | 1 Byte |
 
-    Buffer Access Range - Reads/Writes from/to this address range access the internal Rd and Wr FIFOs. This is to enable access
-        by devices using "addressable" memory requests. The actual memory offset does not matter however.
-    WrFrameBuffSize - Number of Write frames actually stored in memory. Allows for ping-pong buffering in memory.
-    NumWrFrames - Total number of frames to write. Use '0' to enable unlimited frames.
+    | Buffer Access Range | WrFrameBuffSize | NumWrFrames | WrFrameSize |
+    |---------------------|-----------------|-------------|-------------|
+    |       N Bytes       |     1 Bytes     |   1 Bytes   |   4 Bytes   |
+
+    | RdFrameBuffSize | NumRdFrames | RdFrameSize | Wr_Addr | Rd_Addr |
+    |-----------------|-------------|-------------|---------|---------|
+    |     1 Bytes     |   1 Bytes   |   4 Bytes   | 8 Bytes | 8 Bytes |
+
+    | Configs | Flags  |
+    |---------|--------|
+    | 3 Bytes | 1 Byte |
+
+    Buffer Access Range - Reads/Writes from/to this address range access the
+        internal Rd and Wr FIFOs. This is to enable access by devices using
+        "addressable" memory requests. The actual memory offset does not
+        matter however.
+    WrFrameBuffSize - Number of Write frames actually stored in memory.
+        Allows for ping-pong buffering in memory.
+    NumWrFrames - Total number of frames to write. Use '0' to enable unlimited
+        frames.
     WrFrameSize - The size of a Write frame in Bytes.
-    RdFrameBuffSize - Number of Read frames actually stored in memory. Allows for ping-pong buffering in memory.
-    NumRdFrames - Total number of frames to read. Use '0' to enable unlimited frames.
+    RdFrameBuffSize - Number of Read frames actually stored in memory.
+        Allows for ping-pong buffering in memory.
+    NumRdFrames - Total number of frames to read. Use '0' to enable unlimited
+        frames.
     RdFrameSize - The size of a Read frame in Bytes.
     Wr_Addr - The base address to which we are writing the first frame.
     Rd_Addr - The base address from which the first frame is read.
@@ -43,8 +60,10 @@
     | 1 Byte  |   1 Byte   |   1 Byte   |
     23        15           7            0
 
-    RdIntFrame - Number of frames to read before raising interrupt '0' for never
-    WrIntFrame - Number of frames to write before raising interrupt '0' for never
+    RdIntFrame - Number of frames to read before raising interrupt '0'
+                 for never
+    WrIntFrame - Number of frames to write before raising interrupt '0'
+                 for never
 
     Flags Register
     | Unused | WrInt | RdInt | WrRunning | RdRunning | WrStart | RdStart |

@@ -11,7 +11,9 @@ class SimulatorConfig(SimObject):
     ### --- Do Not Modify Below This Line --- ###
     ### Templates
     ### YML Type: simulator_config.functional_unit
-    ## alias = Param.UInt32(limit, "Max Concurrent Functional Units, 0 = IR Defined")
+    ## alias = Param.UInt32(limit,
+    ##     "Max Concurrent Functional Units, 0 = IR Defined")
     ### YML Type: simulator_config
-    ## 'output_to_file' = Param.Bool(output_to_file, "Print Terminal Runtime Output to File")
+    ## 'output_to_file' = Param.Bool(output_to_file,
+    ##     "Print Terminal Runtime Output to File")
     ### -- Code Auto-Generated Below This Line -- ###

@@ -94,10 +94,12 @@ class Value
         gem5::SimObject * getOwner() { return owner; }
         bool debug() { return dbg; }
 
-        // Helper functions for setting the value of the return register directly from the value
-        // Using these functions will increment the write counters on tracked registers
-        // If you'd like to avoid incrementing write counters, directly pull the register and
-        // use its appropriate write function
+        // Helper functions for setting the value of the return register
+        // directly from the value
+        // Using these functions will increment the write counters on
+        // tracked registers
+        // If you'd like to avoid incrementing write counters, directly pull
+        // the register and use its appropriate write function
     #if USE_LLVM_AP_VALUES
         void setRegisterValue(const llvm::APInt &data);
         void setRegisterValue(const llvm::APFloat &data);
@@ -107,21 +109,35 @@ class Value
         void setRegisterValue(bool data);
         void setRegisterValue(std::shared_ptr<SALAM::Register> reg);
 
-        // Helper functions for getting the value of the return register directly from the value
-        // Using these functions will increment the read counters on tracked registers
-        // If you'd like to avoid incrementing read counters, directly pull the register and
-        // use its appropriate read function
-        virtual uint64_t getPtrRegValue() { return returnReg->getPtrData(); }
+        // Helper functions for getting the value of the return register
+        // directly from the value
+        // Using these functions will increment the read counters on
+        // tracked registers
+        // If you'd like to avoid incrementing read counters, directly pull
+        // the register and use its appropriate read function
+        virtual uint64_t getPtrRegValue() {
+                return returnReg->getPtrData();
+        }
     #if USE_LLVM_AP_VALUES
-        virtual llvm::APFloat getFloatRegValue() { return returnReg->getFloatData(); }
-        virtual llvm::APSInt getIntRegValue() { return returnReg->getIntData(); }
+        virtual llvm::APFloat getFloatRegValue() {
+                return returnReg->getFloatData();
+        }
+        virtual llvm::APSInt getIntRegValue() {
+                return returnReg->getIntData();
+        }
     #else
-        virtual uint64_t getFloatRegValue() { return returnReg->getFloatData(); }
+        virtual uint64_t getFloatRegValue() {
+                return returnReg->getFloatData();
+        }
         virtual float getFloatFromReg() { return returnReg->getFloat(); }
         virtual double getDoubleFromReg() { return returnReg->getDouble(); }
         virtual uint64_t getIntRegValue() { return returnReg->getIntData(); }
-        virtual uint64_t getUIntRegValue() { return returnReg->getUnsignedInt(); }
-        virtual int64_t getSIntRegValue() { return returnReg->getSignedInt(size); }
+        virtual uint64_t getUIntRegValue() {
+                return returnReg->getUnsignedInt();
+        }
+        virtual int64_t getSIntRegValue() {
+                return returnReg->getSignedInt(size);
+        }
     #endif
 
         virtual bool isConstant() { return false; }
@@ -135,7 +151,9 @@ class Value
         void value_dump() { if (dbg) value_dbg->dumper(this); }
         std::string registerDataString() { return returnReg->dataString(); }
         std::shared_ptr<SALAM::Value> clone() const { return createClone(); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const { return std::shared_ptr<SALAM::Value>(new SALAM::Value(*this)); }
+        virtual std::shared_ptr<SALAM::Value> createClone() const {
+                return std::shared_ptr<SALAM::Value>(new SALAM::Value(*this));
+        }
 
 };
 } // End SALAM Namespace

@@ -237,7 +237,8 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
     }
 
     void
-    SALAM::APFloatRegister::writeFloatData(uint64_t apf, size_t len, bool incWrites)
+    SALAM::APFloatRegister::writeFloatData(uint64_t apf, size_t len,
+        bool incWrites)
     {
         if (incWrites && tracked) writes++;
         std::memcpy(&data, &apf, len);
@@ -308,7 +309,8 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
     }
 
     void
-    SALAM::APIntRegister::writeIntData(uint64_t api, size_t len, bool incWrites)
+    SALAM::APIntRegister::writeIntData(uint64_t api, size_t len,
+        bool incWrites)
     {
         if (incWrites && tracked) writes++;
         std::memcpy(&data, &api, len);

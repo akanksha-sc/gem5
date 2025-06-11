@@ -48,7 +48,8 @@ tracePacket(System *sys, const char *label, PacketPtr pkt)
     int size = pkt->getSize();
     if (size == 1 || size == 2 || size == 4 || size == 8) {
         DPRINTF(MemoryAccess,"%s from %s of size %i on address %#x data "
-                "%#x %c\n", label, sys->getRequestorName(pkt->req->requestorId()),
+                "%#x %c\n", label,
+                sys->getRequestorName(pkt->req->requestorId()),
                 size, pkt->getAddr(), pkt->getUintX(ByteOrder::little),
                 pkt->req->isUncacheable() ? 'U' : 'C');
         return;
@@ -249,7 +250,8 @@ DrainState
 RegisterBank::drain()
 {
     if (!packetQueue.empty()) {
-        DPRINTF(Drain, "ScratchpadMemory Queue has requests, waiting to drain\n");
+        DPRINTF(Drain, "ScratchpadMemory Queue has requests, "
+                        "waiting to drain\n");
         return DrainState::Draining;
     } else {
         return DrainState::Drained;

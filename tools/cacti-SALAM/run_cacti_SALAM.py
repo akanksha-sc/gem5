@@ -49,12 +49,14 @@ def find_mem_objects(data):
         is_potential_mem = all(k in data for k in ("Name", "Size", "Ports"))
         if obj_type == "SPM" and is_potential_mem:
             print(
-                f"  Found SPM: {data['Name']} (Size: {data['Size']}, Ports: {data['Ports']})"
+                f"  Found SPM: {data['Name']} (Size: {data['Size']},"
+                f" Ports: {data['Ports']})"
             )
             spms_found.append(data)
         elif obj_type and obj_type != "SPM" and is_potential_mem:
             print(
-                f"  INFO: Ignoring non-SPM Var Type='{obj_type}' Name='{data.get('Name', 'N/A')}'"
+                f"  INFO: Ignoring non-SPM Var Type='{obj_type}'"
+                f" Name='{data.get('Name', 'N/A')}'"
             )
         if not (obj_type and is_potential_mem):
             for value in data.values():
@@ -83,7 +85,8 @@ def main():
 
     if not CACTI_EXE.is_file():
         sys.exit(
-            f"ERROR: CACTI executable not found at {CACTI_EXE}. Run setup script."
+            f"ERROR: CACTI executable not found at {CACTI_EXE}."
+            "Run setup script."
         )
     if not args.bench_list.is_file():
         sys.exit(f"ERROR: Benchmark list file not found: {args.bench_list}")
@@ -134,7 +137,8 @@ def main():
                 memobjects = find_mem_objects(yaml_data.get("acc_cluster", []))
             else:
                 print(
-                    f"Warning: Invalid YAML format in {config_path}, expected a dictionary.",
+                    f"Warning: Invalid YAML format in {config_path},"
+                    " expected a dictionary.",
                     file=sys.stderr,
                 )
         except FileNotFoundError:
@@ -189,7 +193,8 @@ def main():
                 run_size = max(spm_size, MIN_CACTI_SIZE)
 
                 print(
-                    f"  Running CACTI for {spm_name} (Size={run_size}, Ports={spm_ports})"
+                    f"  Running CACTI for"
+                    f"{spm_name} (Size={run_size}, Ports={spm_ports})"
                 )
                 # Generate temp config from template
                 modified_cfg_lines = []
@@ -215,12 +220,14 @@ def main():
 
                 if not size_replaced:
                     print(
-                        "Warning: '-size (bytes)' not found/replaced in template.",
+                        "Warning: '-size (bytes)' not"
+                        " found/replaced in template.",
                         file=sys.stderr,
                     )
                 if not ports_replaced:
                     print(
-                        "Warning: '-read-write port' not found/replaced in template.",
+                        "Warning: '-read-write port' not"
+                        " found/replaced in template.",
                         file=sys.stderr,
                     )
                 tmp_cfg_path = None
@@ -247,11 +254,13 @@ def main():
                         timeout=300,
                     )
                     f_out.write(
-                        f"# Output: {bench_name}/{sub_name}/{spm_name}\n{process.stdout or '<No stdout>'}\n"
+                        f"# Output: {bench_name}/{sub_name}/{spm_name}\n"
+                        f"{process.stdout or '<No stdout>'}\n"
                     )
                     if process.stderr:
                         f_err.write(
-                            f"# Stderr: {bench_name}/{sub_name}/{spm_name}\n{process.stderr}\n"
+                            f"# Stderr: {bench_name}/{sub_name}/{spm_name}\n"
+                            f"{process.stderr}\n"
                         )
 
                     # More robust check for CACTI success
@@ -261,7 +270,8 @@ def main():
                         or not CACTI_OUT_CSV.exists()
                     ):
                         print(
-                            f"  ERROR: CACTI failed for {spm_name}. Code: {process.returncode}. Check logs.",
+                            f"  ERROR: CACTI failed for {spm_name}."
+                            f" Code: {process.returncode}. Check logs.",
                             file=sys.stderr,
                         )
                         overall_cacti_success = False
@@ -276,7 +286,8 @@ def main():
                     overall_cacti_success = False
                 except Exception as e:
                     print(
-                        f"  ERROR: Exception during CACTI run for {spm_name}: {e}",
+                        f"  ERROR: Exception during CACTI run for"
+                        f" {spm_name}: {e}",
                         file=sys.stderr,
                     )
                     overall_cacti_success = False
@@ -326,12 +337,14 @@ def main():
                     results_csv.append([bench_name, sub_name, spm_name] + row)
             if num_results != len(spm_names_processed):
                 print(
-                    f"  Warning: Mismatch between result rows ({num_results}) and successful SPMs ({len(spm_names_processed)})",
+                    f"  Warning: Mismatch between result rows ({num_results})"
+                    f" and successful SPMs ({len(spm_names_processed)})",
                     file=sys.stderr,
                 )
         except Exception as e:
             print(
-                f"ERROR: Failed to process intermediate CSV {INTERMEDIATE_CSV}: {e}",
+                f"ERROR: Failed to process intermediate CSV"
+                f" {INTERMEDIATE_CSV}: {e}",
                 file=sys.stderr,
             )
             if args.delay > 0 and line_num < len(bench_lines):

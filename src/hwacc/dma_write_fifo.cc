@@ -205,7 +205,8 @@ DmaWriteFifo::handlePending()
 DrainState
 DmaWriteFifo::drain()
 {
-    return pendingRequests.empty() ? DrainState::Drained : DrainState::Draining;
+    return pendingRequests.empty() ?
+            DrainState::Drained : DrainState::Draining;
 }
 
 

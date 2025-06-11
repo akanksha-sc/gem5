@@ -43,7 +43,9 @@ class ScratchpadRequestPort : public RequestPort
     ScratchpadRequestPort(const std::string& _name, SimObject* _owner,
         PortID id=InvalidPortID) : RequestPort(_name, id) {}
     void setReadyStatus(bool r) { _spmslave->setReadyStatus(r); }
-    bool canAccess(Addr add, size_t len, bool read) { return _spmslave->canAccess(add, len, read); }
+    bool canAccess(Addr add, size_t len, bool read) {
+            return _spmslave->canAccess(add, len, read);
+    }
     void bind(Port &peer) override {
         auto *spmslave = dynamic_cast<ScratchpadResponsePort *>(&peer);
         if (spmslave) {
@@ -69,12 +71,6 @@ class ScratchpadMemory : public AbstractMemory
     bool initial;
     bool *ready;
   public:
-    // typedef ScratchpadMemoryParams Params;
-    // const Params *
-    // params() const
-    // {
-    //   return dynamic_cast<const Params *>(_params);
-    // }
     PARAMS(ScratchpadMemory);
     ScratchpadMemory(const ScratchpadMemoryParams &p);
     bool isReady(Addr ad, size_t size, bool read);
@@ -96,7 +92,8 @@ class ScratchpadMemory : public AbstractMemory
         const PacketPtr pkt;
         const PortID origin;
 
-        DeferredPacket(PacketPtr _pkt, Tick _tick, PortID _origin) : tick(_tick), pkt(_pkt), origin(_origin)
+        DeferredPacket(PacketPtr _pkt, Tick _tick, PortID _origin) :
+                tick(_tick), pkt(_pkt), origin(_origin)
         { }
     };
 
@@ -125,15 +122,21 @@ class ScratchpadMemory : public AbstractMemory
       private:
         ScratchpadMemory * memory;
       public:
-        SPMPort(const std::string& _name, ScratchpadMemory * _memory, PortID id=InvalidPortID) :
+        SPMPort(const std::string& _name, ScratchpadMemory * _memory,
+        PortID id=InvalidPortID) :
             ScratchpadResponsePort(_name, _memory, id), memory(_memory) {}
       protected:
-        bool canAccess(Addr add, size_t len, bool read) override { return memory->isReady(add, len, read); }
-        Tick recvAtomic(PacketPtr pkt) override { return memory->recvAtomic(pkt, true); };
+        bool canAccess(Addr add, size_t len, bool read)
+                override { return memory->isReady(add, len, read); }
+        Tick recvAtomic(PacketPtr pkt)
+                override { return memory->recvAtomic(pkt, true); };
         Tick recvAtomicBackdoor(
-                PacketPtr pkt, MemBackdoorPtr &_backdoor) override { return memory->recvAtomicBackdoor(pkt,_backdoor); };
-        void recvFunctional(PacketPtr pkt) override { memory->recvFunctional(pkt); };
-        bool recvTimingReq(PacketPtr pkt) override { return memory->recvTimingReq(pkt, id, true); };
+                PacketPtr pkt, MemBackdoorPtr &_backdoor)
+                override { return memory->recvAtomicBackdoor(pkt,_backdoor); };
+        void recvFunctional(PacketPtr pkt)
+                override { memory->recvFunctional(pkt); };
+        bool recvTimingReq(PacketPtr pkt)
+                override { return memory->recvTimingReq(pkt, id, true); };
         void recvRespRetry() override { memory->recvRespRetry(id); };
         AddrRangeList getAddrRanges() const override {
             AddrRangeList ranges;
@@ -231,7 +234,8 @@ class ScratchpadMemory : public AbstractMemory
     Tick recvAtomic(PacketPtr pkt, bool validateAccess=false);
     Tick recvAtomicBackdoor(PacketPtr pkt, MemBackdoorPtr &_backdoor);
     void recvFunctional(PacketPtr pkt);
-    bool recvTimingReq(PacketPtr pkt, PortID recvPort, bool validateAccess=false);
+    bool recvTimingReq(PacketPtr pkt, PortID recvPort,
+        bool validateAccess=false);
     void recvRespRetry(PortID id);
 };
 

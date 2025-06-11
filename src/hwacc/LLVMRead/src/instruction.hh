@@ -54,31 +54,47 @@ class Instruction : public Value
         bool isready = false;
     public:
         Instruction(uint64_t id, gem5::SimObject * owner, bool dbg); //
-        Instruction(uint64_t id, gem5::SimObject * owner, bool dbg, uint64_t OpCode); //
-        Instruction(uint64_t id, gem5::SimObject * owner, bool dbg, uint64_t OpCode, uint64_t cycles); //
-        Instruction(uint64_t id, gem5::SimObject * owner, bool dbg, uint64_t OpCode, uint64_t cycles, uint64_t functional_unit); //
+        Instruction(uint64_t id, gem5::SimObject * owner, bool dbg,
+                uint64_t OpCode); //
+        Instruction(uint64_t id, gem5::SimObject * owner, bool dbg,
+                uint64_t OpCode, uint64_t cycles); //
+        Instruction(uint64_t id, gem5::SimObject * owner, bool dbg,
+                uint64_t OpCode, uint64_t cycles, uint64_t functional_unit); //
         ~Instruction(); //
-        bool operator == (const std::shared_ptr<SALAM::Instruction> inst) const { return this->getUID() == inst->getUID(); }
-        bool operator != (const std::shared_ptr<SALAM::Instruction> inst) const { return !operator==(inst); }
-        virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList); //
-        virtual std::shared_ptr<SALAM::BasicBlock> getTarget()  { return nullptr; }
+        bool operator == (const std::shared_ptr<SALAM::Instruction> inst)
+                const { return this->getUID() == inst->getUID(); }
+        bool operator != (const std::shared_ptr<SALAM::Instruction> inst)
+                const { return !operator==(inst); }
+        virtual void initialize(llvm::Value * irval, irvmap * irmap,
+                SALAM::valueListTy * valueList); //
+        virtual std::shared_ptr<SALAM::BasicBlock> getTarget()  {
+                return nullptr;
+        }
         uint64_t getDependencyCount() { return dynamicDependencies.size(); }
         virtual uint64_t getCycleCount() { return cycleCount; }
         virtual uint64_t getOpode() { return llvmOpCode; }
         uint64_t getCurrentCycle() { return currentCycle; }
-        virtual valueListTy getStaticDependencies() const { return staticDependencies; }
-        std::map<uint64_t, std::shared_ptr<SALAM::Instruction>> getDynamicDependencies() const { return dynamicDependencies; }
-        std::shared_ptr<SALAM::Value> getStaticDependencies(int i) const { return staticDependencies.at(i); }
-        std::shared_ptr<SALAM::Value> getDynamicDependencies(int i) const { return dynamicDependencies.at(i); }
+        virtual valueListTy getStaticDependencies() const {
+                return staticDependencies;
+        }
+        std::map<uint64_t, std::shared_ptr<SALAM::Instruction>>
+                getDynamicDependencies() const { return dynamicDependencies; }
+        std::shared_ptr<SALAM::Value> getStaticDependencies(int i) const {
+                return staticDependencies.at(i);
+        }
+        std::shared_ptr<SALAM::Value> getDynamicDependencies(int i) const {
+                return dynamicDependencies.at(i);
+        }
         virtual std::vector<uint64_t> runtimeInitialize();
         void removeDynamicDependency(uint64_t opuid);
         void addRuntimeDependency(std::shared_ptr<SALAM::Instruction> dep) {
             dynamicDependencies.insert({dep->getUID(),dep});
         }
-        void addRuntimeUser(std::shared_ptr<SALAM::Instruction> dep) { dynamicUsers.push_back(dep); }
+        void addRuntimeUser(std::shared_ptr<SALAM::Instruction> dep) {
+                dynamicUsers.push_back(dep);
+        }
         void signalUsers();
         bool isCommitted() { return committed; }
-        //bool hasFunctionalUnit() { return (functional_unit != 0); }
         bool hasFunctionalUnit() { return false; }
         bool debug() { return dbg; }
         void linkOperands(const SALAM::Operand &newOp);
@@ -102,13 +118,22 @@ class Instruction : public Value
         virtual bool isInstruction() { return true; }
         virtual bool isLoadingInternal() { return false; }
         virtual bool isLatchingBrExiting() { return false; }
-        // virtual void linkFunctionalUnit(HWInterface * hw_interface);
-        std::shared_ptr<SALAM::Instruction> clone() const { return std::static_pointer_cast<SALAM::Instruction>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Instruction>(new SALAM::Instruction(*this)); }
+        std::shared_ptr<SALAM::Instruction> clone() const {
+                return std::static_pointer_cast<SALAM::Instruction>(
+                        createClone()
+                );
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Instruction>(
+                        new SALAM::Instruction(*this)
+                );
+        }
         virtual MemoryRequest * createMemoryRequest() { return nullptr; }
 
         // Functions for getting data from operands
-        uint64_t getPtrOperandValue(uint64_t op_num) { return (operands.at(op_num).getPtrRegValue()); }
+        uint64_t getPtrOperandValue(uint64_t op_num) {
+                return (operands.at(op_num).getPtrRegValue());
+        }
 };
 
 //---------------------------------------------------------------------------//
@@ -121,7 +146,6 @@ class BadInstruction : public Instruction
     // Used to draw hard dependencies, ie: ret
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
 
     protected:
@@ -134,8 +158,16 @@ class BadInstruction : public Instruction
         void initialize (llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList);
-        std::shared_ptr<SALAM::BadInstruction> clone() const { return std::static_pointer_cast<SALAM::BadInstruction>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::BadInstruction>(new SALAM::BadInstruction(*this)); }
+        std::shared_ptr<SALAM::BadInstruction> clone() const {
+                return std::static_pointer_cast<SALAM::BadInstruction>(
+                        createClone()
+                );
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::BadInstruction>(
+                        new SALAM::BadInstruction(*this)
+                );
+        }
 };
 
 
@@ -156,7 +188,6 @@ class Ret : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -173,10 +204,19 @@ class Ret : public Instruction
         bool isReturn() override { return true; }
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::Ret> clone() const { return std::static_pointer_cast<SALAM::Ret>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Ret>(new SALAM::Ret(*this)); }
+        std::shared_ptr<SALAM::Ret> clone() const {
+                return std::static_pointer_cast<SALAM::Ret>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Ret>(new SALAM::Ret(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -191,7 +231,6 @@ class Br : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         std::shared_ptr<SALAM::Value> condition;
         std::shared_ptr<SALAM::BasicBlock> defaultDestination;
         std::shared_ptr<SALAM::BasicBlock> trueDestination;
@@ -212,7 +251,10 @@ class Br : public Instruction
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        Br &isConditional(bool isConditional) { conditional = isConditional; return *this; }
+        Br &isConditional(bool isConditional) {
+                conditional = isConditional;
+                return *this;
+        }
         bool isConditional() { return conditional; }
         std::shared_ptr<SALAM::BasicBlock> getTarget() override;
         bool isTerminator() override { return true; }
@@ -220,11 +262,22 @@ class Br : public Instruction
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
         void setLatching(bool latch) { isLatching = latch; }
-        virtual bool isLatchingBrExiting() override { return isLatching && (getTarget()==trueDestination); }
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        virtual bool isLatchingBrExiting() override {
+                return isLatching && (getTarget()==trueDestination);
+        }
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::Br> clone() const { return std::static_pointer_cast<SALAM::Br>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Br>(new SALAM::Br(*this)); }
+        std::shared_ptr<SALAM::Br> clone() const {
+                return std::static_pointer_cast<SALAM::Br>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Br>(new SALAM::Br(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -234,16 +287,14 @@ createBrInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t fu);
 
 // SALAM-Switch // ----------------------------------------------------------//
-typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::BasicBlock>> caseArgs;
+typedef std::pair<std::shared_ptr<SALAM::Value>,
+        std::shared_ptr<SALAM::BasicBlock>> caseArgs;
 typedef std::vector< caseArgs> switchArgs;
 
 class Switch : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
-        // [0] [Switch Var, Default Dest]
-        // [1] [ Case Var, Case Dest ] .... [n]
         switchArgs cases;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
@@ -258,16 +309,23 @@ class Switch : public Instruction
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        // std::shared_ptr<SALAM::Value> defaultDest() { return arguments[0].second; }
-        // std::shared_ptr<SALAM::Value> destination(int switchVar);
         std::shared_ptr<SALAM::BasicBlock> getTarget() override;
         bool isTerminator() override { return true; }
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::Switch> clone() const { return std::static_pointer_cast<SALAM::Switch>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Switch>(new SALAM::Switch(*this)); }
+        std::shared_ptr<SALAM::Switch> clone() const {
+            return std::static_pointer_cast<SALAM::Switch>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+            return std::shared_ptr<SALAM::Switch>(new SALAM::Switch(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -285,7 +343,6 @@ class Add : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -301,10 +358,19 @@ class Add : public Instruction
                         SALAM::valueListTy *valueList) override;
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::Add> clone() const { return std::static_pointer_cast<SALAM::Add>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Add>(new SALAM::Add(*this)); }
+        std::shared_ptr<SALAM::Add> clone() const {
+                return std::static_pointer_cast<SALAM::Add>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Add>(new SALAM::Add(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -319,7 +385,6 @@ class FAdd : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -335,10 +400,19 @@ class FAdd : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::FAdd> clone() const { return std::static_pointer_cast<SALAM::FAdd>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::FAdd>(new SALAM::FAdd(*this)); }
+        std::shared_ptr<SALAM::FAdd> clone() const {
+                return std::static_pointer_cast<SALAM::FAdd>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::FAdd>(new SALAM::FAdd(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -352,7 +426,6 @@ class Sub : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -368,10 +441,19 @@ class Sub : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::Sub> clone() const { return std::static_pointer_cast<SALAM::Sub>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Sub>(new SALAM::Sub(*this)); }
+        std::shared_ptr<SALAM::Sub> clone() const {
+                return std::static_pointer_cast<SALAM::Sub>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Sub>(new SALAM::Sub(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -379,13 +461,12 @@ createSubInst(uint64_t id, gem5::SimObject * owner, bool dbg,
               uint64_t OpCode,
               uint64_t cycles,
               uint64_t fu);
-// SALAM-FSub // -------------------------------------------------------------//
+// SALAM-FSub // ------------------------------------------------------------//
 
 class FSub : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -401,10 +482,19 @@ class FSub : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::FSub> clone() const { return std::static_pointer_cast<SALAM::FSub>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::FSub>(new SALAM::FSub(*this)); }
+        std::shared_ptr<SALAM::FSub> clone() const {
+                return std::static_pointer_cast<SALAM::FSub>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::FSub>(new SALAM::FSub(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -418,7 +508,6 @@ class Mul : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::APIntRegister *op1, *op2;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
@@ -435,10 +524,19 @@ class Mul : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::Mul> clone() const { return std::static_pointer_cast<SALAM::Mul>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Mul>(new SALAM::Mul(*this)); }
+        std::shared_ptr<SALAM::Mul> clone() const {
+                return std::static_pointer_cast<SALAM::Mul>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Mul>(new SALAM::Mul(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -452,7 +550,6 @@ class FMul : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -468,10 +565,19 @@ class FMul : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::FMul> clone() const { return std::static_pointer_cast<SALAM::FMul>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::FMul>(new SALAM::FMul(*this)); }
+        std::shared_ptr<SALAM::FMul> clone() const {
+                return std::static_pointer_cast<SALAM::FMul>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::FMul>(new SALAM::FMul(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -485,7 +591,6 @@ class UDiv : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -501,10 +606,19 @@ class UDiv : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::UDiv> clone() const { return std::static_pointer_cast<SALAM::UDiv>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::UDiv>(new SALAM::UDiv(*this)); }
+        std::shared_ptr<SALAM::UDiv> clone() const {
+                return std::static_pointer_cast<SALAM::UDiv>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::UDiv>(new SALAM::UDiv(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -518,7 +632,6 @@ class SDiv : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -534,10 +647,19 @@ class SDiv : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::SDiv> clone() const { return std::static_pointer_cast<SALAM::SDiv>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::SDiv>(new SALAM::SDiv(*this)); }
+        std::shared_ptr<SALAM::SDiv> clone() const {
+                return std::static_pointer_cast<SALAM::SDiv>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::SDiv>(new SALAM::SDiv(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -551,7 +673,6 @@ class FDiv : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -567,10 +688,19 @@ class FDiv : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::FDiv> clone() const { return std::static_pointer_cast<SALAM::FDiv>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::FDiv>(new SALAM::FDiv(*this)); }
+        std::shared_ptr<SALAM::FDiv> clone() const {
+                return std::static_pointer_cast<SALAM::FDiv>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::FDiv>(new SALAM::FDiv(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -584,7 +714,6 @@ class URem : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -600,10 +729,19 @@ class URem : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::URem> clone() const { return std::static_pointer_cast<SALAM::URem>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::URem>(new SALAM::URem(*this)); }
+        std::shared_ptr<SALAM::URem> clone() const {
+                return std::static_pointer_cast<SALAM::URem>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::URem>(new SALAM::URem(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -617,7 +755,6 @@ class SRem : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -633,10 +770,19 @@ class SRem : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::SRem> clone() const { return std::static_pointer_cast<SALAM::SRem>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::SRem>(new SALAM::SRem(*this)); }
+        std::shared_ptr<SALAM::SRem> clone() const {
+                return std::static_pointer_cast<SALAM::SRem>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::SRem>(new SALAM::SRem(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -650,7 +796,6 @@ class FRem : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -666,10 +811,19 @@ class FRem : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::FRem> clone() const { return std::static_pointer_cast<SALAM::FRem>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::FRem>(new SALAM::FRem(*this)); }
+        std::shared_ptr<SALAM::FRem> clone() const {
+                return std::static_pointer_cast<SALAM::FRem>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::FRem>(new SALAM::FRem(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -687,7 +841,6 @@ class Shl : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -703,10 +856,19 @@ class Shl : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::Shl> clone() const { return std::static_pointer_cast<SALAM::Shl>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Shl>(new SALAM::Shl(*this)); }
+        std::shared_ptr<SALAM::Shl> clone() const {
+                return std::static_pointer_cast<SALAM::Shl>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Shl>(new SALAM::Shl(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -720,7 +882,6 @@ class LShr : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -736,10 +897,19 @@ class LShr : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::LShr> clone() const { return std::static_pointer_cast<SALAM::LShr>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::LShr>(new SALAM::LShr(*this)); }
+        std::shared_ptr<SALAM::LShr> clone() const {
+                return std::static_pointer_cast<SALAM::LShr>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::LShr>(new SALAM::LShr(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -753,7 +923,6 @@ class AShr : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -769,10 +938,19 @@ class AShr : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::AShr> clone() const { return std::static_pointer_cast<SALAM::AShr>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::AShr>(new SALAM::AShr(*this)); }
+        std::shared_ptr<SALAM::AShr> clone() const {
+                return std::static_pointer_cast<SALAM::AShr>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::AShr>(new SALAM::AShr(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -786,7 +964,6 @@ class And : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -802,10 +979,19 @@ class And : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::And> clone() const { return std::static_pointer_cast<SALAM::And>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::And>(new SALAM::And(*this)); }
+        std::shared_ptr<SALAM::And> clone() const {
+                return std::static_pointer_cast<SALAM::And>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::And>(new SALAM::And(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -819,7 +1005,6 @@ class Or : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
     protected:
@@ -835,10 +1020,19 @@ class Or : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::Or> clone() const { return std::static_pointer_cast<SALAM::Or>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Or>(new SALAM::Or(*this)); }
+        std::shared_ptr<SALAM::Or> clone() const {
+                return std::static_pointer_cast<SALAM::Or>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Or>(new SALAM::Or(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -852,7 +1046,6 @@ class Xor : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -868,10 +1061,19 @@ class Xor : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::Xor> clone() const { return std::static_pointer_cast<SALAM::Xor>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Xor>(new SALAM::Xor(*this)); }
+        std::shared_ptr<SALAM::Xor> clone() const {
+                return std::static_pointer_cast<SALAM::Xor>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Xor>(new SALAM::Xor(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -889,7 +1091,6 @@ class Load : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         uint64_t align;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
@@ -909,11 +1110,20 @@ class Load : public Instruction
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
         void loadInternal();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
         bool isLoadingInternal() { return loadingInternal; }
-        std::shared_ptr<SALAM::Load> clone() const { return std::static_pointer_cast<SALAM::Load>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Load>(new SALAM::Load(*this)); }
+        std::shared_ptr<SALAM::Load> clone() const {
+                return std::static_pointer_cast<SALAM::Load>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Load>(new SALAM::Load(*this));
+        }
 
         MemoryRequest * createMemoryRequest() override;
 };
@@ -929,7 +1139,6 @@ class Store : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         uint64_t align;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
@@ -947,10 +1156,19 @@ class Store : public Instruction
         bool isStore() override { return true; }
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::Store> clone() const { return std::static_pointer_cast<SALAM::Store>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Store>(new SALAM::Store(*this)); }
+        std::shared_ptr<SALAM::Store> clone() const {
+                return std::static_pointer_cast<SALAM::Store>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Store>(new SALAM::Store(*this));
+        }
 
         MemoryRequest * createMemoryRequest() override;
 };
@@ -965,7 +1183,8 @@ createStoreInst(uint64_t id, gem5::SimObject * owner, bool dbg,
 /*
 
 In our storage, pointers are standard uint64_t, for comm interface convience
-The GEP indecies will by APSInts, so cast to int64_t for calculating offset inside GEP, then recast to APSInt
+The GEP indecies will by APSInts, so cast to int64_t for calculating offset
+inside GEP, then recast to APSInt
 
 */
 
@@ -995,10 +1214,23 @@ class GetElementPtr : public Instruction
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         virtual bool isGEP() override { return true; }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::GetElementPtr> clone() const { return std::static_pointer_cast<SALAM::GetElementPtr>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::GetElementPtr>(new SALAM::GetElementPtr(*this)); }
+        std::shared_ptr<SALAM::GetElementPtr> clone() const {
+            return std::static_pointer_cast<SALAM::GetElementPtr>(
+                createClone()
+            );
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+            return std::shared_ptr<SALAM::GetElementPtr>(
+                new SALAM::GetElementPtr(*this)
+            );
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1016,7 +1248,6 @@ class Trunc : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1032,10 +1263,18 @@ class Trunc : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}
+        }
         void dumper();
-        std::shared_ptr<SALAM::Trunc> clone() const { return std::static_pointer_cast<SALAM::Trunc>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Trunc>(new SALAM::Trunc(*this)); }
+        std::shared_ptr<SALAM::Trunc> clone() const {
+                return std::static_pointer_cast<SALAM::Trunc>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Trunc>(new SALAM::Trunc(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1049,7 +1288,6 @@ class ZExt : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1065,10 +1303,19 @@ class ZExt : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::ZExt> clone() const { return std::static_pointer_cast<SALAM::ZExt>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::ZExt>(new SALAM::ZExt(*this)); }
+        std::shared_ptr<SALAM::ZExt> clone() const {
+                return std::static_pointer_cast<SALAM::ZExt>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::ZExt>(new SALAM::ZExt(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1082,7 +1329,6 @@ class SExt : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1098,10 +1344,19 @@ class SExt : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::SExt> clone() const { return std::static_pointer_cast<SALAM::SExt>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::SExt>(new SALAM::SExt(*this)); }
+        std::shared_ptr<SALAM::SExt> clone() const {
+                return std::static_pointer_cast<SALAM::SExt>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::SExt>(new SALAM::SExt(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1117,7 +1372,6 @@ class FPToUI : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1133,10 +1387,19 @@ class FPToUI : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::FPToUI> clone() const { return std::static_pointer_cast<SALAM::FPToUI>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::FPToUI>(new SALAM::FPToUI(*this)); }
+        std::shared_ptr<SALAM::FPToUI> clone() const {
+            return std::static_pointer_cast<SALAM::FPToUI>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+            return std::shared_ptr<SALAM::FPToUI>(new SALAM::FPToUI(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1150,7 +1413,6 @@ class FPToSI : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1167,10 +1429,19 @@ class FPToSI : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::FPToSI> clone() const { return std::static_pointer_cast<SALAM::FPToSI>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::FPToSI>(new SALAM::FPToSI(*this)); }
+        std::shared_ptr<SALAM::FPToSI> clone() const {
+            return std::static_pointer_cast<SALAM::FPToSI>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+            return std::shared_ptr<SALAM::FPToSI>(new SALAM::FPToSI(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1184,7 +1455,6 @@ class UIToFP : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1200,10 +1470,21 @@ class UIToFP : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::UIToFP> clone() const { return std::static_pointer_cast<SALAM::UIToFP>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::UIToFP>(new SALAM::UIToFP(*this)); }
+        std::shared_ptr<SALAM::UIToFP> clone() const {
+                return std::static_pointer_cast<SALAM::UIToFP>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::UIToFP>(
+                                new SALAM::UIToFP(*this)
+                );
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1217,7 +1498,6 @@ class SIToFP : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1233,10 +1513,21 @@ class SIToFP : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::SIToFP> clone() const { return std::static_pointer_cast<SALAM::SIToFP>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::SIToFP>(new SALAM::SIToFP(*this)); }
+        std::shared_ptr<SALAM::SIToFP> clone() const {
+                return std::static_pointer_cast<SALAM::SIToFP>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::SIToFP>(
+                        new SALAM::SIToFP(*this)
+                );
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1250,7 +1541,6 @@ class FPTrunc : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1266,10 +1556,21 @@ class FPTrunc : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::FPTrunc> clone() const { return std::static_pointer_cast<SALAM::FPTrunc>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::FPTrunc>(new SALAM::FPTrunc(*this)); }
+        std::shared_ptr<SALAM::FPTrunc> clone() const {
+                return std::static_pointer_cast<SALAM::FPTrunc>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::FPTrunc>(
+                        new SALAM::FPTrunc(*this)
+                );
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1283,7 +1584,6 @@ class FPExt : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1299,10 +1599,21 @@ class FPExt : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::FPExt> clone() const { return std::static_pointer_cast<SALAM::FPExt>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::FPExt>(new SALAM::FPExt(*this)); }
+        std::shared_ptr<SALAM::FPExt> clone() const {
+                return std::static_pointer_cast<SALAM::FPExt>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::FPExt>(
+                        new SALAM::FPExt(*this)
+                );
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1316,7 +1627,6 @@ class PtrToInt : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1333,10 +1643,23 @@ class PtrToInt : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::PtrToInt> clone() const { return std::static_pointer_cast<SALAM::PtrToInt>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::PtrToInt>(new SALAM::PtrToInt(*this)); }
+        std::shared_ptr<SALAM::PtrToInt> clone() const {
+                return std::static_pointer_cast<SALAM::PtrToInt>(
+                        createClone()
+                );
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::PtrToInt>(
+                        new SALAM::PtrToInt(*this)
+                );
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1350,7 +1673,6 @@ class IntToPtr : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1366,10 +1688,23 @@ class IntToPtr : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::IntToPtr> clone() const { return std::static_pointer_cast<SALAM::IntToPtr>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::IntToPtr>(new SALAM::IntToPtr(*this)); }
+        std::shared_ptr<SALAM::IntToPtr> clone() const {
+                return std::static_pointer_cast<SALAM::IntToPtr>(
+                        createClone()
+                );
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::IntToPtr>(
+                        new SALAM::IntToPtr(*this)
+                );
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1382,7 +1717,6 @@ class BitCast : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1398,10 +1732,23 @@ class BitCast : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::BitCast> clone() const { return std::static_pointer_cast<SALAM::BitCast>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::BitCast>(new SALAM::BitCast(*this)); }
+        std::shared_ptr<SALAM::BitCast> clone() const {
+                return std::static_pointer_cast<SALAM::BitCast>(
+                        createClone()
+                );
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::BitCast>(
+                        new SALAM::BitCast(*this)
+                );
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1421,7 +1768,6 @@ class ICmp : public Instruction
     private:
         std::vector< std::vector<uint64_t> > conditions;
         uint64_t predicate;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1438,10 +1784,19 @@ class ICmp : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::ICmp> clone() const { return std::static_pointer_cast<SALAM::ICmp>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::ICmp>(new SALAM::ICmp(*this)); }
+        std::shared_ptr<SALAM::ICmp> clone() const {
+                return std::static_pointer_cast<SALAM::ICmp>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::ICmp>(new SALAM::ICmp(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1456,7 +1811,6 @@ class FCmp : public Instruction
     private:
         std::vector< std::vector<uint64_t> > conditions;
         uint64_t predicate;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1473,10 +1827,19 @@ class FCmp : public Instruction
                         SALAM::valueListTy * valueList);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+           if (dbgr->enabled()) {
+               dumper();
+               inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+           }
+        }
         void dumper();
-        std::shared_ptr<SALAM::FCmp> clone() const { return std::static_pointer_cast<SALAM::FCmp>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::FCmp>(new SALAM::FCmp(*this)); }
+        std::shared_ptr<SALAM::FCmp> clone() const {
+                return std::static_pointer_cast<SALAM::FCmp>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::FCmp>(new SALAM::FCmp(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1490,16 +1853,16 @@ createFCmpInst(uint64_t id, gem5::SimObject * owner, bool dbg,
 
 // SALAM-Phi // -------------------------------------------------------------//
 
-typedef std::pair<std::shared_ptr<SALAM::BasicBlock>, std::shared_ptr<SALAM::Value>> phiArgTy;
+typedef std::pair<std::shared_ptr<SALAM::BasicBlock>,
+        std::shared_ptr<SALAM::Value>> phiArgTy;
 
-//typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::Value> > phiNode;
-typedef std::map<std::shared_ptr<SALAM::BasicBlock>, std::shared_ptr<SALAM::Value>> phiArgsTy;
+typedef std::map<std::shared_ptr<SALAM::BasicBlock>,
+        std::shared_ptr<SALAM::Value>> phiArgsTy;
 
 class Phi : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         std::shared_ptr<SALAM::BasicBlock> previousBB;
         phiArgsTy phiArgs; // [BasicBlock, Value]
         SALAM::Debugger *dbgr;
@@ -1516,17 +1879,25 @@ class Phi : public Instruction
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        //virtual std::deque<uint64_t> runtimeInitialize() override;
         virtual std::vector<uint64_t> runtimeInitialize() override;
         bool isPhi() override { return true; }
         void setPrevBB(std::shared_ptr<SALAM::BasicBlock> prevBB);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
         virtual valueListTy getStaticDependencies() const override;
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::Phi> clone() const { return std::static_pointer_cast<SALAM::Phi>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Phi>(new SALAM::Phi(*this)); }
+        std::shared_ptr<SALAM::Phi> clone() const {
+                return std::static_pointer_cast<SALAM::Phi>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Phi>(new SALAM::Phi(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1540,7 +1911,6 @@ class Call : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
         std::shared_ptr<SALAM::Value> callee;
@@ -1557,11 +1927,20 @@ class Call : public Instruction
         bool isCall() override { return true; }
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
         std::shared_ptr<SALAM::Value> getCalleeValue() { return callee; }
-        std::shared_ptr<SALAM::Call> clone() const { return std::static_pointer_cast<SALAM::Call>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Call>(new SALAM::Call(*this)); }
+        std::shared_ptr<SALAM::Call> clone() const {
+                return std::static_pointer_cast<SALAM::Call>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Call>(new SALAM::Call(*this));
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -1575,7 +1954,6 @@ class Select : public Instruction
 {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // conditions.at[0] == base params
         std::shared_ptr<SALAM::Value> condition;
         std::shared_ptr<SALAM::Value> trueValue;
         std::shared_ptr<SALAM::Value> falseValue;
@@ -1593,14 +1971,23 @@ class Select : public Instruction
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        // std::shared_ptr<SALAM::Value> evaluate();
-        // bool isTerminator() override { return true; }
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
-        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dump() {
+            if (dbgr->enabled()) {
+                dumper();
+                inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));
+            }
+        }
         void dumper();
-        std::shared_ptr<SALAM::Select> clone() const { return std::static_pointer_cast<SALAM::Select>(createClone()); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Select>(new SALAM::Select(*this)); }
+        std::shared_ptr<SALAM::Select> clone() const {
+                return std::static_pointer_cast<SALAM::Select>(createClone());
+        }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override {
+                return std::shared_ptr<SALAM::Select>(
+                        new SALAM::Select(*this)
+                );
+        }
 };
 
 std::shared_ptr<SALAM::Instruction>

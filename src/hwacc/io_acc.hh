@@ -1,6 +1,10 @@
 #ifndef __HWACC_IO_ACC_HH__
 #define __HWACC_IO_ACC_HH__
-//------------------------------------------//
+
+#include <cstdio>
+#include <cstdlib>
+#include <queue>
+
 #include "base/trace.hh"
 #include "dev/arm/base_gic.hh"
 #include "dev/io_device.hh"
@@ -9,13 +13,6 @@
 #include "mem/packet_access.hh"
 #include "params/IOAcc.hh"
 #include "sim/system.hh"
-
-//------------------------------------------//
-#include <cstdio>
-#include <cstdlib>
-#include <queue>
-
-//------------------------------------------//
 
 class IOAcc : public BasicPioDevice
 {
@@ -131,7 +128,9 @@ class IOAcc : public BasicPioDevice
     bool isRunning() { return running; }
     bool isCompNeeded() { return computationNeeded; }
 
-    uint64_t getMMRData(unsigned index) { return *(uint64_t *)(mmreg + DEV_MEM_LOC + index * 8); }
+    uint64_t getMMRData(unsigned index) {
+            return *(uint64_t *)(mmreg + DEV_MEM_LOC + index * 8);
+    }
     int getProcessDelay() { return processDelay; }
 
   protected:
@@ -143,5 +142,6 @@ class IOAcc : public BasicPioDevice
 
 /*
 * MM Register Layout
-* | Location of Data 32bits | Compute Finished 1bit | Unused 30bits | Start Operation 1bit |
+* | Location of Data 32bits | Compute Finished 1bit | Unused 30bits |
+* | Start Operation 1bit |
 */

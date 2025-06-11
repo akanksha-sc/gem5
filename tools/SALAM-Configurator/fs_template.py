@@ -249,9 +249,10 @@ def build_test_system(np):
         # when not fast forwarding using the atomic cpu, then check that the
         # TestCPUClass is DerivO3CPU or inherits from DerivO3CPU. If the check
         # passes then attach the elastic trace probe.
-        # If restoring from checkpoint or fast forwarding, the code that does this for
-        # FutureCPUClass is in the Simulation module. If the check passes then the
-        # elastic trace probe is attached to the switch CPUs.
+        # If restoring from checkpoint or fast forwarding, the code that does
+        # this for FutureCPUClass is in the Simulation module.
+        # If the check passes then the elastic trace probe is attached to the
+        # switch CPUs.
         if (
             args.elastic_trace_en
             and args.checkpoint_restore == None

@@ -50,7 +50,8 @@ class CommInterface : public BasicPioDevice
         bool writeActive;
 
       public:
-        MemSidePort(const std::string& name, CommInterface *owner, PortID id=InvalidPortID) :
+        MemSidePort(const std::string& name, CommInterface *owner,
+        PortID id=InvalidPortID) :
           StreamRequestPort(name, owner, id), owner(owner) {
           readActive = false;
           writeActive = false;
@@ -93,7 +94,8 @@ class CommInterface : public BasicPioDevice
         bool writeActive;
 
       public:
-        SPMPort(const std::string& name, CommInterface *owner, PortID id=InvalidPortID) :
+        SPMPort(const std::string& name, CommInterface *owner,
+        PortID id=InvalidPortID) :
           ScratchpadRequestPort(name, owner, id), owner(owner) {
           readActive = false;
           writeActive = false;
@@ -132,7 +134,8 @@ class CommInterface : public BasicPioDevice
         MemoryRequest *readReq;
         MemoryRequest *writeReq;
       public:
-        RegPort(const std::string& name, CommInterface *_owner, PortID id=InvalidPortID) :
+        RegPort(const std::string& name, CommInterface *_owner,
+        PortID id=InvalidPortID) :
           RequestPort(name), owner(_owner) {}
         void setReadReq(MemoryRequest * req = nullptr) { readReq = req; }
         void setWriteReq(MemoryRequest * req = nullptr) { writeReq = req; }
@@ -154,7 +157,8 @@ class CommInterface : public BasicPioDevice
       public:
         TickEvent(CommInterface *_comm) : Event(CPU_Tick_Pri), comm(_comm) {}
         void process() { comm->tick(); }
-        virtual const char *description() const { return "CommInterface tick"; }
+        virtual const char *description() const
+          { return "CommInterface tick"; }
         bool debug() { return comm->debug(); }
     };
 
@@ -196,7 +200,8 @@ class CommInterface : public BasicPioDevice
         return true;
     }
     bool allPortsStalled() {
-        return localPortsStalled() && globalPortsStalled() && streamPortsStalled() && spmPortsStalled();
+        return localPortsStalled() && globalPortsStalled() &&
+                streamPortsStalled() && spmPortsStalled();
     }
     bool inStreamRange(Addr add);
     bool inSPMRange(Addr add);
@@ -264,8 +269,6 @@ class CommInterface : public BasicPioDevice
 
     void enqueueWrite(MemoryRequest * req);
 
-    //uint8_t* getReadBuffer() { return readBuffer; }
-
     bool isRunning() { return running; }
     bool isCompNeeded() { return computationNeeded; }
 
@@ -292,5 +295,6 @@ class CommInterface : public BasicPioDevice
 
 /*
 * MM Register Layout
-* | Location of Data 32bits | Compute Finished 1bit | Unused 30bits | Start Operation 1bit |
+* | Location of Data 32bits | Compute Finished 1bit | Unused 30bits |
+* | Start Operation 1bit |
 */

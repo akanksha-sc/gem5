@@ -40,8 +40,11 @@ namespace SALAM {
       BasicBlock(uint64_t id, gem5::SimObject * owner, bool dbg);
       ~BasicBlock();
       virtual bool isBasicBlock() { return true; }
-      void initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueListTy *valueList);
-      std::vector<std::shared_ptr<SALAM::Instruction> > * Instructions() { return &instructions; }
+      void initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueListTy
+                      *valueList);
+      std::vector<std::shared_ptr<SALAM::Instruction> > * Instructions() {
+              return &instructions;
+      }
       void dump() { if (dbg) bb_dbg->dumper(this); }
       bool validPredecessor(std::shared_ptr<SALAM::BasicBlock> bb) {
         auto it = std::find(predecessors.begin(), predecessors.end(), bb);

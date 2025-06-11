@@ -66,7 +66,8 @@ SALAM::Value::initialize(llvm::Value * irval, SALAM::irvmap * irmap) {
     llvm::Type *irtype = irval->getType();
     if (irtype->getTypeID() == llvm::Type::PointerTyID) {
         size = 64; //We assume a 64-bit memory address space
-    } else {
+    }
+    else {
         size = irtype->getScalarSizeInBits();
     }
     valueTy = irtype->getTypeID();
@@ -88,11 +89,14 @@ void
 SALAM::Value::addRegister(llvm::Type *irtype, bool istracked) {
     if (irtype->isPointerTy()) {
         returnReg = std::make_shared<PointerRegister>(istracked);
-    } else if (irtype->isIntegerTy()) {
+    }
+    else if (irtype->isIntegerTy()) {
         returnReg = std::make_shared<APIntRegister>(irtype, istracked);
-    } else if (irtype->isFloatingPointTy()) {
+    }
+    else if (irtype->isFloatingPointTy()) {
         returnReg = std::make_shared<APFloatRegister>(irtype, istracked);
-    } else {
+    }
+    else {
         //assert(0); // Type is invalid for a register
         returnReg = nullptr;
     }
@@ -158,23 +162,33 @@ SALAM::Value::addPointerRegister(uint64_t val, bool istracked, bool isnull) {
     void
     SALAM::Value::setRegisterValue(const llvm::APInt &data) {
 
-        if (dbg) DPRINTFS(Runtime, owner, "| APInt Register\n");
+        if (dbg) {
+            DPRINTFS(Runtime, owner, "| APInt Register\n");
+        }
         if (returnReg->isInt()) {
             returnReg->writeIntData(data);
-        } else {
-            if (dbg) DPRINTFS(Runtime, owner, "Unsupported type for register operation. \
+        }
+        else {
+            if (dbg) {
+                DPRINTFS(Runtime, owner, "Unsupported type for register op. \
                 Tried to place integer data in non-integer register.\n");
+            }
         }
     }
     void
     SALAM::Value::setRegisterValue(const llvm::APFloat &data) {
 
-        if (dbg) DPRINTFS(Runtime, owner, "| APFloat Register\n");
+        if (dbg) {
+            DPRINTFS(Runtime, owner, "| APFloat Register\n");
+        }
         if (returnReg->isFP()) {
             returnReg->writeFloatData(data);
-        } else {
-            if (dbg) DPRINTFS(Runtime, owner, "Unsupported type for register operation. \
+        }
+        else {
+            if (dbg) {
+                DPRINTFS(Runtime, owner, "Unsupported type for register op. \
                 Tried to place float data in non-float register.\n");
+            }
         }
     }
 #endif
@@ -182,18 +196,25 @@ SALAM::Value::addPointerRegister(uint64_t val, bool istracked, bool isnull) {
 void
 SALAM::Value::setRegisterValue(const uint64_t data) {
     if (returnReg->isPtr()) {
-        if (dbg) DPRINTFS(Runtime, owner, "| Ptr Register\n");
+        if (dbg) {
+            DPRINTFS(Runtime, owner, "| Ptr Register\n");
+        }
         returnReg->writePtrData(data);
     } else {
     #if USE_LLVM_AP_VALUES
-        if (dbg) DPRINTFS(Runtime, owner, "Unsupported type for register operation. \
+        if (dbg) DPRINTFS(Runtime, owner, "Unsupported type for register op. \
             Tried to place Ptr data in non-Ptr register.\n");
     #else
         if (returnReg->isInt()) {
-            if (dbg) DPRINTFS(Runtime, owner, "| Int Register\n");
+            if (dbg) {
+                DPRINTFS(Runtime, owner, "| Int Register\n");
+            }
             returnReg->writeIntData(data, getSizeInBytes());
-        } else {
-            if (dbg) DPRINTFS(Runtime, owner, "| FP Register\n");
+        }
+        else {
+            if (dbg) {
+                DPRINTFS(Runtime, owner, "| FP Register\n");
+            }
             returnReg->writeFloatData(data, getSizeInBytes());
         }
     #endif
@@ -201,12 +222,16 @@ SALAM::Value::setRegisterValue(const uint64_t data) {
 }
 void
 SALAM::Value::setRegisterValue(uint8_t * data) {
-    if (dbg) DPRINTFS(Runtime, owner, "| Set Register Data - ");
+    if (dbg) {
+        DPRINTFS(Runtime, owner, "| Set Register Data - ");
+    }
     switch (valueTy) {
     #if USE_LLVM_AP_VALUES
         case llvm::Type::FloatTyID:
         {
-            if (dbg) DPRINTFS(Runtime, owner, "Float\n");
+            if (dbg) {
+                DPRINTFS(Runtime, owner, "Float\n");
+            }
             float tmpData;
             std::memcpy(&tmpData, data, sizeof(float));
             setRegisterValue(llvm::APFloat(tmpData));
@@ -214,7 +239,9 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
         }
         case llvm::Type::DoubleTyID:
         {
-            if (dbg) DPRINTFS(Runtime, owner, "Double\n");
+            if (dbg) {
+                DPRINTFS(Runtime, owner, "Double\n");
+            }
             double tmpData;
             std::memcpy(&tmpData, data, sizeof(double));
             setRegisterValue(llvm::APFloat(tmpData));
@@ -222,12 +249,15 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
         }
         case llvm::Type::IntegerTyID:
         {
-            if (dbg) DPRINTFS(Runtime, owner, "Integer Type | Size = %d\n", size);
+            if (dbg) {
+                DPRINTFS(Runtime, owner, "Integer Type | Size = %d\n", size);
+            }
             if (size > 64) {
                 size_t bigIntLen = ((size - 1) / 64) + 1;
                 setRegisterValue(llvm::APInt(size,
                     llvm::ArrayRef<uint64_t>((uint64_t *)data, bigIntLen)));
-            } else {
+            }
+            else {
                 setRegisterValue(llvm::APInt(size, *(uint64_t *)(data)));
             }
             break;
@@ -235,19 +265,25 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
     #else
         case llvm::Type::FloatTyID:
         {
-            if (dbg) DPRINTFS(Runtime, owner, "Float\n");
+            if (dbg) {
+                DPRINTFS(Runtime, owner, "Float\n");
+            }
             returnReg->writeFloatData(*(uint64_t *)data, (size_t)4);
             break;
         }
         case llvm::Type::DoubleTyID:
         {
-            if (dbg) DPRINTFS(Runtime, owner, "Double\n");
+            if (dbg) {
+                DPRINTFS(Runtime, owner, "Double\n");
+            }
             returnReg->writeFloatData(*(uint64_t *)data, (size_t)8);
             break;
         }
         case llvm::Type::IntegerTyID:
         {
-            if (dbg) DPRINTFS(Runtime, owner, "Integer Type | Size = %d\n", size);
+            if (dbg) {
+                DPRINTFS(Runtime, owner, "Integer Type | Size = %d\n", size);
+            }
             returnReg->writeIntData(*(uint64_t *)data,
                                     (size_t)getSizeInBytes());
             break;
@@ -255,13 +291,17 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
     #endif
         case llvm::Type::PointerTyID:
         {
-            if (dbg) DPRINTFS(Runtime, owner, "Pointer\n");
+            if (dbg) {
+                DPRINTFS(Runtime, owner, "Pointer\n");
+            }
             returnReg->writePtrData(*(uint64_t *)data);
             break;
         }
         default:
         {
-            if (dbg) DPRINTFS(Runtime, owner, "Unsupported type for register operation\n");
+            if (dbg) {
+                DPRINTFS(Runtime, owner, "Unsupported type for register op\n");
+            }
             assert(0);
         }
     }
@@ -269,24 +309,31 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
 
 void
 SALAM::Value::setRegisterValue(bool data) {
-    if (dbg) DPRINTFS(Runtime, owner, "| Int Register\n");
+    if (dbg) {
+        DPRINTFS(Runtime, owner, "| Int Register\n");
+    }
     if (returnReg->isInt()) {
     #if USE_LLVM_AP_VALUES
         if (data) {
             setRegisterValue(llvm::APInt::getAllOnesValue(1));
-        } else {
+        }
+        else {
             setRegisterValue(llvm::APInt::getNullValue(1));
         }
     #else
         if (data) {
             setRegisterValue((uint64_t)1);
-        } else {
+        }
+        else {
             setRegisterValue((uint64_t)0);
         }
     #endif
-    } else {
-        if (dbg) DPRINTFS(Runtime, owner, "Unsupported type for register operation. \
+    }
+    else {
+        if (dbg) {
+            DPRINTFS(Runtime, owner, "Unsupported type for register op. \
             Tried to place integer data in non-integer register.\n");
+        }
     }
 }
 
@@ -294,10 +341,14 @@ void
 SALAM::Value::setRegisterValue(std::shared_ptr<SALAM::Register> reg) {
     if (reg->isPtr()) {
         setRegisterValue((reg->getPtrData()));
-    } else if (reg->isFP()) {
+    }
+    else if (reg->isFP()) {
         setRegisterValue((reg->getFloatData()));
-    } else {
+    }
+    else {
         setRegisterValue((reg->getIntData()));
     }
-    if (dbg) DPRINTFS(Runtime, owner, "||==setRegisterValue====\n");
+    if (dbg) {
+        DPRINTFS(Runtime, owner, "||==setRegisterValue====\n");
+    }
 }

@@ -299,8 +299,8 @@ SALAM::Constant::initialize(llvm::Value * irval,
     }
 }
 
-SALAM::GlobalConstant::GlobalConstant(uint64_t id, gem5::SimObject * owner, bool dbg) :
-                                      Constant(id, owner, dbg)
+SALAM::GlobalConstant::GlobalConstant(uint64_t id, gem5::SimObject * owner,
+bool dbg) : Constant(id, owner, dbg)
 {
 }
 
@@ -382,17 +382,26 @@ SALAM::Operand::initOperandReg()
 {
     bool istracked = false;
     if (returnReg->isPtr()) {
-        if (dbg) DPRINTFS(Runtime, owner, "Operand Ptr Register Initialized\n");
+        if (dbg) {
+            DPRINTFS(Runtime, owner, "Operand Ptr Register Initialized\n");
+        }
         lockedValue = std::make_shared<PointerRegister>(istracked);
     } else if (returnReg->isInt()) {
-        if (dbg) DPRINTFS(Runtime, owner, "Operand Int Register Initialized\n");
+        if (dbg) {
+            DPRINTFS(Runtime, owner, "Operand Int Register Initialized\n");
+        }
         lockedValue = std::make_shared<APIntRegister>(size, istracked);
     } else if (returnReg->isFP()) {
-        if (dbg) DPRINTFS(Runtime, owner, "Operand FP Register Initialized\n");
+        if (dbg) {
+            DPRINTFS(Runtime, owner, "Operand FP Register Initialized\n");
+        }
         lockedValue =
             std::make_shared<APFloatRegister>(valueTy, istracked);
     } else {
-        if (dbg) DPRINTFS(Runtime, owner, "Invalid register type. Dumping Operand details\n");
+        if (dbg) {
+            DPRINTFS(Runtime, owner,
+                 "Invalid register type. Dumping Operand details\n");
+        }
         dump();
         assert(0); // Type is invalid for a register
     }

@@ -15,7 +15,8 @@ class CommInterface(BasicPioDevice):
     )
     pio_size = Param.Addr(
         0x8,
-        "Size of MMRs. Should be large enough to support flags, config, and global var addresses",
+        "Size of MMRs. Should be large enough to support flags, config, "
+        "and global var addresses",
     )
     devicename = Param.String(
         "comm_interface", "Name of comm_interface device"
@@ -50,5 +51,6 @@ class CommInterface(BasicPioDevice):
     )
     reset_spm = Param.Bool(
         False,
-        "Reset the ready state of any connected scratchpad memories when finished executing",
+        "Reset the ready state of any connected scratchpad memories when"
+        " finished executing",
     )

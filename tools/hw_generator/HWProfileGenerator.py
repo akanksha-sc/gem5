@@ -21,7 +21,7 @@ class HWModel:
         latency="10ns",
         profile="default_profile",
         benchname=None,
-        benchfolder="/nobackup/akankshac/research/gem5-SALAM-benchmarks/sys_validation",
+        benchfolder="/nobackup/akankshac/research/benchmarks/sys_validation",
     ):
         self.benchname = benchname
         self.benchfolder = benchfolder

@@ -1,6 +1,5 @@
 #ifndef __HWACC_OPERAND_HH__
 #define __HWACC_OPERAND_HH__
-//------------------------------------------//
 #include <llvm-c/Core.h>
 
 #include <map>
@@ -52,21 +51,33 @@ class Operand: public Value
 
         virtual uint64_t getPtrRegValue() { return lockedValue->getPtrData(); }
     #if USE_LLVM_AP_VALUES
-        virtual llvm::APFloat getFloatRegValue() { return lockedValue->getFloatData(); }
-        virtual llvm::APSInt getIntRegValue() { return lockedValue->getIntData(); }
+        virtual llvm::APFloat getFloatRegValue() {
+                return lockedValue->getFloatData();
+        }
+        virtual llvm::APSInt getIntRegValue() {
+                return lockedValue->getIntData();
+        }
         virtual bool hasIntVal() { return lockedValue->isInt(); }
         virtual bool hasPtrVal() { return lockedValue->isPtr(); }
     #else
-        virtual uint64_t getFloatRegValue() { return lockedValue->getFloatData(); }
+        virtual uint64_t getFloatRegValue() {
+                return lockedValue->getFloatData();
+        }
         virtual float getFloatFromReg() { return lockedValue->getFloat(); }
         virtual double getDoubleFromReg() { return lockedValue->getDouble(); }
         virtual uint64_t getIntRegValue() { return lockedValue->getIntData(); }
-        virtual uint64_t getUIntRegValue() { return lockedValue->getUnsignedInt(); }
-        virtual int64_t getSIntRegValue() { return lockedValue->getSignedInt(size); }
+        virtual uint64_t getUIntRegValue() {
+                return lockedValue->getUnsignedInt();
+        }
+        virtual int64_t getSIntRegValue() {
+                return lockedValue->getSignedInt(size);
+        }
         virtual bool hasIntVal() { return lockedValue->isInt(); }
         virtual bool hasPtrVal() { return lockedValue->isPtr(); }
     #endif
-        std::shared_ptr<SALAM::Register> getOpRegister() { return lockedValue; }
+        std::shared_ptr<SALAM::Register> getOpRegister() {
+                return lockedValue;
+        }
 };
 
 class Constant: public Value
@@ -78,8 +89,8 @@ class Constant: public Value
         Constant(uint64_t id, gem5::SimObject * owner, bool dbg);
         ~Constant() = default;
         virtual bool isConstant() { return true; }
-        //Value *clone() { return new Constant(*this); }
-        virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values);
+        virtual void initialize(llvm::Value * irval, irvmap * irmap,
+                SALAM::valueListTy * values);
 };
 
 class GlobalConstant : public Constant
@@ -90,8 +101,8 @@ class GlobalConstant : public Constant
         GlobalConstant(uint64_t id, gem5::SimObject * owner, bool dbg);
         ~GlobalConstant() = default;
         virtual bool isGlobalConstant() { return true; }
-        //Value *clone() { return new GlobalConstant(*this); }
-        virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values) override;
+        virtual void initialize(llvm::Value * irval, irvmap * irmap,
+                SALAM::valueListTy * values) override;
 };
 
 class Argument : public Value
@@ -102,11 +113,9 @@ class Argument : public Value
         Argument(uint64_t id, gem5::SimObject * owner, bool dbg);
         ~Argument() = default;
         virtual bool isArgument() { return true; }
-        //Value *clone() { return new Argument(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
 };
 
 }
 
-//------------------------------------------//
 #endif //__HWACC_OPERAND_HH__

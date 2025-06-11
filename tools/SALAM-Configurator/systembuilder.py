@@ -11,7 +11,9 @@ import config_parser
 import yaml
 
 # Define the imports of the gem5 script
-imports = """import m5\nfrom m5.objects import *\nfrom m5.util import *\nfrom configparser import ConfigParser\nfrom HWAccConfig import *\n\n"""
+imports = """import m5\nfrom m5.objects import *\nfrom m5.util import *\n
+from configparser import ConfigParser\nfrom HWAccConfig import *\n\n"""
+
 # L1 Cache defined here for now, need to add some more configurability to this
 l1Cache = """class L1Cache(Cache):
 \tassoc = 2
@@ -30,18 +32,21 @@ def parse_cur_args():
     argparser = argparse.ArgumentParser(description="SALAM System Builder")
     argparser.add_argument(
         "--bench-path",
-        help="Path to Benchmark Directory Relative to ACC_BENCH_PATH. e.g. gemm's bench path will be benchmarks/sys_validation/gemm",
+        help="Path to Benchmark Directory Relative to ACC_BENCH_PATH."
+        "e.g. gemm's bench path will be benchmarks/sys_validation/gemm",
         required=True,
     )
     argparser.add_argument(
         "--sys-name",
-        help="Name of the generated python files. For a sys_name of gemm, the configurator will generate both fs_gemm.py & gemm.py in configs/SALAM).",
+        help="Name of the generated python files. For a sys_name of gemm, the"
+        " configurator generates both fs_gemm.py & gemm.py in configs/SALAM).",
         required=True,
         default=None,
     )
     argparser.add_argument(
         "--config-name",
-        help="Name of the configuration file in the root of the bench. Defaults to config.yml",
+        help="Name of the configuration file in the root of the bench."
+        " Defaults to config.yml",
         required=False,
         default="config.yml",
     )
@@ -84,7 +89,8 @@ def parse_yaml(
                             hw_path = parent_path
             if FOUND_SYS_PATH and FOUND_DEVICE:
                 raise Exception(
-                    "Found device definitions in a cluster with a path to another YAML file."
+                    "Found device definitions in a cluster with a"
+                    " path to another YAML file."
                 )
             if FOUND_SYS_PATH:
                 # Recursion Alert!
@@ -151,7 +157,8 @@ def gen_config(clusters, config_path: str, file_name: str):
             # Add cluster definitions here
             for dma in cluster.dmas:
                 writeLines(writer, dma.genConfig())
-            # Come back here later and see if you can get away with doing these at the same time (probably not)
+            # Come back here later and see if you can get away with doing
+            # these at the same time (probably not)
             for acc in cluster.accs:
                 writeLines(writer, acc.genDefinition())
             for acc in cluster.accs:
@@ -178,7 +185,8 @@ def load_og_header(clusters, working_dir: str):
     header_list = []
     for i in clusters:
         try:
-            # f = open(working_dir + i.name  + "_" + args.headerName + ".h", 'r')
+            # f = open(working_dir + i.name  + "_" + args.headerName +
+            #     ".h", 'r')
             f = open(working_dir + i.name + "_hw_defines.h")
             oldHeader = f.readlines()
             for i in range(0, len(oldHeader)):
@@ -430,7 +438,7 @@ def main():
     f = open(config_path + "fs_" + file_name + ".py")
     fullSystem = f.readlines()
     fullSystem[58] = "import " + file_name + "\n"
-    fullSystem[266] = "        " + file_name + ".makeHWAcc(args, test_sys)\n"
+    fullSystem[267] = "        " + file_name + ".makeHWAcc(args, test_sys)\n"
     f = open(config_path + "fs_" + file_name + ".py", "w")
     f.writelines(fullSystem)
     # Warn if the size is greater than allowed
