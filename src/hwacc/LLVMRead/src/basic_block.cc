@@ -6,52 +6,24 @@ using namespace SALAM;
 
 SALAM::BasicBlock::BasicBlock(uint64_t id, gem5::SimObject * owner, bool dbg):
     SALAM::Value(id, owner, dbg) {
-    if (DTRACE(Trace)) {
-        DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    }
-    if (DTRACE(SALAM_Debug)) {
-        this->dbg = true;
-        this->bb_dbg = new BasicBlock_Debugger();
-    }
 }
 
 SALAM::BasicBlock::~BasicBlock()
 {
-    if (DTRACE(Trace)) {
-            DPRINTF(Runtime, "Trace Deleted: %s \n", __PRETTY_FUNCTION__);
-    }
-    if (DTRACE(SALAM_Debug)) {
-        delete bb_dbg;
-    }
 }
 
 SALAM::BasicBlock::BasicBlock_Debugger::BasicBlock_Debugger()
 {
-    if (DTRACE(Trace)) {
-        DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    }
 }
 
 void
 SALAM::BasicBlock::BasicBlock_Debugger::dumper(SALAM::BasicBlock *bb)
 {
-    if (DTRACE(SALAM_Debug)) {
-        if (DTRACE(Trace)) {
-            DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-        }
-        DPRINTF(SALAM_Debug, "%s \n\t\t\t %s %d  \n",
-            "************** Basic Block Dump **************",
-            "UID: ", bb->getUID()
-        );
-    }
 }
 
 void
 SALAM::BasicBlock::initialize(llvm::Value * irval, irvmap *vmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) {
-        DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    }
     if (dbg) {
         DPRINTFS(LLVMParse, owner,
                         "Initialize Values - BasicBlock::initialize\n");
