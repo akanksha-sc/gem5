@@ -22,7 +22,7 @@ def makeHWAcc(options, system):
     # acc_config = <Absolute path to the config file>
     # acc_config = options.accpath + "/" + options.accbench + "/config.ini"
 
-    ############################# Creating the Accelerator Cluster #################################
+    ################### Creating the Accelerator Cluster #####################
     # Create a new Accelerator Cluster
     system.acctest = AccCluster()
     local_low = 0x2F000000
@@ -32,25 +32,16 @@ def makeHWAcc(options, system):
         AddrRange(0x00000000, local_low - 1),
         AddrRange(local_high + 1, 0xFFFFFFFF),
     ]
-    # local_range = AddrRange(start=local_low, size=local_high - local_low + 1)
-    # external_range = [AddrRange(start=0, size=local_low),
-    #                  AddrRange(start=local_high+1, size=(Addr.max - local_high))]
-    # print("---- Accelerator Cluster Address Mapping ----")
-    # print("Local Accelerator Range: Start =", hex(local_low), "Size =", hex(local_high - local_low + 1))
-    # print("External Range 1:", external_range[0])
-    # print("External Range 2:", external_range[1])
-    # print("-----------------------------------------------")
     system.acctest._attach_bridges(system, local_range, external_range)
     system.acctest._connect_caches(system, options, l2coherent=True)
 
-    ############################# Adding Accelerators to Cluster ##################################
+    ################### Adding Accelerators to Cluster #######################
     # Add an accelerator to the cluster
     system.acctest.acc = CommInterface(devicename=options.accbench)
     AccConfig(system.acctest.acc, acc_config, acc_bench)
 
     # Add an SPM for the accelerator
     system.acctest.acc_spm = ScratchpadMemory()
-    # AccSPMConfig(system.acctest.acc, system.acctest.acc_spm, acc_config)
     system.acctest._connect_spm(system.acctest.acc_spm)
     system.acctest.acc_spm.reset_on_scratchpad_read = False
 
@@ -65,7 +56,7 @@ def makeHWAcc(options, system):
     # Enable display of debug messages for the accelerator
     system.acctest.acc.enable_debug_msgs = False
 
-    ################################## Adding DMAs to Cluster #####################################
+    #################### Adding DMAs to Cluster ##############################
     # Add DMA devices to the cluster and connect them
     system.acctest.dma = NoncoherentDma(
         pio_addr=0x2FF00000,
@@ -75,8 +66,6 @@ def makeHWAcc(options, system):
         int_num=95,
     )
     system.acctest._connect_cluster_dma(system, system.acctest.dma)
-    # system.acctest.dma.dma = system.membus.slave
-    # system.acctest.dma.pio = system.acctest.local_bus.master
 
     system.acctest.stream_dma_0 = StreamDma(
         pio_addr=0x2FF10000,
