@@ -30,8 +30,6 @@ def AccConfig(acc, bench_file, config_file):
     # acc.llvm_interface.lockstep_mode =
     #     Config.getboolean("Scheduler", 'lockstep_mode')
 
-    # TODO: Auto generate the functional unit list
-
     # Initialize HWInterface Objects
     acc.hw_interface = HWInterface()
     # Define HW Counts
@@ -78,45 +76,69 @@ def AccConfig(acc, bench_file, config_file):
 
     #  Functional Units
     acc.hw_interface.functional_units = FunctionalUnits()
-
-    # tech-node, lat, profile
-    tech_model = "40nm_model"
-    lat_ns = "5ns"
-    profile = "default_profile"
-    qc = Path(Path(bench_file).parent.parent, "configs/quick_config.yml")
-    if qc.exists():
-        qyml = yaml.safe_load(qc.read_text())
-        tech_model = qyml.get("tech_model", tech_model)
-        lat_ns = qyml.get("clock_period", lat_ns)
-        profile = qyml.get("profile", profile)
-
-    fu_yaml_root = Path(
-        Path(bench_file).parent.parent,
-        "configs/hw_interface/functional_units",
-        tech_model,
-        lat_ns,
-        profile,
-    )
-
-    for fu_dir in fu_yaml_root.iterdir():
-        alias = fu_dir.name
-        clsname = "".join(w.capitalize() for w in alias.split("_"))
-        SimObj = getattr(m5.objects, clsname)
-        setattr(acc.hw_interface.functional_units, alias, SimObj())
+    acc.hw_interface.functional_units.double_multiplier = DoubleMultiplier()
+    acc.hw_interface.functional_units.bit_register = BitRegister()
+    acc.hw_interface.functional_units.bitwise_operations = BitwiseOperations()
+    acc.hw_interface.functional_units.double_adder = DoubleAdder()
+    acc.hw_interface.functional_units.float_divider = FloatDivider()
+    acc.hw_interface.functional_units.bit_shifter = BitShifter()
+    acc.hw_interface.functional_units.integer_multiplier = IntegerMultiplier()
+    acc.hw_interface.functional_units.integer_adder = IntegerAdder()
+    acc.hw_interface.functional_units.double_divider = DoubleDivider()
+    acc.hw_interface.functional_units.float_adder = FloatAdder()
+    acc.hw_interface.functional_units.float_multiplier = FloatMultiplier()
 
     #  Instructions
     acc.hw_interface.inst_config = InstConfig()
-
-    inst_list_path = Path(
-        Path(bench_file).parent.parent,
-        "configs/hw_interface/instructions/inst_list.yml",
-    )
-    inst_yaml = yaml.safe_load(inst_list_path.read_text())
-
-    for opcode in sorted(inst_yaml["instructions"].keys()):
-        clsname = "".join(w.capitalize() for w in opcode.split("_"))
-        SimObj = getattr(m5.objects, clsname)
-        setattr(acc.hw_interface.inst_config, opcode, SimObj())
+    acc.hw_interface.inst_config.add = Add()
+    acc.hw_interface.inst_config.addrspacecast = Addrspacecast()
+    acc.hw_interface.inst_config.alloca = Alloca()
+    acc.hw_interface.inst_config.and_inst = AndInst()
+    acc.hw_interface.inst_config.ashr = Ashr()
+    acc.hw_interface.inst_config.bitcast = Bitcast()
+    acc.hw_interface.inst_config.br = Br()
+    acc.hw_interface.inst_config.call = Call()
+    acc.hw_interface.inst_config.fadd = Fadd()
+    acc.hw_interface.inst_config.fcmp = Fcmp()
+    acc.hw_interface.inst_config.fdiv = Fdiv()
+    acc.hw_interface.inst_config.fence = Fence()
+    acc.hw_interface.inst_config.fmul = Fmul()
+    acc.hw_interface.inst_config.fpext = Fpext()
+    acc.hw_interface.inst_config.fptosi = Fptosi()
+    acc.hw_interface.inst_config.fptoui = Fptoui()
+    acc.hw_interface.inst_config.fptrunc = Fptrunc()
+    acc.hw_interface.inst_config.frem = Frem()
+    acc.hw_interface.inst_config.fsub = Fsub()
+    acc.hw_interface.inst_config.gep = Gep()
+    acc.hw_interface.inst_config.icmp = Icmp()
+    acc.hw_interface.inst_config.indirectbr = Indirectbr()
+    acc.hw_interface.inst_config.inttoptr = Inttoptr()
+    acc.hw_interface.inst_config.invoke = Invoke()
+    acc.hw_interface.inst_config.landingpad = Landingpad()
+    acc.hw_interface.inst_config.load = Load()
+    acc.hw_interface.inst_config.lshr = Lshr()
+    acc.hw_interface.inst_config.mul = Mul()
+    acc.hw_interface.inst_config.or_inst = OrInst()
+    acc.hw_interface.inst_config.phi = Phi()
+    acc.hw_interface.inst_config.ptrtoint = Ptrtoint()
+    acc.hw_interface.inst_config.resume = Resume()
+    acc.hw_interface.inst_config.ret = Ret()
+    acc.hw_interface.inst_config.sdiv = Sdiv()
+    acc.hw_interface.inst_config.select = Select()
+    acc.hw_interface.inst_config.sext = Sext()
+    acc.hw_interface.inst_config.shl = Shl()
+    acc.hw_interface.inst_config.srem = Srem()
+    acc.hw_interface.inst_config.store = Store()
+    acc.hw_interface.inst_config.sub = Sub()
+    acc.hw_interface.inst_config.switch_inst = SwitchInst()
+    acc.hw_interface.inst_config.trunc = Trunc()
+    acc.hw_interface.inst_config.udiv = Udiv()
+    acc.hw_interface.inst_config.uitofp = Uitofp()
+    acc.hw_interface.inst_config.unreachable = Unreachable()
+    acc.hw_interface.inst_config.urem = Urem()
+    acc.hw_interface.inst_config.vaarg = Vaarg()
+    acc.hw_interface.inst_config.xor_inst = XorInst()
+    acc.hw_interface.inst_config.zext = Zext()
 
     acc.hw_interface.salam_power_model = SALAMPowerModel()
     acc.hw_interface.hw_statistics = HWStatistics()
