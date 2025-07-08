@@ -37,8 +37,8 @@
 //
 
 // In theory, all registers should be sign extended if not operating in the
-// full MXLEN register, but that will cause memory address out of range as it
-// is always regarded as uint64. So we'll zero extend PC related registers and
+// full MXLEN register, but that will cause memory address out of range as it is
+// always regarded as uint64. So we'll zero extend PC related registers and
 // memory address, and sign extend others.
 decode QUADRANT default Unknown::unknown() {
     0x0: decode COPCODE {
@@ -1353,8 +1353,8 @@ decode QUADRANT default Unknown::unknown() {
                             if (pm == PRV_U) {
                                 if (senvcfg.cbie == 0) {
                                     return std::make_shared<IllegalInstFault>(
-                                        "Can't execute cbo.clean in current"
-                                        " privilege mode!", machInst);
+                                            "Can't execute cbo.clean in current"
+                                            " privilege mode!", machInst);
                                 }
                                 else if (senvcfg.cbie == 1){ //flush
                                     Mem = 0;
@@ -1504,8 +1504,7 @@ decode QUADRANT default Unknown::unknown() {
                         0x1: decode RVTYPE {
                             0x1: aes64ks1i({{
                                 Rd_sd = _rvk_emu_aes64ks1i(Rs1_sd, imm);
-                            }},
-                            imm_type = int32_t, imm_code={{ imm = RNUM; }});
+                            }}, imm_type = int32_t, imm_code={{ imm = RNUM; }});
                         }
                     }
                     0x09: bclri({{
@@ -3369,8 +3368,7 @@ decode QUADRANT default Unknown::unknown() {
                                 /* Overflow, for which this operation raises
                                 invalid. */
                                 invalid = true;
-                                inexact = false;  /* invalid takes
-                                                     precedence */
+                                inexact = false;  /* invalid takes precedence */
                             }
 
                             /* Honor the sign.  */

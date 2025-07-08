@@ -404,6 +404,7 @@ def makeArmSystem(
                 "Exclusive operations. Multicore ARM systems configured "
                 "with the MI_example protocol will not work properly."
             )
+
     return self
 
 
@@ -469,8 +470,7 @@ def connectX86ClassicSystem(x86_sys, numCPUs):
     # Allow the bridge to pass through:
     #  1) kernel configured PCI device memory map address: address range
     #     [0xC0000000, 0xFFFF0000). (The upper 64KiB are reserved for m5ops.)
-    #  2) the bridge to pass through the IO APIC (two pages, already contained
-    #     in 1),
+    #  2) the bridge to pass through the IO APIC (two pages, already contained in 1),
     #  3) everything in the IO address range up to the local APIC, and
     #  4) then the entire PCI address space and beyond.
     x86_sys.bridge.ranges = [

@@ -73,9 +73,9 @@ class PCState : public GenericISA::UPCState<4>
 
   public:
     PCState(const PCState &other) : Base(other),
-        _compressed(other._compressed), _rvType(other._rvType),
-        _new_vconf(other._new_vconf), _vtype(other._vtype), _vl(other._vl),
-        _zcmtSecondFetch(other._zcmtSecondFetch), _zcmtPc(other._zcmtPc)
+        _compressed(other._compressed),
+        _rvType(other._rvType), _new_vconf(other._new_vconf), _vtype(other._vtype),
+        _vl(other._vl), _zcmtSecondFetch(other._zcmtSecondFetch), _zcmtPc(other._zcmtPc)
     {}
     PCState &operator=(const PCState &other) = default;
     PCState() = default;

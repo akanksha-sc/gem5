@@ -35,8 +35,8 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
-#include <cstdio>
 #include <deque>
+#include <cstdio>
 #include <fstream>
 #include <list>
 #include <memory>

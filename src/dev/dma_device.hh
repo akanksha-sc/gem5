@@ -42,8 +42,8 @@
 #define __DEV_DMA_DEVICE_HH__
 
 #include <deque>
-#include <memory>
 #include <optional>
+#include <memory>
 
 #include "base/addr_range_map.hh"
 #include "base/chunk_generator.hh"
@@ -122,10 +122,8 @@ class DmaPort : public RequestPort, public Drainable
 
         DmaReqState(Packet::Command _cmd, Addr addr, Addr chunk_sz, Addr tb,
                     uint8_t *_data, Request::Flags _flags, RequestorID _id,
-                    std::optional<uint32_t> _sid,
-                    std::optional<uint32_t> _ssid,
-                    Event *ce, Tick _delay,
-                    Event *ae=nullptr)
+                    std::optional<uint32_t> _sid, std::optional<uint32_t> _ssid,
+                    Event *ce, Tick _delay, Event *ae=nullptr)
             : completionEvent(ce), abortEvent(ae), totBytes(tb), delay(_delay),
               gen(addr, tb, chunk_sz), data(_data), flags(_flags), id(_id),
               sid(_sid), ssid(_ssid), cmd(_cmd)
