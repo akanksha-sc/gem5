@@ -87,16 +87,22 @@ In order to use the system validation benchmarks, it is required to have the ARM
 sudo apt-get install gcc-multilib gcc-arm-none-eabi
 ```
 
-**run_system.sh** requires an environment variable named **M5_PATH** to be set. You will want to point it to your gem5-SALAM path as shown below.
+**run_system.sh** requires environment variables named **M5_PATH** and **ACC_BENCH_PATH** to be set. You will want to point them to your gem5 and benchmark root paths (respectively) as shown below.
 
 ```bash
-export M5_PATH=/path/to/gem5-SALAM
+export M5_PATH=/path/to/gem5 root
 ```
+
+```bash
+export ACC_BENCH_PATH=/path/to/benchmarks root
+```
+
+All paths passed at runtime as arguments would be relative to this benchmark root.
 
 Next, compile your desired example.
 
 ```bash
-cd $M5_PATH/benchmarks/sys_validation/[benchmark]
+cd $ACC_BENCH_PATH/benchmarks/sys_validation/[benchmark]
 make
 ```
 
@@ -107,6 +113,41 @@ $M5_PATH/tools/run_system.sh --bench bfs --bench-path benchmarks/sys_validation/
 ```
 
 If you would like to see the gem5-SALAM command created by the shell file you would just need to inspect the **RUN_SCRIPT** variable in the shell file.
+
+## Using Custom Hardware Profiles
+
+The gem5-SALAM toolchain also allows you to run benchmarks with custom hardware profiles to be specified in YAML files. The hardware generator in **tools/hw_generator** auto-generates functional unit and instruction files using the specified YAML profile.
+
+To utilize this functionality, the following script must be run to generate source code for functional unit and instruction timing models before building and running gem5.
+
+```bash
+python3 tools/hw_generator/HWProfileGenerator.py -b <benchmark_name>
+```
+
+## Power Modeling using cacti-SALAM
+
+The cacti-SALAM toolchain is a mini-suite of Python scripts to drive CACTI analyses on SALAM scratchpad memories based on YAML accelerator config, aggregating power/area/delay results.
+
+Start by running the setup script:
+
+```bash
+cd tools/cacti_salam
+./setup_cacti_salam.py
+```
+
+Next, in `$ACC_BENCH_PATH/benchmarks.list`, prepare a list of lines with the following fields:
+
+```
+path/to/config.yml <benchmark name> <config name>
+```
+
+Finally, run cacti-SALAM using the following script to generate the lookup table:
+
+```bash
+python3 ./run_cacti_salam.py --bench-list $ACC_BENCH_PATH/benchmarks.list --delay 1.0
+```
+
+Check `tools/cacti-SALAM/results/SALAM-out.csv` for the consolidated table of `Benchmark,Config,Acc,…<CACTI columns>`, which will be used by the simulation to generate power/area/delay results.
 
 # Resources
 
