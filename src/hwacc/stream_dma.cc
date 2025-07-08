@@ -1,3 +1,37 @@
+/*
+ * Copyright (c) 2025 Akanksha Chaudhari, Matt Sinclair
+ * All rights reserved.
+ *
+ * This file contains modifications and/or code derived from:
+ * gem5-SALAM: https://github.com/TeCSAR-UNCC/gem5-SALAM
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include "hwacc/stream_dma.hh"
 
 StreamDma::StreamDma(const StreamDmaParams &p)
@@ -139,7 +173,8 @@ StreamDma::tick() {
         if ((framesToRead != 0) && (framesRead >= framesToRead)) {
             rdRunning = false;
             *FLAGS &= ~RD_RUNNING_MASK;
-        } else {
+        }
+        else {
             assert(readFrameBuffSize != 0);
             readPtr = readAddr + ((framesRead % readFrameBuffSize)
                             * readFrameSize);
@@ -164,7 +199,8 @@ StreamDma::tick() {
         if ((framesToWrite != 0) && (framesWritten >= framesToWrite)) {
             wrRunning = false;
             *FLAGS &= ~WR_RUNNING_MASK;
-        } else {
+        }
+        else {
             assert(writeFrameBuffSize != 0);
             writePtr = writeAddr + ((framesWritten % writeFrameBuffSize)
                             * writeFrameSize);
@@ -192,24 +228,24 @@ StreamDma::read(PacketPtr pkt) {
                 "The MMR associated with this DMA was read from!\n");
 
         uint32_t data;
-
         data = *(uint32_t *)(mmreg+offset);
 
         switch(pkt->getSize()) {
-          case 1:
-            pkt->set<uint8_t>(data, endian);
-            break;
-          case 2:
-            pkt->set<uint16_t>(data, endian);
-            break;
-          case 4:
-            pkt->set<uint32_t>(data, endian);
-            break;
-          default:
-            panic("Read size too big?\n");
-            break;
+            case 1:
+                pkt->set<uint8_t>(data, endian);
+                break;
+            case 2:
+                pkt->set<uint16_t>(data, endian);
+                break;
+            case 4:
+                pkt->set<uint32_t>(data, endian);
+                break;
+            default:
+                panic("Read size too big?\n");
+                break;
         }
-    } else {
+    }
+    else {
         DPRINTF(DeviceMMR,
                 "The data buffer associated with this DMA was read from!\n");
 
@@ -219,21 +255,21 @@ StreamDma::read(PacketPtr pkt) {
         delete buff;
 
         switch(pkt->getSize()) {
-          case 1:
-            pkt->set<uint8_t>(data, endian);
-            break;
-          case 2:
-            pkt->set<uint16_t>(data, endian);
-            break;
-          case 4:
-            pkt->set<uint32_t>(data, endian);
-            break;
-          case 8:
-            pkt->set<uint64_t>(data, endian);
-            break;
-          default:
-            panic("Read size too big?\n");
-            break;
+            case 1:
+                pkt->set<uint8_t>(data, endian);
+                break;
+            case 2:
+                pkt->set<uint16_t>(data, endian);
+                break;
+            case 4:
+                pkt->set<uint32_t>(data, endian);
+                break;
+            case 8:
+                pkt->set<uint64_t>(data, endian);
+                break;
+            default:
+                panic("Read size too big?\n");
+                break;
         }
     }
 
@@ -252,9 +288,9 @@ StreamDma::write(PacketPtr pkt) {
     if (offset < BUFFER_ACCESS_OFF) {
         DPRINTF(DeviceMMR,
                 "The MMR associated with this DMA was written to!\n");
-
         pkt->writeData(mmreg + offset);
-    } else {
+    }
+    else {
         DPRINTF(DeviceMMR,
                 "The data buffer associated with this DMA was written to!\n");
         uint8_t * data = new uint8_t[pkt->getSize()];
@@ -274,33 +310,30 @@ Tick
 StreamDma::streamRead(PacketPtr pkt) {
     DPRINTF(DeviceMMR,
         "The data buffer associated with this DMA was read from!\n");
-
     uint8_t *buff = new uint8_t[pkt->getSize()];
     readFifo->get(buff, pkt->getSize());
     uint64_t data = *(uint64_t *)buff;
     delete buff;
 
     switch(pkt->getSize()) {
-      case 1:
-        pkt->set<uint8_t>(data, endian);
-        break;
-      case 2:
-        pkt->set<uint16_t>(data, endian);
-        break;
-      case 4:
-        pkt->set<uint32_t>(data, endian);
-        break;
-      case 8:
-        pkt->set<uint64_t>(data, endian);
-        break;
-      default:
-        panic("Read size too big?\n");
-        break;
+        case 1:
+            pkt->set<uint8_t>(data, endian);
+            break;
+        case 2:
+            pkt->set<uint16_t>(data, endian);
+            break;
+        case 4:
+             pkt->set<uint32_t>(data, endian);
+             break;
+        case 8:
+            pkt->set<uint64_t>(data, endian);
+            break;
+        default:
+            panic("Read size too big?\n");
+            break;
     }
     Tick duration = pkt->getSize() * bandwidth;
-
     pkt->makeAtomicResponse();
-
     return duration;
 }
 
@@ -319,40 +352,42 @@ StreamDma::streamWrite(PacketPtr pkt) {
 
 Tick
 StreamDma::status(PacketPtr pkt, bool readStatus) {
-        // Provide a means of reading the current buffer capacity of the stream
-        // Writes to this register do nothing
-        if (pkt->isRead()) {
-        uint64_t data;
+    // Provide a means of reading the current buffer capacity of the stream
+    // Writes to this register do nothing
+    if (pkt->isRead()) {
+            uint64_t data;
         if (readStatus) {
             DPRINTF(StreamDma,
                 "Read MM2S buffer status. Current capacity: %d/%d bytes\n",
                     readFifo->size(), rdBufferSize);
             data = readFifo->size();
-        } else {
+        }
+        else {
             DPRINTF(StreamDma,
                 "Read S2MM buffer status. Current capacity: %d/%d bytes\n",
                     writeFifo->size(), wrBufferSize);
             data = writeFifo->size();
         }
-                switch(pkt->getSize()) {
-                        case 1:
-                                pkt->set<uint8_t>(data, endian);
-                                break;
-                        case 2:
-                                pkt->set<uint16_t>(data, endian);
-                                break;
-                        case 4:
-                                pkt->set<uint32_t>(data, endian);
-                                break;
-                        case 8:
-                                pkt->set<uint64_t>(data, endian);
-                                break;
-                        default:
-                                panic("Read size too big?\n");
-                                break;
+
+        switch(pkt->getSize()) {
+            case 1:
+                pkt->set<uint8_t>(data, endian);
+                break;
+            case 2:
+                pkt->set<uint16_t>(data, endian);
+                break;
+            case 4:
+                pkt->set<uint32_t>(data, endian);
+                break;
+            case 8:
+                pkt->set<uint64_t>(data, endian);
+                break;
+            default:
+                panic("Read size too big?\n");
+                break;
         }
-        }
-        Tick duration = pkt->getSize() * bandwidth;
+    }
+    Tick duration = pkt->getSize() * bandwidth;
     pkt->makeAtomicResponse();
     return duration;
 }
@@ -366,7 +401,8 @@ bool
 StreamDma::tvalid(size_t len, bool isRead) {
     if (isRead) {
         return (readFifo->size() >= len) ? true : false;
-    } else {
+    }
+    else {
         return writeFifo->canFill(len);
     }
 }
@@ -375,12 +411,15 @@ Port &
 StreamDma::getPort(const std::string &if_name, PortID idx) {
     if (if_name == "stream_in") {
         return streamIn;
-    } else if (if_name == "stream_out") {
+    }
+    else if (if_name == "stream_out") {
         return streamOut;
-    } else if (if_name == "status_in") {
+    }
+    else if (if_name == "status_in") {
         return statusIn;
-    } else if (if_name == "status_out") {
+    }
+    else if (if_name == "status_out") {
         return statusOut;
-        }
+    }
     return DmaDevice::getPort(if_name, idx);
 }
