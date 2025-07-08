@@ -468,8 +468,13 @@ def main():
     )
     f = open(config_path + "fs_" + file_name + ".py")
     fullSystem = f.readlines()
-    fullSystem[58] = "import " + file_name + "\n"
-    fullSystem[267] = "        " + file_name + ".makeHWAcc(args, test_sys)\n"
+
+    for i, ln in enumerate(fullSystem):
+        if ln.strip() == "import TEMPLATE":
+            fullSystem[i] = f"import {file_name}\n"
+        elif "TEMPLATE.makeHWAcc(" in ln:
+            fullSystem[i] = ln.replace("TEMPLATE.", f"{file_name}.")
+
     f = open(config_path + "fs_" + file_name + ".py", "w")
     f.writelines(fullSystem)
     # Warn if the size is greater than allowed
