@@ -159,7 +159,11 @@ gpu-compute:
         - Matt Sinclair <sinclair@cs.wisc.edu>
 
 hwacc:
-    status: orphaned
+    desc: >-
+        Code and configs for accelerator components and interfaces
+    status: maintained
+    maintainers:
+        - Matt Sinclair <sinclair@cs.wisc.edu>
 
 learning-gem5:
     desc: >-
