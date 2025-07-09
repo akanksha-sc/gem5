@@ -78,7 +78,7 @@ class Register
         Register(bool trk=true,
                  bool nul=false);
         ~Register();
-    #if USE_LLVM_AP_VALUES
+#if USE_LLVM_AP_VALUES
         virtual llvm::APFloat getFloatData(bool incReads=true) {
             assert(0 &&
                 "Attempted to read float data from non-float register");
@@ -89,7 +89,7 @@ class Register
                 "Attempted to read integer data from non-integer register");
             return llvm::APSInt::getMinValue(1,true);
         }
-    #else
+#else
         virtual uint64_t getFloatData(bool incReads=true) {
             assert(0 &&
                 "Attempted to read float data from non-float register");
@@ -120,13 +120,13 @@ class Register
                 "Attempted to read integer data from non-integer register");
             return 0;
         }
-    #endif
+#endif
         virtual uint64_t getPtrData(bool incReads=true) {
             assert(0 &&
                 "Attempted to read pointer data from non-pointer register");
             return 0;
         }
-    #if USE_LLVM_AP_VALUES
+#if USE_LLVM_AP_VALUES
         virtual void writeFloatData(llvm::APFloat apf, bool incWrites=true) {
             assert(0 &&
                 "Attempted to write float data on non-float register");
@@ -135,7 +135,7 @@ class Register
             assert(0 &&
                 "Attempted to write interger data on non-integer register");
         }
-    #else
+#else
         virtual void writeFloatData(uint64_t apf, size_t len=8,
         bool incWrites=true) {
             assert(0 && "Attempted to write float data on non-float register");
@@ -145,7 +145,7 @@ class Register
             assert(0 &&
                 "Attempted to write interger data on non-integer register");
         }
-    #endif
+#endif
         virtual void writePtrData(uint64_t ptr, size_t len=8,
         bool incWrites=true) {
             assert(0 &&
@@ -167,15 +167,15 @@ class Register
 class APFloatRegister : public Register
 {
     private:
-    #if USE_LLVM_AP_VALUES
+#if USE_LLVM_AP_VALUES
         llvm::APFloat data =
                 llvm::APFloat::getZero(llvm::APFloat::IEEEdouble());
-    #else
+#else
         // We use uint64_t to store the bitcast of the FP value.
         // Compute should be performed after bitcasting back to
         // appropriate type.
         uint64_t data = 0;
-    #endif
+#endif
     public:
         APFloatRegister(llvm::Type::TypeID T,
                         bool isTracked);
@@ -184,11 +184,11 @@ class APFloatRegister : public Register
         // This constructor is only used for constants.
         APFloatRegister(const llvm::APFloat &RHS);
         // ~APFloatRegister() { if (data) delete data; }
-    #if USE_LLVM_AP_VALUES
+#if USE_LLVM_AP_VALUES
         virtual llvm::APFloat getFloatData(bool incReads=true) override;
         virtual void writeFloatData(llvm::APFloat apf,
                 bool incWrites=true) override;
-    #else
+#else
         // This constructor is only used for constants.
         APFloatRegister(const uint64_t RHS) : Register(false) {
             data = RHS;
@@ -199,7 +199,7 @@ class APFloatRegister : public Register
         virtual double getDouble(bool incReads=true) override;
         virtual void writeFloatData(uint64_t apf, size_t len=8,
                 bool incWrites=true) override;
-    #endif
+#endif
         virtual bool isFP() override { return true; }
         virtual std::string dataString() override;
 };
@@ -207,11 +207,11 @@ class APFloatRegister : public Register
 class APIntRegister : public Register
 {
     private:
-    #if USE_LLVM_AP_VALUES
+#if USE_LLVM_AP_VALUES
         llvm::APSInt data = llvm::APSInt::getMinValue(1,true);
-    #else
+#else
         uint64_t data = 0;
-    #endif
+#endif
     public:
         APIntRegister(uint64_t bitwidth,
                       bool isTracked);
@@ -220,11 +220,11 @@ class APIntRegister : public Register
         // This constructor is only used for constants.
         APIntRegister(const llvm::APInt &RHS);
         // ~APIntRegister() { if (data) delete data; }
-    #if USE_LLVM_AP_VALUES
+#if USE_LLVM_AP_VALUES
         virtual llvm::APSInt getIntData(bool incReads=true) override;
         virtual void writeIntData(llvm::APInt api,
                 bool incWrites=true) override;
-    #else
+#else
         // This constructor is only used for constants.
         APIntRegister(const uint64_t RHS) : Register(false) {
             data = RHS;
@@ -236,7 +236,7 @@ class APIntRegister : public Register
                 bool incReads=true) override;
         virtual void writeIntData(uint64_t api, size_t len=8,
                 bool incWrites=true) override;
-    #endif
+#endif
         virtual bool isInt() override { return true; }
         virtual std::string dataString() override;
 };

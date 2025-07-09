@@ -34,7 +34,6 @@
 
 #ifndef MACROS_HH
 #define MACROS_HH
-//____________________________________________________________________________
 
 // Function Macros
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -126,18 +125,5 @@ namespace SALAM {
         LAST_ICMP_PREDICATE = ICMP_SLE, BAD_ICMP_PREDICATE = ICMP_SLE + 1
     };
 }
-
-
-/*
-Useful snippets
-
-// Line break
-//____________________________________________________________________________
-
-
-
-
-
-*/
 
 #endif //__MACROS_HH__

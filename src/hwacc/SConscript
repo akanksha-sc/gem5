@@ -156,13 +156,8 @@ if env["CONF"]["USE_ARM_ISA"]:
     Source("LLVMRead/src/registers.cc")
     Source("LLVMRead/src/operand.cc")
 
-    # GENERATED FILES
-    # Source('HWModeling/generated/functionalunits/adder.cc')
-    # Source('HWModeling/generated/instructions/add.cc')
-    # END OF GENERATED FILES
-
     Source("HWModeling/src/cycle_counts.cc")
-    # Source('HWModeling/src/cacti_wrapper.cc')
+    #Source('HWModeling/src/cacti_wrapper.cc')
     Source("HWModeling/src/functional_units.cc")
     Source("HWModeling/src/hw_interface.cc")
     Source("HWModeling/src/hw_statistics.cc")

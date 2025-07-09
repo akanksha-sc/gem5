@@ -55,6 +55,7 @@ SALAM::BasicBlock::initialize(llvm::Value * irval, irvmap *vmap,
         DPRINTFS(LLVMParse, owner,
                         "Initialize Values - BasicBlock::initialize\n");
     }
+
     Value::initialize(irval, vmap);
         //Parse irval for BasicBlock params
         llvm::BasicBlock * bb = llvm::dyn_cast<llvm::BasicBlock>(irval);
