@@ -40,7 +40,6 @@ class HWStatistics(SimObject):
     type = "HWStatistics"
     # gem5-SALAM attached header
     cxx_header = "hwacc/HWModeling/src/hw_statistics.hh"
-    ### --- Do Not Modify Below This Line --- ###
     ### Templates
     ### YML Type: statistics
     ## 'quick_stats' = Param.Bool(quick_stats,
@@ -67,4 +66,3 @@ class HWStatistics(SimObject):
     ## 'params' = Param.Bool(params, "Print All Defined Configurations")
     ## 'inst_usage' = Param.Bool(inst_usage, "Usage count of each Instruction")
     ## 'memory' = Param.Bool(memory, "Memory Usage Results")
-    ### -- Code Auto-Generated Below This Line -- ###

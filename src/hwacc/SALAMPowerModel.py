@@ -40,7 +40,6 @@ class SALAMPowerModel(SimObject):
     type = "SALAMPowerModel"
     # gem5-SALAM attached header
     cxx_header = "hwacc/HWModeling/src/salam_power_model.hh"
-    ### --- Do Not Modify Below This Line --- ###
     ### Templates
     ### YML Type: functional_unit.power_model
     ## 'power_units' = Param.String(units.power, "Hardware Model Power Units")
@@ -59,4 +58,3 @@ class SALAMPowerModel(SimObject):
     ## 'leakage_power' = Params.Double(leakage_power, "Measured Power Metric")
     ## 'area' = Params.Double(area, "Measure Area Metric")
     ## 'path_delay' = Params.Double(path_delay, "Measured Path Delay Metric")
-    ### -- Code Auto-Generated Below This Line -- ###

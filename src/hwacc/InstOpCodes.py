@@ -42,12 +42,10 @@ class InstOpCodes(SimObject):
     cxx_header = "hwacc/HWModeling/src/opcodes.hh"
     # Default Values Below are LLVM Instruction Enumerations from
     # llvm/IR/Instructions.def
-    ### --- Do Not Modify Below This Line --- ###
     ### Templates
     ### YML Type: instruction
     ## SALAM_OpCodeName = Param.UInt32(SALAM_OpCodeNum,
     ##     SALAM_OpCode " Instruction OpCode.")
-    ### -- Code Auto-Generated Below This Line -- ###
     gep = Param.UInt32(34, "GetElementPtr operation.")
     phi = Param.UInt32(55, "Phi operation.")
     select = Param.UInt32(57, "Select operation.")

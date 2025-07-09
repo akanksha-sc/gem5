@@ -40,13 +40,10 @@ class CycleCounts(SimObject):
     type = "CycleCounts"
     # gem5-SALAM attached header
     cxx_header = "hwacc/HWModeling/src/cycle_counts.hh"
-    ### --- Do Not Modify Below This Line --- ###
     ### Templates
     ### YML Type: instruction
     ## SALAM_OpCodeName = Param.UInt32(runtime_cycles,
     ##     SALAM_OpCode " instruction runtime cycles.")
-    ### -- Code Auto-Generated Below This Line -- ###
-
     counter = Param.UInt32(0, "Counter intructions runtime cycles.")
     gep = Param.UInt32(0, "GetElementPtr intructions runtime cycles.")
     phi = Param.UInt32(0, "Phi intructions runtime cycles.")
