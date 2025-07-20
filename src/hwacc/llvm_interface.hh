@@ -78,8 +78,8 @@ class LLVMInterface : public AccComputeUnit
   private:
     std::string filename;
     std::string topName;
-    uint32_t scheduling_threshold;
-    int32_t clock_period;
+    float scheduling_threshold;
+    float clock_period;
     int cycle;
     int stalls;
 
@@ -117,7 +117,7 @@ class LLVMInterface : public AccComputeUnit
         std::map<uint64_t, std::shared_ptr<SALAM::Instruction>> computeQueue;
         std::shared_ptr<SALAM::BasicBlock> previousBB;
         HW_Cycle_Stats hw_cycle_stats;
-        uint32_t scheduling_threshold;
+        float scheduling_threshold;
         bool returned = false;
         bool lockstep;
         bool dbg;
@@ -217,7 +217,7 @@ class LLVMInterface : public AccComputeUnit
             llvm::Instruction *inst, uint64_t id
     );
     void dumpQueues();
-    uint32_t getSchedulingThreshold() { return scheduling_threshold; }
+    float getSchedulingThreshold() { return scheduling_threshold; }
     void addSchedulingTime(std::chrono::duration<float> timeDelta) {
             schedulingTime = schedulingTime + timeDelta;
     }

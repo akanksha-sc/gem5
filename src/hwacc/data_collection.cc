@@ -370,7 +370,7 @@ Results::simpleStats() {
 
 void
 Results::unitCorrections() {
-    sys_clock = 1.0/(clock_period/1000);
+    sys_clock = 1.0/(clock_period/1000.0);
     cache_size = cache_size/1024;
     spm_size = spm_size/1024;
     spm_total_power = spm_leakage + spm_read_dynamic + spm_write_dynamic;

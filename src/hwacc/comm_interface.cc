@@ -67,7 +67,7 @@ CommInterface::CommInterface(const CommInterfaceParams &p) :
     cacheLineSize(p.cache_line_size),
     clock_period(p.clock_period),
     reset_spm(p.reset_spm) {
-    processDelay = 1000 * clock_period;
+    processDelay = static_cast<Tick>(std::llround(clock_period * 1000.0));
     FLAG_OFFSET = 0;
     CONFIG_OFFSET = flag_size;
     VAR_OFFSET = CONFIG_OFFSET + config_size;

@@ -50,4 +50,4 @@ class NoncoherentDma(DmaDevice):
     )
     gic = Param.BaseGic(Parent.any, "Gic on which to trigger interrupts")
     int_num = Param.UInt32(200, "Interrupt number that connects to GIC")
-    clock_period = Param.Int(10, "Clock period in ns")
+    clock_period = Param.Float(10, "Clock period in ns")

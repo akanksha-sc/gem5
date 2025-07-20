@@ -45,9 +45,9 @@ class Results
         //Performance
         double setupTime;
         double simTime;
-        int clock_period;
+        float clock_period;
         double sys_clock;
-        int fu_clock_period;
+        float fu_clock_period;
         int cycles;
         double runtime;
         int stalls;

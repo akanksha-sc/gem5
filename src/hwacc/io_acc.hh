@@ -131,7 +131,7 @@ class IOAcc : public BasicPioDevice
 
     bool processingDone;
     int processDelay;
-    int clock_period;
+    float clock_period;
 
   public:
     typedef IOAccParams Params;

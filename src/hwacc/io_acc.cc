@@ -49,7 +49,7 @@ IOAcc::IOAcc(Params *p) :
     cacheLineSize(p->cache_line_size),
     cacheSize(p->cache_size),
     clock_period(p->clock_period) {
-    processDelay = 1000 * clock_period;
+    processDelay = static_cast<Tick>(std::llround(clock_period * 1000.0));
     needToRead = false;
     needToWrite = false;
     running = false;

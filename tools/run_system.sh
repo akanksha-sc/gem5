@@ -35,7 +35,7 @@ BENCH=""
 BENCH_PATH=""
 CONFIG_NAME=""
 FLAGS=""
-FLAGS="SALAM_Debug,CommInterface,LLVMInterface,NoncoherentDma"
+FLAGS="SALAM_Debug,CommInterface,LLVMInterface,NoncoherentDma,Runtime,RuntimeCompute,Event"
 BUILD=True
 DEBUG=False
 PRINT_TO_FILE=False
@@ -60,6 +60,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -f|--flags)
       FLAGS="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --outdir)
+      OUTDIR="$2"
       shift # past argument
       shift # past value
       ;;
@@ -114,6 +119,10 @@ if [ "$BENCH_PATH" == "" ]; then
 	BENCH_PATH=$BENCH
 fi
 
+if [ "$OUTDIR" == "" ]; then
+        OUTDIR=BM_ARM_OUT/$BENCH_PATH/
+fi
+
 if [ ${DEBUG} == True ]; then
 	BINARY="gdb --args ${M5_PATH}/build/ARM/gem5.debug"
 elif [ ${VALGRIND} == True ]; then
@@ -134,7 +143,6 @@ SYS_OPTS="--mem-size=16GB \
 
 CACHE_OPTS="--caches --l2cache"
 
-OUTDIR=BM_ARM_OUT/$BENCH_PATH/
 
 DEBUG_FLAGS=""
 

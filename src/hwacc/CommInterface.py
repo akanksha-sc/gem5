@@ -70,7 +70,7 @@ class CommInterface(BasicPioDevice):
     )
     gic = Param.BaseGic(Parent.any, "Gic on which to trigger interrupts")
     int_num = Param.Int32(-1, "Interrupt number that connects to GIC")
-    clock_period = Param.Int(10, "Clock period in ns")
+    clock_period = Param.Float(10.0, "Clock period in ns")
     premap_data = Param.Bool(
         False,
         "Whether or not the memory read/write locations for data predefined",

@@ -416,7 +416,8 @@ LLVMInterface::tick()
     }
     //////////////// Schedule Next Cycle ////////////////////////
     if (running && !tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + clock_period);// * process_delay);
+        schedule(tickEvent, curTick() +
+                        static_cast<Tick>(clock_period));// * process_delay);
     }
     auto tickStop = std::chrono::high_resolution_clock::now();
     simTime = simTime + (tickStop - tickStart);
@@ -644,6 +645,10 @@ LLVMInterface::constructStaticGraph() {
     // Detect Loop Latches
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
         llvm::Function &func = *func_iter;
+
+        if (func.isDeclaration() || func.empty())
+            continue;
+
         dt->recalculate(func);
         loopInfo->releaseMemory();
         loopInfo->analyze(*dt);
@@ -932,7 +937,7 @@ LLVMInterface::printResults() {
     std::cout << "\nTotal Power Static: " << total_power_static << "\n";
     std::cout << "\nTotal Power Dynamic: " << total_power_dynamic << "\n";
 
-    Tick cycle_time = clock_period/1000;
+    // Tick cycle_time = clock_period/1000;
 
     auto hwTimingMS = std::chrono::duration_cast<std::chrono::milliseconds>(
                     hwTime);
@@ -1030,12 +1035,13 @@ LLVMInterface::printResults() {
     std::cout << "             Computation Time:      " << computeHours.count()
             << "h " << computeMins.count() << "m " << computeSecs.count()
             << "s " << computeMS.count() << "ms" << std::endl;
-    std::cout << "   System Clock:                    " << 1.0/(cycle_time)
+    std::cout << "   System Clock:                    " <<
+            1.0/(clock_period / 1000.0)
             << "GHz" << std::endl;
     std::cout << "   Runtime:                         " << cycle
             << " cycles" << std::endl;
     std::cout << "   Runtime:                         "
-            << (cycle*cycle_time*(1e-3)) << " us" << std::endl;
+            << (cycle*(clock_period/1000.0)*(1e-3)) << " us" << std::endl;
     std::cout << "   Stalls:                          " << stalls
             << " cycles" << std::endl;
     std::cout << "   Executed Nodes:                  " << (cycle-stalls-1)
@@ -1400,7 +1406,9 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
                 );
                 break;
         default: {
-            warn("Tried to create instance of undefined instruction type!");
+            warn("Undefined opcode %u (%s) in "
+                            "LLVMInterface::createInstruction()",
+                OpCode, llvm::Instruction::getOpcodeName(OpCode));
             return SALAM::createBadInst(id, this, dbg, OpCode, 0, 0);
             break;
         }

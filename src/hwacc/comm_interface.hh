@@ -277,7 +277,7 @@ class CommInterface : public BasicPioDevice
 
     bool processingDone;
     int processDelay;
-    int clock_period;
+    float clock_period;
 
     bool reset_spm;
 

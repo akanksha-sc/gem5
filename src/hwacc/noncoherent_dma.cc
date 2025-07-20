@@ -148,7 +148,8 @@ NoncoherentDma::tick() {
     }
         last_flag = *FLAGS;
     if (!tickEvent.scheduled() && running) {
-        schedule(tickEvent, curTick() + clock_period*1000);
+        schedule(tickEvent, curTick() + static_cast<Tick>(std::llround(
+                                        clock_period * 1000.0)));
     }
 }
 
@@ -197,7 +198,8 @@ NoncoherentDma::write(PacketPtr pkt) {
     pkt->writeData(mmreg + (pkt->req->getPaddr() - pioAddr));
 
     if (!tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + clock_period*1000);
+        schedule(tickEvent, curTick() + static_cast<Tick>(std::llround(
+                                        clock_period * 1000.0)));
     }
     pkt->makeAtomicResponse();
     return pioDelay;

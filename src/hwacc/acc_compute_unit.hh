@@ -65,7 +65,7 @@ class AccComputeUnit : public SimObject
 
 
     TickEvent tickEvent;
-    int clock_period;
+    float clock_period;
 
   public:
     virtual void tick() {}
