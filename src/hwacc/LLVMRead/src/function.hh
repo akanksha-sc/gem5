@@ -51,6 +51,7 @@ namespace SALAM {
         unsigned instanceLimit = 1;
     public:
         Function(uint64_t id, gem5::SimObject * owner, bool dbg);
+        using SALAM::Value::initialize;
         void initialize(llvm::Value * irval, irvmap *vmap,
                 SALAM::valueListTy *valueList, std::string topName);
         bool isTop() { return top; }
