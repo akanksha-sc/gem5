@@ -439,40 +439,76 @@ main.Prepend(CPPPATH=Dir('include'))
 if not GetOption('duplicate_sources'):
     main.Prepend(CPPPATH=Dir('src'))
 
-
 ########################################################################
 # LLVM Configuration
 #
-# Configure compilation flags and linking for LLVM using llvm-config.
+# Look for versioned llvm-config binaries and configure flags.
 ########################################################################
+import os, re, glob, shutil, subprocess, sys
 
-# Path to the llvm-config binary
-llvm_config = 'llvm-config'
+def _find_llvm_config():
+    # 1) Explicit override
+    override = os.environ.get("LLVM_CONFIG")
+    if override and shutil.which(override):
+        return override
 
-# Add LLVM-specific CPP flags
-main.Append(CPPFLAGS=Split(subprocess.check_output(
-    [llvm_config, '--cppflags']).decode()))
+    # 2) Plain name on PATH
+    if shutil.which("llvm-config"):
+        return "llvm-config"
 
-# Add LLVM library paths
-main.Append(LIBPATH=Split(subprocess.check_output(
-    [llvm_config, '--libdir']).decode()))
+    # 3) Versioned binaries on PATH and common install locations
+    candidates = set()
+    path_dirs = os.environ.get("PATH", "").split(os.pathsep)
+    extra_dirs = [
+        "/usr/bin", "/usr/local/bin",
+        "/opt/llvm/bin", "/opt/homebrew/opt/llvm/bin"
+    ]
 
-# Link against all LLVM libraries
-main.Append(LIBS=Split(subprocess.check_output(
-    [llvm_config, '--libs', 'all']).decode()))
+    for d in path_dirs + extra_dirs:
+        try:
+            for p in glob.glob(os.path.join(d, "llvm-config-*")):
+                candidates.add(p)
+        except OSError:
+            pass
 
-# Add LLVM include directory to the search path
-main.Append(CPPPATH=Split(subprocess.check_output(
-    [llvm_config, '--includedir']).decode()))
+    def verkey(p):
+        # Prefer highest numeric suffix, e.g., llvm-config-18 > -17 > -10
+        m = re.search(r"llvm-config-([0-9]+(?:\.[0-9]+)?)$", os.path.basename(p))
+        return tuple(int(x) for x in m.group(1).split(".")) if m else (-1,)
 
-# Define LLVM-specific preprocessor macros
-main.Append(CPPDEFINES=[
-    'LLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING=1'
-])
+    return max(candidates, key=verkey) if candidates else None
 
-# Configure runtime library paths for LLVM
-main.Append(RPATH=Split(subprocess.check_output(
-    [llvm_config, '--libdir']).decode()))
+def _llvm_out(llvm_config, *args):
+    return subprocess.check_output([llvm_config, *args]).decode().split()
+
+llvm_config = _find_llvm_config()
+
+if not llvm_config:
+    msg = (
+        "ERROR: Could not locate 'llvm-config' (plain or versioned).\n"
+        "Tried PATH and common locations for names like llvm-config-18.\n\n"
+        "Fixes:\n"
+        "  • Install LLVM or ensure it’s on PATH\n"
+        "  • OR set LLVM_CONFIG to the exact binary, e.g.:\n"
+        "      export LLVM_CONFIG=/usr/bin/llvm-config-18\n"
+        "  • OR create a symlink, e.g.:\n"
+        "      sudo ln -s $(which llvm-config-18) /usr/local/bin/llvm-config\n"
+    )
+    print(msg, file=sys.stderr)
+    Exit(1)
+
+# Optional: echo which one we picked
+print(f"Using LLVM config: {llvm_config}")
+
+# Query flags from the selected llvm-config
+main.Append(CPPFLAGS=_llvm_out(llvm_config, "--cppflags"))
+libdir = _llvm_out(llvm_config, "--libdir")
+main.Append(LIBPATH=libdir)
+main.Append(LIBS=_llvm_out(llvm_config, "--libs", "all"))
+main.Append(CPPPATH=_llvm_out(llvm_config, "--includedir"))
+main.Append(CPPDEFINES=["LLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING=1"])
+main.Append(RPATH=libdir)
+########################################################################
 
 
 ########################################################################
