@@ -252,7 +252,7 @@ StreamDma::read(PacketPtr pkt) {
         uint8_t *buff = new uint8_t[pkt->getSize()];
         readFifo->get(buff, pkt->getSize());
         uint64_t data = *(uint64_t *)buff;
-        delete buff;
+        delete[] buff;
 
         switch(pkt->getSize()) {
             case 1:
@@ -296,7 +296,7 @@ StreamDma::write(PacketPtr pkt) {
         uint8_t * data = new uint8_t[pkt->getSize()];
         pkt->writeData(data);
         writeFifo->fill(data, pkt->getSize());
-        delete data;
+        delete[] data;
     }
 
     if (!tickEvent.scheduled()) {
@@ -313,7 +313,7 @@ StreamDma::streamRead(PacketPtr pkt) {
     uint8_t *buff = new uint8_t[pkt->getSize()];
     readFifo->get(buff, pkt->getSize());
     uint64_t data = *(uint64_t *)buff;
-    delete buff;
+    delete[] buff;
 
     switch(pkt->getSize()) {
         case 1:
@@ -344,7 +344,7 @@ StreamDma::streamWrite(PacketPtr pkt) {
     uint8_t * data = new uint8_t[pkt->getSize()];
     pkt->writeData(data);
     writeFifo->fill(data, pkt->getSize());
-    delete data;
+    delete[] data;
 
     pkt->makeAtomicResponse();
     return pioDelay;
