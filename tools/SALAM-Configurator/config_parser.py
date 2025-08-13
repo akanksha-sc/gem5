@@ -183,6 +183,7 @@ class AccCluster:
             ir_path = None
             hw_config_path = self.hw_config_path
             debug = False
+            clock_period_ns = None
 
             # Find the name first...
             # Also, find a non-stupid way to find the name first
@@ -217,6 +218,10 @@ class AccCluster:
                     int_num = device_dict["InterruptNum"]
                 if "Debug" in device_dict:
                     debug = device_dict["Debug"]
+                if "ClockPeriod_ns" in device_dict:
+                    clock_period_ns = float(device_dict["ClockPeriod_ns"])
+                if "Clock_GHz" in device_dict:
+                    clock_period_ns = 1.0 / float(device_dict["Clock_GHz"])
                 if "Var" in device_dict:
                     for var in device_dict["Var"]:
                         # Setup the variable's parameters to pass
@@ -285,6 +290,7 @@ class AccCluster:
                     hw_config_path=hw_config_path,
                     variables=variables,
                     debug=debug,
+                    clock_period_ns=clock_period_ns,
                 )
             )
 
@@ -338,6 +344,7 @@ class Accelerator:
         hw_config_path: str,
         variables=None,
         debug: bool = False,
+        clock_period_ns: float = None,
     ):
 
         self.name = name.lower()
@@ -355,6 +362,7 @@ class Accelerator:
         self.hw_config_path = hw_config_path
         self.variables = variables
         self.debug = debug
+        self.clock_period_ns = clock_period_ns
 
     def genDefinition(self):
         lines = []
@@ -390,6 +398,21 @@ class Accelerator:
             )
 
         lines.append("AccConfig(clstr." + self.name + ", ir, hw_config)")
+        # --- auto-generated clock wiring ---
+        if self.clock_period_ns is not None:
+            freq_ghz = round(1.0 / self.clock_period_ns, 6)
+            lines.append("# Clock configuration (generated)")
+            lines.append(
+                "clstr."
+                + self.name
+                + ".llvm_interface.clock_period = "
+                + str(self.clock_period_ns)
+            )
+            lines.append(
+                "clstr." + self.name + ".clock_domain = SrcClockDomain("
+                "clock='" + str(freq_ghz) + "GHz', "
+                "voltage_domain=system.voltage_domain)"
+            )
         lines.append("")
 
         return lines
