@@ -47,7 +47,7 @@ import yaml
 # Configuration variables
 M5_PATH_ENV = os.environ.get("M5_PATH")
 ACC_BENCH_PATH_ENV = os.environ.get("ACC_BENCH_PATH")
-if not M5_PATH_ENV or not ACC_BENCH_PATH:
+if not M5_PATH_ENV or not ACC_BENCH_PATH_ENV:
     sys.exit(
         "ERROR: M5_PATH and/or ACC_BENCH_PATH environment variables not set."
     )

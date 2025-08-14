@@ -43,6 +43,10 @@ M5_PATH = os.environ.get("M5_PATH")
 if not M5_PATH:
     raise RuntimeError("Environment variable M5_PATH must be set")
 
+ACC_BENCH_PATH = os.environ.get("ACC_BENCH_PATH")
+if not ACC_BENCH_PATH:
+    raise RuntimeError("Environment variable ACC_BENCH_PATH must be set")
+
 HWACC_DIR = os.path.join(M5_PATH, "src", "hwacc")
 
 
@@ -53,7 +57,9 @@ class HWModel:
         latency="10ns",
         profile="default_profile",
         benchname=None,
-        benchfolder="/nobackup/akankshac/research/benchmarks/sys_validation",
+        benchfolder=os.path.join(
+            ACC_BENCH_PATH, "benchmarks", "sys_validation"
+        ),
     ):
         self.benchname = benchname
         self.benchfolder = benchfolder
