@@ -153,7 +153,7 @@ StreamBuffer::streamWrite(PacketPtr pkt) {
     uint8_t * data = new uint8_t[pkt->getSize()];
     pkt->writeData(data);
     writeStream(data, pkt->getSize());
-    delete data;
+    delete[] data;
     pkt->makeAtomicResponse();
     return streamDelay;
 }
