@@ -29,9 +29,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
 #include "gpu-compute/global_memory_pipeline.hh"
 
 #include <cinttypes>
