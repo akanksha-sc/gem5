@@ -96,6 +96,7 @@ class Value
             public:
                 Value_Debugger();
                 ~Value_Debugger() = default;
+                using SALAM::Debugger::dumper;
                 virtual void dumper(SALAM::Value * value);
         };
 

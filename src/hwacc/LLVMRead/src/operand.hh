@@ -66,6 +66,7 @@ class Operand: public Value
             public:
                 Operand_Debugger();
                 ~Operand_Debugger() = default;
+                using SALAM::Debugger::dumper;
                 virtual void dumper(SALAM::Operand *op);
         };
 
@@ -79,7 +80,7 @@ class Operand: public Value
         Operand(std::shared_ptr<SALAM::Value> copy_val);
         Operand& operator = (Operand &copy_val);
         ~Operand() = default;
-        //Value *clone() { return new Operand(*this); }
+        using SALAM::Value::initialize;
         virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
         void updateOperandRegister();
 
@@ -123,6 +124,7 @@ class Constant: public Value
         Constant(uint64_t id, gem5::SimObject * owner, bool dbg);
         ~Constant() = default;
         virtual bool isConstant() { return true; }
+        using SALAM::Value::initialize;
         virtual void initialize(llvm::Value * irval, irvmap * irmap,
                 SALAM::valueListTy * values);
 };

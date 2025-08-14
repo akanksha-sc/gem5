@@ -63,6 +63,7 @@ namespace SALAM {
         public:
           BasicBlock_Debugger();
           ~BasicBlock_Debugger() = default;
+          using SALAM::Debugger::dumper;
           virtual void dumper(SALAM::BasicBlock * bb);
       };
       BasicBlock_Debugger* bb_dbg;
@@ -72,6 +73,7 @@ namespace SALAM {
       virtual bool isBasicBlock() {
         return true;
       }
+      using SALAM::Value::initialize;
       void initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueListTy
                       *valueList);
       std::vector<std::shared_ptr<SALAM::Instruction> > * Instructions() {

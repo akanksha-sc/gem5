@@ -37,6 +37,8 @@
 
 #include <llvm-c/Core.h>
 
+#include <cmath>
+
 #include "debug_flags.hh"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/APSInt.h"
@@ -69,6 +71,7 @@ class Register
             public:
                 Register_Debugger();
                 ~Register_Debugger() = default;
+                using SALAM::Debugger::dumper;
                 virtual void dumper(SALAM::Register *reg);
         };
 

@@ -181,7 +181,7 @@ class CommInterface : public BasicPioDevice
         virtual Tick recvAtomic(PacketPtr pkt) {return 0;}
         virtual void recvFunctional(PacketPtr pkt) { };
         void sendPacket(PacketPtr pkt);
-        bool debug() { return owner-debug(); }
+        bool debug() { return owner->debug(); }
     };
 
     class TickEvent : public Event
@@ -277,7 +277,7 @@ class CommInterface : public BasicPioDevice
 
     bool processingDone;
     int processDelay;
-    int clock_period;
+    float clock_period;
 
     bool reset_spm;
 

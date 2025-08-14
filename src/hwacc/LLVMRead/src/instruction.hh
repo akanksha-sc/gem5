@@ -80,6 +80,7 @@ class Instruction : public Value
             public:
                 Instruction_Debugger();
                 ~Instruction_Debugger() = default;
+                using SALAM::Debugger::dumper;
                 virtual void dumper(SALAM::Instruction *inst);
         };
         Instruction_Debugger* inst_dbg;
@@ -99,6 +100,7 @@ class Instruction : public Value
                 const { return this->getUID() == inst->getUID(); }
         bool operator != (const std::shared_ptr<SALAM::Instruction> inst)
                 const { return !operator==(inst); }
+        using SALAM::Value::initialize;
         virtual void initialize(llvm::Value * irval, irvmap * irmap,
                 SALAM::valueListTy * valueList); //
         virtual std::shared_ptr<SALAM::BasicBlock> getTarget()  {
