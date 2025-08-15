@@ -508,7 +508,7 @@ futexFunc(SyscallDesc *desc, ThreadContext *tc,
 }
 
 /// Pseudo Funcs  - These functions use a different return convension,
-/// returning second value in a register other than the normal return register
+/// returning a second value in a register other than the normal return register
 SyscallReturn pipePseudoFunc(SyscallDesc *desc, ThreadContext *tc);
 
 
@@ -1155,14 +1155,12 @@ renameatFunc(SyscallDesc *desc, ThreadContext *tc,
         return -EFAULT;
 
     // Modifying old_name from the directory descriptor
-    if (auto res = atSyscallPath<OS>(tc, olddirfd, old_name);
-        !res.successful()) {
+    if (auto res = atSyscallPath<OS>(tc, olddirfd, old_name); !res.successful()) {
         return res;
     }
 
     // Modifying new_name from the directory descriptor
-    if (auto res = atSyscallPath<OS>(tc, newdirfd, new_name);
-        !res.successful()) {
+    if (auto res = atSyscallPath<OS>(tc, newdirfd, new_name); !res.successful()) {
         return res;
     }
 
@@ -1929,9 +1927,6 @@ readvFunc(SyscallDesc *desc, ThreadContext *tc,
           int tgt_fd, VPtr<> tiov_base,
           typename OS::size_t count)
 {
-    if (count > static_cast<typename OS::size_t>(INT_MAX))
-        return -EINVAL;
-
     auto p = tc->getProcessPtr();
 
     auto ffdp = std::dynamic_pointer_cast<FileFDEntry>((*p->fds)[tgt_fd]);
@@ -1970,9 +1965,6 @@ writevFunc(SyscallDesc *desc, ThreadContext *tc,
            int tgt_fd, VPtr<> tiov_base,
            typename OS::size_t count)
 {
-    if (count > static_cast<typename OS::size_t>(INT_MAX))
-        return -EINVAL;
-
     auto p = tc->getProcessPtr();
 
     auto hbfdp = std::dynamic_pointer_cast<HBFDEntry>((*p->fds)[tgt_fd]);
