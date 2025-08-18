@@ -321,8 +321,26 @@ class AccCluster:
             "	clstr._connect_caches(system, options, l2coherent=False)"
         )
         lines.append("	gic = system.realview.gic")
-        lines.append("")
 
+        lines.append(
+            "\t# Derive system clock period (ns) from options.sys_clock (e.g., '1GHz','500MHz')"
+        )
+        lines.append("\t_sys_clk_str = str(options.sys_clock)")
+        lines.append("\timport re")
+        lines.append(
+            "\tm = re.match(r'^(\\d+(?:\\.\\d+)?)([kMG])?Hz$', _sys_clk_str)"
+        )
+        lines.append(
+            "\tif not m: fatal('Unsupported --sys-clock: %s (expected e.g., 1GHz/500MHz/100kHz/1Hz)' % _sys_clk_str)"
+        )
+        lines.append(
+            "\tscale = {'G':1e9, 'M':1e6, 'k':1e3, None:1.0}[m.group(2)]"
+        )
+        lines.append(
+            "\t_sys_clk_period_ns = 1e9/(float(m.group(1))*scale)  # float, units: ns"
+        )
+
+        lines.append("")
         return lines
 
 
@@ -398,7 +416,8 @@ class Accelerator:
             )
 
         lines.append("AccConfig(clstr." + self.name + ", ir, hw_config)")
-        # --- auto-generated clock wiring ---
+
+        # Auto-generated clock wiring - Accelerator core
         if self.clock_period_ns is not None:
             freq_ghz = round(1.0 / self.clock_period_ns, 6)
             lines.append("# Clock configuration (generated)")
@@ -413,7 +432,19 @@ class Accelerator:
                 "clock='" + str(freq_ghz) + "GHz', "
                 "voltage_domain=system.voltage_domain)"
             )
-        lines.append("")
+            lines.append(
+                "clstr."
+                + self.name
+                + ".clk_domain = clstr."
+                + self.name
+                + ".clock_domain"
+            )
+
+        # Wrapper follows system clock
+        lines.append("clstr." + self.name + ".clk_domain = system.clk_domain")
+        lines.append(
+            "clstr." + self.name + ".clock_period = _sys_clk_period_ns"
+        )
 
         return lines
 
@@ -532,6 +563,13 @@ class StreamDMA:
             + str(self.pio)
             + ")"
         )
+
+        # DMA follows system clock
+        lines.append("clstr." + self.name + ".clk_domain = system.clk_domain")
+        lines.append(
+            "clstr." + self.name + ".clock_period = _sys_clk_period_ns"
+        )
+
         lines.append(
             dmaPath
             + "stream_addr = "
@@ -607,6 +645,13 @@ class DMA:
             + str(self.int_num)
             + ")"
         )
+
+        # DMA follows system clock
+        lines.append("clstr." + self.name + ".clk_domain = system.clk_domain")
+        lines.append(
+            "clstr." + self.name + ".clock_period = _sys_clk_period_ns"
+        )
+
         lines.append(
             dmaPath
             + "cluster_dma = "
