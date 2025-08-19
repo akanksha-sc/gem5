@@ -135,6 +135,7 @@ namespace ArmISA
     BitUnion64(AA64ISAR1)
         Bitfield<59, 56> xs;
         Bitfield<55, 52> i8mm;
+        Bitfield<47, 44> bf16;
         Bitfield<43, 40> specres;
         Bitfield<39, 36> sb;
         Bitfield<35, 32> frintts;
@@ -165,6 +166,7 @@ namespace ArmISA
     EndBitUnion(AA64MMFR0)
 
     BitUnion64(AA64MMFR1)
+        Bitfield<47, 44> afp;
         Bitfield<43, 40> hcx;
         Bitfield<31, 28> xnx;
         Bitfield<27, 24> specsei;

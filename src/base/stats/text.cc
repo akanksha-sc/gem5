@@ -127,9 +127,16 @@ Text::valid() const
 }
 
 void
-Text::begin()
+Text::begin(const std::string &message)
 {
-    ccprintf(*stream, "\n---------- Begin Simulation Statistics ----------\n");
+    if (message.empty()) {
+        ccprintf(*stream,
+                 "\n---------- Begin Simulation Statistics ----------\n");
+    } else {
+        ccprintf(*stream,
+                 "\n---------- Begin Simulation Statistics : %s ----------\n",
+                 message);
+    }
 }
 
 void

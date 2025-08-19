@@ -88,6 +88,9 @@ class ArmExtension(ScopedEnum):
         "FEAT_I8MM",  # Optional in Armv8.2
         "FEAT_DOTPROD",  # Optional in Armv8.2
         "FEAT_FP16",
+        "FEAT_BF16",  # Optional in Armv8.2
+        "FEAT_AA32BF16",  # Optional in Armv8.2
+        "FEAT_EBF16",  # Optional in Armv8.2
         # Armv8.3
         "FEAT_FCMA",
         "FEAT_JSCVT",
@@ -107,6 +110,7 @@ class ArmExtension(ScopedEnum):
         "FEAT_EVT",
         # Armv8.6
         "FEAT_FGT",
+        "FEAT_AFP",  # Optional in Armv8.6
         # Armv8.7
         "FEAT_HCX",
         "FEAT_XS",
@@ -247,6 +251,9 @@ class Armv82(Armv81):
         "FEAT_I8MM",
         "FEAT_DOTPROD",
         "FEAT_FP16",
+        "FEAT_BF16",
+        "FEAT_AA32BF16",
+        "FEAT_EBF16",
     ]
 
 
@@ -278,6 +285,7 @@ class Armv85(Armv84):
 class Armv86(Armv85):
     extensions = Armv85.extensions + [
         "FEAT_FGT",
+        "FEAT_AFP",
     ]
 
 

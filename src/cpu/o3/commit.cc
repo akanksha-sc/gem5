@@ -297,9 +297,10 @@ Commit::clearStates(ThreadID tid)
     squashAfterInst[tid] = NULL;
 
     // Clear out any of this thread's instructions being sent to prior stages.
-    for (int i = -cpu->timeBuffer.getPast();
-         i <= cpu->timeBuffer.getFuture(); ++i)
-        cpu->timeBuffer[i].commitInfo[i] = {};
+    for (int i = -cpu->timeBuffer.getPast(); i <= cpu->timeBuffer.getFuture();
+         ++i) {
+        cpu->timeBuffer[i].commitInfo[tid] = {};
+    }
 }
 
 void Commit::drain() { drainPending = true; }
@@ -465,6 +466,7 @@ Commit::generateTrapEvent(ThreadID tid, Fault inst_fault)
     cpu->schedule(trap, cpu->clockEdge(latency));
     trapInFlight[tid] = true;
     thread[tid]->trapPending = true;
+    toIEW->commitInfo[tid].trapPending = true;
 }
 
 void
@@ -521,6 +523,7 @@ Commit::squashFromTrap(ThreadID tid)
     thread[tid]->trapPending = false;
     thread[tid]->noSquashFromTC = false;
     trapInFlight[tid] = false;
+    toIEW->commitInfo[tid].trapPending = false;
 
     trapSquash[tid] = false;
 
@@ -946,12 +949,12 @@ Commit::commitInsts()
         // so panic.
         } else if (head_inst->noCapableFU() &&
             head_inst->getFault() == NoFault)  {
-            panic("CPU cannot execute [sn:%llu] op_class: %u but"
-              " did not trigger a fault. Do you need to update"
-              " the configuration and add a functional unit for"
-              " that op class?\n",
-              head_inst->seqNum,
-              head_inst->opClass());
+            panic("CPU cannot execute [sn:%llu] op_class: %s but"
+                  " did not trigger a fault. Do you need to update"
+                  " the configuration and add a functional unit for"
+                  " that op class?\n",
+                  head_inst->seqNum,
+                  enums::OpClassStrings[head_inst->opClass()]);
         } else {
             set(pc[tid], head_inst->pcState());
 
@@ -1324,13 +1327,21 @@ Commit::markCompletedInsts()
 void
 Commit::updateComInstStats(const DynInstPtr &inst)
 {
-    ThreadID tid = inst->threadNumber;
+    const ThreadID tid = inst->threadNumber;
+    const bool in_user_mode = cpu->inUserMode(tid);
 
     if (!inst->isMicroop() || inst->isLastMicroop()) {
         cpu->commitStats[tid]->numInsts++;
         cpu->baseStats.numInsts++;
+        if (in_user_mode) {
+            cpu->commitStats[tid]->numUserInsts++;
+        }
     }
+
     cpu->commitStats[tid]->numOps++;
+    if (in_user_mode) {
+        cpu->commitStats[tid]->numUserOps++;
+    }
 
     // To match the old model, don't count nops and instruction
     // prefetches towards the total commit count.

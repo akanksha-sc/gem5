@@ -1,16 +1,4 @@
-# Copyright (c) 2017 ARM Limited
-# All rights reserved.
-#
-# The license below extends only to copyright in the software and shall
-# not be construed as granting a license to any other intellectual
-# property including but not limited to intellectual property relating
-# to a hardware implementation of the functionality of the software
-# licensed hereunder.  You may use the software subject to the license
-# terms below provided that you ensure that this notice is replicated
-# unmodified and in its entirety in all distributions of the software,
-# modified or unmodified, in source code or in binary form.
-#
-# Copyright (c) 2010 The Hewlett-Packard Development Company
+# Copyright (c) 2025 The Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,18 +24,49 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import inspect
+"""
+This runs simple tests to ensure that running binaries via readfile works.
+"""
+import os
+import re
 
-try:
-    # Avoid ImportErrors at build time when _m5 is not available
-    import _m5
+from testlib import *
 
-    in_gem5 = True
-except ImportError:
-    # The import failed, we're being called from the build system
-    in_gem5 = False
+if config.bin_path:
+    resource_path = config.bin_path
+else:
+    resource_path = joinpath(absdirpath(__file__), "..", "resources")
 
-if in_gem5:
-    for name, module in inspect.getmembers(_m5):
-        if name.startswith("param_") or name.startswith("enum_"):
-            exec(f"from _m5.{name} import *")
+readfile_verifier = verifier.MatchRegex(re.compile(r"Readfile test passed!"))
+
+
+def test_readfile(isa: str, length: str):
+    gem5_verify_config(
+        name=f"test_readfile_{isa}",
+        fixtures=(),
+        verifiers=(readfile_verifier,),
+        config=joinpath(
+            config.base_dir,
+            "tests",
+            "gem5",
+            "readfile_tests",
+            "configs",
+            "ubuntu-run-with-readfile.py",
+        ),
+        config_args=[
+            "--isa",
+            isa,
+            "--resource-directory",
+            resource_path,
+        ],
+        valid_isas=(constants.all_compiled_tag,),
+        valid_hosts=constants.supported_hosts,
+        length=length,
+    )
+
+
+test_readfile(isa="x86", length=constants.long_tag)
+
+test_readfile(isa="riscv", length=constants.long_tag)
+
+test_readfile(isa="arm", length=constants.long_tag)
