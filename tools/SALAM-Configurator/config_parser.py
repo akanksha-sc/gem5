@@ -172,6 +172,7 @@ class AccCluster:
         # Parse Accelerators
         for acc in self.accs:
             name = None
+            top_name = None
             pio_masters = []
             stream_in = []
             stream_out = []
@@ -190,6 +191,9 @@ class AccCluster:
             for device_dict in acc["Accelerator"]:
                 if "Name" in device_dict:
                     name = device_dict["Name"]
+                if "TopName" in device_dict:
+                    # Allow explicit IR entry override
+                    top_name = device_dict["TopName"]
             # Parse the rest of the parameters
             for device_dict in acc["Accelerator"]:
                 if "PIOSize" in device_dict:
@@ -277,6 +281,7 @@ class AccCluster:
             acc_class.append(
                 Accelerator(
                     name=name,
+                    top_name=top_name,
                     pio_masters=pio_masters,
                     local_connections=local_connections,
                     address=pio_address,
@@ -349,6 +354,7 @@ class Accelerator:
     def __init__(
         self,
         name: str,
+        top_name: str,
         pio_masters: str,
         local_connections: str,
         address: int,
@@ -366,6 +372,8 @@ class Accelerator:
     ):
 
         self.name = name.lower()
+        # If TopName not given, default to device name
+        self.top_name = top_name if top_name is not None else self.name
         self.pio_masters = pio_masters
         self.local_connections = local_connections
         self.address = address
@@ -415,7 +423,16 @@ class Accelerator:
                 + ")"
             )
 
+        # Set the LLVM entry function name
         lines.append("AccConfig(clstr." + self.name + ", ir, hw_config)")
+        lines.append(
+            "clstr."
+            + self.name
+            + ".llvm_interface.top_name = "
+            + "'"
+            + self.top_name
+            + "'"
+        )
 
         # Auto-generated clock wiring - Accelerator core
         if self.clock_period_ns is not None:
