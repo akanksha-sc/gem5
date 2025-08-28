@@ -425,14 +425,15 @@ class Accelerator:
 
         # Set the LLVM entry function name
         lines.append("AccConfig(clstr." + self.name + ", ir, hw_config)")
-        lines.append(
-            "clstr."
-            + self.name
-            + ".llvm_interface.top_name = "
-            + "'"
-            + self.top_name
-            + "'"
-        )
+        if self.top_name:
+            lines.append(
+                "clstr."
+                + self.name
+                + ".llvm_interface.top_name = "
+                + "'"
+                + self.top_name
+                + "'"
+            )
 
         # Auto-generated clock wiring - Accelerator core
         if self.clock_period_ns is not None:
