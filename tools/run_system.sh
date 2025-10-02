@@ -35,7 +35,7 @@ BENCH=""
 BENCH_PATH=""
 CONFIG_NAME=""
 FLAGS=""
-FLAGS="SALAM_Debug,CommInterface,LLVMInterface,NoncoherentDma"
+FLAGS="NoncoherentDma,DeviceMMR,RuntimeQueues,RuntimeCompute,CommInterface,CommInterfaceQueues"
 BUILD=True
 DEBUG=False
 PRINT_TO_FILE=False
@@ -50,6 +50,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     --bench-path)
       BENCH_PATH="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --sys-clock)
+      SYS_CLOCK="$2"
       shift # past argument
       shift # past value
       ;;
@@ -141,6 +146,10 @@ SYS_OPTS="--mem-size=16GB \
           --dtb-file=none --bare-metal \
           --cpu-type=DerivO3CPU"
 
+if [ ! -z "$SYS_CLOCK" ]; then
+    SYS_OPTS+=" --sys-clock=$SYS_CLOCK"
+fi
+
 CACHE_OPTS="--caches --l2cache"
 
 
@@ -155,6 +164,8 @@ RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
 			$M5_PATH/configs/SALAM/fs_$BENCH.py $SYS_OPTS \
 			--accpath=$ACC_BENCH_PATH/$BENCH_PATH \
 			--accbench=$BENCH $CACHE_OPTS"
+	                #--debug-start=1093770125 \
+	                #--debug-end=1093774125 \
 
 if (! "$M5_PATH"/tools/SALAM-Configurator/systembuilder.py --sys-name "$BENCH" --bench-path "$BENCH_PATH" --config-name $CONFIG_NAME) then
 	echo "Configurator failed"

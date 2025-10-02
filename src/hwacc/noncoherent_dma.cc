@@ -155,8 +155,8 @@ NoncoherentDma::tick() {
 
 Tick
 NoncoherentDma::read(PacketPtr pkt) {
-    DPRINTF(DeviceMMR,
-            "The address range associated with this DMA was read!\n");
+    // DPRINTF(DeviceMMR,
+    //         "The address range associated with this DMA was read!\n");
 
     Addr offset = pkt->req->getPaddr() - pioAddr;
 

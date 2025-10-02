@@ -112,7 +112,7 @@ class AccCluster(Platform):
         self.mem2cls.slave = system.membus.master
 
         # self.cls2mem = Bridge(delay='1ns', ranges = ext_ranges)
-        # self.cls2mem.master = system.membus.slave
+        # self.cls2mem.master = system.membus.cpu_side_ports
         # self.cls2mem.slave = self.local_bus.master
 
     def _connect_hwacc(self, hwacc):
@@ -126,13 +126,15 @@ class AccCluster(Platform):
             if options.l2cache and l2coherent:
                 self.cluster_cache.mem_side = system.tol2bus.slave
             else:
-                self.cluster_cache.mem_side = system.membus.slave
-            self.coherency_bus.master = self.cluster_cache.cpu_side
+                self.cluster_cache.mem_side = system.membus.cpu_side_ports
+            self.coherency_bus.mem_side_ports = self.cluster_cache.cpu_side
         else:
             if options.l2cache and l2coherent:
-                self.coherency_bus.master = system.tol2bus.slave
+                self.coherency_bus.mem_side_ports = system.tol2bus.slave
             else:
-                self.coherency_bus.master = system.membus.slave
+                self.coherency_bus.mem_side_ports = (
+                    system.membus.cpu_side_ports
+                )
 
     def _connect_dma(self, system, dma):
         dma.pio = self.local_bus.master

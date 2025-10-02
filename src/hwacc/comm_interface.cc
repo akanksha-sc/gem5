@@ -401,18 +401,32 @@ CommInterface::getValidStreamPort(Addr add, size_t len, bool read) {
 
 CommInterface::SPMPort *
 CommInterface::getValidSPMPort(Addr add, size_t len, bool read) {
+    // DPRINTF(CommInterfaceQueues,
+    //         "[SPM] addr=%#lx len=%lu dir=%s\n",
+    //         (unsigned long)add, (unsigned long)len, read ? "R" : "W");
     for (auto port : spmPorts) {
         AddrRangeList adl = port->getAddrRanges();
         for (auto address : adl) {
             if (address.contains(add) && !(port->isStalled())) {
+                // DPRINTF(CommInterfaceQueues,
+                //     "  spm[%s] contains=1 stalled=0 busy=%d\n",
+                //     port->name(),
+                //     read ? (port->readReq != nullptr) :
+                //     (port->writeReq != nullptr));
                 if (((read && !(port->readReq)) ||
                     (!read && !(port->writeReq)))) {
+                    // bool can = port->canAccess(add, len, read);
+                    // DPRINTF(CommInterfaceQueues,
+                    //     "    canAccess=%d\n", can ? 1 : 0);
                     if (port->canAccess(add, len, read))
                         return port;
                 }
             }
         }
     }
+    // DPRINTF(CommInterfaceQueues,
+    //     "[SPM-SELECT] addr=%#lx len=%lu -> NO VALID SPM PORT\n",
+    //     (unsigned long)add, (unsigned long)len);
     return nullptr;
 }
 
