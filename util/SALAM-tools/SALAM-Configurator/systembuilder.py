@@ -463,7 +463,7 @@ def main():
     )
     # Generate full system file
     shutil.copyfile(
-        M5_Path + "/tools/SALAM-Configurator/fs_template.py",
+        M5_Path + "/util/SALAM-tools/SALAM-Configurator/fs_template.py",
         config_path + "fs_" + file_name + ".py",
     )
     f = open(config_path + "fs_" + file_name + ".py")

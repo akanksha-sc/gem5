@@ -102,8 +102,8 @@ if [ "$M5_PATH" == "" ]; then
 fi
 
 if [ "$ACC_BENCH_PATH" == "" ]; then
-	        echo "ACC_BENCH_PATH env var is not set, exiting"
-		        exit 1
+	echo "ACC_BENCH_PATH env var is not set, exiting"
+	exit 1
 fi
 
 if [ "$CONFIG_NAME" == "" ]; then
@@ -125,9 +125,9 @@ fi
 KERNEL=$ACC_BENCH_PATH/"$BENCH_PATH"/sw/main.elf
 
 SYS_OPTS="--mem-size=16GB \
-		  --mem-type=DDR4_2400_8x8 \
+          --mem-type=DDR4_2400_8x8 \
           --kernel=$KERNEL \
-          --disk-image=$ACC_BENCH_PATH/benchmarks/common/fake.iso \
+          --disk-image=$ACC_BENCH_PATH/common/fake.iso \
           --machine-type=VExpress_GEM5_V1 \
           --dtb-file=none --bare-metal \
           --cpu-type=DerivO3CPU"
@@ -148,7 +148,7 @@ RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
 			--accpath=$ACC_BENCH_PATH/$BENCH_PATH \
 			--accbench=$BENCH $CACHE_OPTS"
 
-if (! "$M5_PATH"/tools/SALAM-Configurator/systembuilder.py --sys-name "$BENCH" --bench-path "$BENCH_PATH" --config-name $CONFIG_NAME) then
+if (! "$M5_PATH"/util/SALAM-tools/SALAM-Configurator/systembuilder.py --sys-name "$BENCH" --bench-path "$BENCH_PATH" --config-name $CONFIG_NAME) then
 	echo "Configurator failed"
 	exit 1
 fi

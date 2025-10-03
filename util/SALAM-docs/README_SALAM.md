@@ -102,26 +102,32 @@ All paths passed at runtime as arguments would be relative to this benchmark roo
 Next, compile your desired example.
 
 ```bash
-cd $ACC_BENCH_PATH/benchmarks/sys_validation/[benchmark]
+cd $ACC_BENCH_PATH/[benchmark path relative to ACC_BENCH_PATH]
 make
 ```
 
 Finally, you can run any of the benchmarks you have compiled by running the run system script.
 
 ```bash
-$M5_PATH/tools/run_system.sh --bench bfs --bench-path benchmarks/sys_validation/bfs
+$M5_PATH/util/SALAM-tools/run_system.sh --bench [benchmark name] --bench-path [benchmark path relative to ACC_BENCH_PATH]
+```
+
+For instance, for bfs you would run:
+
+```bash
+$M5_PATH/util/SALAM-tools/run_system.sh --bench bfs --bench-path sys_validation/bfs
 ```
 
 If you would like to see the gem5-SALAM command created by the shell file you would just need to inspect the **RUN_SCRIPT** variable in the shell file.
 
 ## Using Custom Hardware Profiles
 
-The gem5-SALAM toolchain also allows you to run benchmarks with custom hardware profiles to be specified in YAML files. The hardware generator in **tools/hw_generator** auto-generates functional unit and instruction files using the specified YAML profile.
+The gem5-SALAM toolchain also allows you to run benchmarks with custom hardware profiles to be specified in YAML files. The hardware generator in **util/SALAM-tools/hw_generator** auto-generates functional unit and instruction files using the specified YAML profile.
 
 To utilize this functionality, the following script must be run to generate source code for functional unit and instruction timing models before building and running gem5.
 
 ```bash
-python3 tools/hw_generator/HWProfileGenerator.py -b <benchmark_name>
+python3 util/SALAM-tools/hw_generator/HWProfileGenerator.py -b <benchmark_name>
 ```
 
 ## Power Modeling using cacti-SALAM
@@ -131,7 +137,7 @@ The cacti-SALAM toolchain is a mini-suite of Python scripts to drive CACTI analy
 Start by running the setup script:
 
 ```bash
-cd tools/cacti_salam
+cd util/SALAM-tools/cacti-SALAM
 ./setup_cacti_salam.py
 ```
 

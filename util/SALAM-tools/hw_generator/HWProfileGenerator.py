@@ -57,9 +57,7 @@ class HWModel:
         latency="10ns",
         profile="default_profile",
         benchname=None,
-        benchfolder=os.path.join(
-            ACC_BENCH_PATH, "benchmarks", "sys_validation"
-        ),
+        benchfolder=os.path.join(ACC_BENCH_PATH, "sys_validation"),
     ):
         self.benchname = benchname
         self.benchfolder = benchfolder
