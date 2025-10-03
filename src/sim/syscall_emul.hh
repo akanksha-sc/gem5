@@ -109,6 +109,7 @@
 #include "sim/syscall_desc.hh"
 #include "sim/syscall_emul_buf.hh"
 #include "sim/syscall_return.hh"
+#include "sim/system.hh"
 
 #if defined(__APPLE__) && defined(__MACH__) && !defined(CMSG_ALIGN)
 #define CMSG_ALIGN(len) (((len) + sizeof(size_t) - 1) & ~(sizeof(size_t) - 1))

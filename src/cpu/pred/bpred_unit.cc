@@ -111,8 +111,11 @@ BPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
     return taken;
 }
 
-
-
+void
+BPredUnit::insertPredictorHistory(ThreadID tid, PredictorHistory *&bpu_history)
+{
+    predHist[tid].push_front(bpu_history);
+}
 
 bool
 BPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
@@ -405,6 +408,11 @@ BPredUnit::squash(const InstSeqNum &squashed_sn, ThreadID tid)
 
         auto hist = predHist[tid].front();
 
+        DPRINTF(Branch,
+                "[tid:%i, squash sn:%llu] Removing history for "
+                "sn:%llu, PC:%#x\n",
+                tid, squashed_sn, hist->seqNum, hist->pc);
+
         squashHistory(tid, hist);
 
         predHist[tid].pop_front();
@@ -441,7 +449,7 @@ BPredUnit::squashHistory(ThreadID tid, PredictorHistory* &history)
                         history->indirectHistory);
     }
 
-    // This call should delete the bpHistory.
+    // This call will  delete the bpHistory.
     cPred->squash(tid, history->bpHistory);
 
     delete history;
@@ -465,7 +473,6 @@ BPredUnit::squash(const InstSeqNum &squashed_sn,
     //     PC-relative, branch was predicted incorrectly. If so, a signal
     //     to the fetch stage is sent to squash history after the mispredict
 
-    History &pred_hist = predHist[tid];
     DPRINTF(Branch, "[tid:%i] Squash from %s start from sequence number %i, "
             "setting target to %s\n", tid, from_commit ? "commit" : "decode",
             squashed_sn, corr_target);
@@ -479,9 +486,9 @@ BPredUnit::squash(const InstSeqNum &squashed_sn,
     // If there's a squash due to a syscall, there may not be an entry
     // corresponding to the squash.  In that case, don't bother trying to
     // fix up the entry.
-    if (!pred_hist.empty()) {
+    if (!predHist[tid].empty()) {
 
-        PredictorHistory *hist = pred_hist.front();
+        PredictorHistory *hist = predHist[tid].front();
 
         DPRINTF(Branch, "[tid:%i] [squash sn:%llu] Mispredicted: %s, PC:%#x\n",
                     tid, squashed_sn, toString(hist->type), hist->pc);
@@ -574,8 +581,10 @@ BPredUnit::squash(const InstSeqNum &squashed_sn,
         if (actually_taken && updateBTBAtSquash) { updateBTB(tid, hist); }
 
     } else {
-        DPRINTF(Branch, "[tid:%i] [sn:%llu] pred_hist empty, can't "
-                "update\n", tid, squashed_sn);
+        DPRINTF(Branch,
+                "[tid:%i] [sn:%llu] predHist empty, can't "
+                "update\n",
+                tid, squashed_sn);
     }
 }
 

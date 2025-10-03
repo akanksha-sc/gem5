@@ -56,8 +56,8 @@ from gem5.utils.override import overrides
 
 from .nodes.directory import SimpleDirectory
 from .nodes.dma_requestor import DMARequestor
+from .nodes.l1_cache import L1CacheController
 from .nodes.memory_controller import MemoryController
-from .nodes.private_l1_moesi_cache import PrivateL1MOESICache
 
 
 class PrivateL1CacheHierarchy(AbstractRubyCacheHierarchy):
@@ -154,7 +154,7 @@ class PrivateL1CacheHierarchy(AbstractRubyCacheHierarchy):
         for the core with a split I/D cache.
         """
         cluster = SubSystem()
-        cluster.dcache = PrivateL1MOESICache(
+        cluster.dcache = L1CacheController(
             size=self._size,
             assoc=self._assoc,
             network=self.ruby_system.network,
@@ -163,7 +163,7 @@ class PrivateL1CacheHierarchy(AbstractRubyCacheHierarchy):
             target_isa=board.get_processor().get_isa(),
             clk_domain=board.get_clock_domain(),
         )
-        cluster.icache = PrivateL1MOESICache(
+        cluster.icache = L1CacheController(
             size=self._size,
             assoc=self._assoc,
             network=self.ruby_system.network,
@@ -196,8 +196,8 @@ class PrivateL1CacheHierarchy(AbstractRubyCacheHierarchy):
         core.connect_dcache(cluster.dcache.sequencer.in_ports)
 
         core.connect_walker_ports(
-            cluster.dcache.sequencer.in_ports,
             cluster.icache.sequencer.in_ports,
+            cluster.dcache.sequencer.in_ports,
         )
 
         # Connect the interrupt ports

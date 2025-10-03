@@ -34,10 +34,12 @@ from m5.objects import (
     BaseMMU,
     PcCountTracker,
     PcCountTrackerManager,
-    Port,
     Process,
 )
-from m5.params import PcCountPair
+from m5.params import (
+    PcCountPair,
+    Port,
+)
 
 from ...isas import ISA
 from ...utils.override import overrides

@@ -35,7 +35,6 @@ from typing import (
 
 import m5
 from m5.objects import (
-    AddrRange,
     ArmDefaultRelease,
     ArmFsLinux,
     ArmRelease,
@@ -45,9 +44,10 @@ from m5.objects import (
     CowDiskImage,
     GenericTimer,
     IOXBar,
+    PciBus,
     PciVirtIO,
-    Port,
     RawDiskImage,
+    Root,
     SimObject,
     SrcClockDomain,
     Terminal,
@@ -57,6 +57,10 @@ from m5.objects import (
     VirtIOBlock,
     VncServer,
     VoltageDomain,
+)
+from m5.params import (
+    AddrRange,
+    Port,
 )
 
 from ...isas import ISA
@@ -294,6 +298,14 @@ class ArmBoard(ArmSystem, AbstractBoard, KernelDiskWorkload):
         return self.iobus
 
     @overrides(AbstractBoard)
+    def has_pci_bus(self) -> bool:
+        return True
+
+    @overrides(AbstractBoard)
+    def get_pci_bus(self) -> PciBus:
+        return self.realview.pci_bus
+
+    @overrides(AbstractBoard)
     def has_coherent_io(self) -> bool:
         # The setup of the caches gets a little tricky here. We need to
         # override the default cache_hierarchy.iobridge due to different delay
@@ -332,8 +344,8 @@ class ArmBoard(ArmSystem, AbstractBoard, KernelDiskWorkload):
         self.system_port = port
 
     @overrides(AbstractBoard)
-    def _pre_instantiate(self, full_system: Optional[bool] = None) -> None:
-        super()._pre_instantiate(full_system=full_system)
+    def _pre_instantiate(self, full_system: Optional[bool] = None) -> Root:
+        root = super()._pre_instantiate(full_system=full_system)
 
         # Add the PCI devices.
         self.pci_devices = self._pci_devices
@@ -351,6 +363,8 @@ class ArmBoard(ArmSystem, AbstractBoard, KernelDiskWorkload):
         # Calling generateDtb from class ArmSystem to add memory information to
         # the dtb file.
         self.generateDtb(self._get_dtb_filename())
+
+        return root
 
     def _get_dtb_filename(self) -> str:
         """Returns the ``dtb`` file location.
@@ -373,9 +387,7 @@ class ArmBoard(ArmSystem, AbstractBoard, KernelDiskWorkload):
 
         # For every PCI device, we need to get its dma_port so that we
         # can setup dma_controllers correctly.
-        self.realview.attachPciDevice(
-            pci_device, self.iobus, dma_ports=self.get_dma_ports()
-        )
+        self.realview.attachPciDevice(pci_device)
 
     @overrides(KernelDiskWorkload)
     def get_disk_device(self):

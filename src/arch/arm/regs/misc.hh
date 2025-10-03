@@ -2987,7 +2987,7 @@ namespace ArmISA
         }
     };
 
-    static inline MiscRegClassOps miscRegClassOps;
+    inline MiscRegClassOps miscRegClassOps;
 
     inline constexpr RegClass miscRegClass =
         RegClass(MiscRegClass, MiscRegClassName, NUM_MISCREGS,

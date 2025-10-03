@@ -29,6 +29,7 @@ from abc import (
     ABCMeta,
     abstractmethod,
 )
+from pathlib import Path
 from typing import (
     List,
     Optional,
@@ -37,14 +38,17 @@ from typing import (
 )
 
 from m5.objects import (
-    AddrRange,
     ClockDomain,
     IOXBar,
-    Port,
+    PciBus,
     Root,
     SrcClockDomain,
     System,
     VoltageDomain,
+)
+from m5.params import (
+    AddrRange,
+    Port,
 )
 
 from ...resources.resource import WorkloadResource
@@ -322,6 +326,28 @@ class AbstractBoard:
         raise NotImplementedError
 
     @abstractmethod
+    def has_pci_bus(self) -> bool:
+        """Determine whether the board has an PCI bus or not.
+
+        :returns: ``True`` if the board has an PCI bus, otherwise ``False``.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_pci_bus(self) -> PciBus:
+        """Get the board's main PCI Bus.
+
+        This abstract method must be implemented within the subclasses if they
+        support PCI and/or full system simulation.
+
+        The PCI bus is a non-coherent bus (in the classic caches). This bus is
+        connected to the PCI host bridge and to each PCI devices of the system.
+
+        :returns: The PCI Bus.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def has_coherent_io(self) -> bool:
         """Determine whether the board needs coherent I/O
 
@@ -339,6 +365,9 @@ class AbstractBoard:
         CPU-side port for which coherent I/O (DMA) is issued.
         """
         raise NotImplementedError
+
+    def get_checkpoint_dir(self) -> Optional[Path]:
+        return self._checkpoint
 
     @abstractmethod
     def _setup_memory_ranges(self) -> None:

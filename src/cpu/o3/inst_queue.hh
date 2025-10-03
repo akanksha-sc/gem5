@@ -535,7 +535,7 @@ class InstructionQueue
         statistics::Vector statFuBusy;
         // statistics::Vector dist_unissued;
         /** Stat for total number issued for each instruction type. */
-        statistics::Vector2d statIssuedInstType;
+        statistics::Vector2d issuedInstType;
 
         /** Number of instructions issued per cycle. */
         statistics::Formula issueRate;

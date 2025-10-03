@@ -50,11 +50,12 @@
 #include "base/statistics.hh"
 #include "enums/TypeTLB.hh"
 #include "mem/request.hh"
-#include "params/ArmTLB.hh"
 #include "sim/probe/pmu.hh"
 
 namespace gem5
 {
+
+struct ArmTLBParams;
 
 class ThreadContext;
 

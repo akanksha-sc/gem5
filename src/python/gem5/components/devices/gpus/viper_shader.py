@@ -30,7 +30,6 @@
 from typing import List
 
 from m5.objects import (
-    AddrRange,
     AMDGPUDevice,
     AMDGPUInterruptHandler,
     AMDGPUMemoryManager,
@@ -56,6 +55,7 @@ from m5.objects import (
     VegaTLBCoalescer,
     Wavefront,
 )
+from m5.params import AddrRange
 
 
 class ViperCU(ComputeUnit):
@@ -360,12 +360,12 @@ class ViperShader(Shader):
 
         self._gpu_dma_ports.append(self.l3_tlb.walker.port)
 
-    def connect_iobus(self, iobus: BaseXBar):
+    def connect_iobus(self, iobus: BaseXBar, pci_bus: BaseXBar):
         """Connect the GPU objects to the IO bus."""
         self.gpu_cmd_proc.pio = iobus.mem_side_ports
         self.gpu_cmd_proc.hsapp.pio = iobus.mem_side_ports
         self.system_hub.pio = iobus.mem_side_ports
-        self._device.pio = iobus.mem_side_ports
+        self._device.pio = pci_bus.mem_side_ports
         self._device.device_ih.pio = iobus.mem_side_ports
         for sdma in self._device.sdmas:
             sdma.pio = iobus.mem_side_ports

@@ -136,7 +136,7 @@ def generateDtb(system):
 
     node = FdtNode("chosen")
     node.append(FdtPropertyStrings("bootargs", [system.workload.command_line]))
-    node.append(FdtPropertyStrings("stdout-path", ["/uart@10000000"]))
+    node.append(FdtPropertyStrings("stdout-path", ["/soc/uart@10000000"]))
     root.append(node)
 
     fdt = Fdt()
@@ -182,7 +182,7 @@ np = args.num_cpus
 
 # ---------------------------- Setup System ---------------------------- #
 # Default Setup
-system = System()
+system = RiscvSystem()
 mdesc = SysConfig(
     disks=args.disk_image,
     rootdev=args.root_device,
@@ -221,7 +221,17 @@ system.platform = HiFive()
 # RTCCLK (Set to 100MHz for faster simulation)
 system.platform.rtc = RiscvRTC(frequency=Frequency("100MHz"))
 system.platform.clint.int_pin = system.platform.rtc.int_pin
-system.platform.pci_host.pio = system.iobus.mem_side_ports
+
+system.iobus.cpu_side_ports = system.platform.pci_host.up_request_port()
+system.iobus.mem_side_ports = system.platform.pci_host.up_response_port()
+
+system.platform.pci_bus.cpu_side_ports = (
+    system.platform.pci_host.down_request_port()
+)
+system.platform.pci_bus.default = system.platform.pci_host.down_response_port()
+system.platform.pci_bus.config_error_port = (
+    system.platform.pci_host.config_error.pio
+)
 
 # VirtIOMMIO
 if args.disk_image:

@@ -1438,6 +1438,9 @@ Fault
 faultFgtEL0(const MiscRegLUTEntry &entry,
     ThreadContext *tc, const MiscRegOp64 &inst)
 {
+    if (!FullSystem) {
+        return NoFault;
+    }
     const HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
     const bool in_host = EL2Enabled(tc) && hcr.e2h && hcr.tge;
     if (fgtEnabled(tc) && !in_host &&
@@ -1890,6 +1893,9 @@ Fault
 faultCtrEL0(const MiscRegLUTEntry &entry,
     ThreadContext *tc, const MiscRegOp64 &inst)
 {
+    if (!FullSystem) {
+        return NoFault;
+    }
      const SCTLR sctlr = tc->readMiscReg(MISCREG_SCTLR_EL1);
      const SCTLR sctlr2 = tc->readMiscReg(MISCREG_SCTLR_EL2);
      const HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
@@ -1917,6 +1923,9 @@ Fault
 faultMdccsrEL0(const MiscRegLUTEntry &entry,
     ThreadContext *tc, const MiscRegOp64 &inst)
 {
+    if (!FullSystem) {
+        return NoFault;
+    }
     const DBGDS32 mdscr = tc->readMiscReg(MISCREG_MDSCR_EL1);
     const HDCR mdcr_el2 = tc->readMiscReg(MISCREG_MDCR_EL2);
     const HDCR mdcr_el3 = tc->readMiscReg(MISCREG_MDCR_EL3);
@@ -2441,6 +2450,9 @@ Fault
 faultGenericTimerEL0(const MiscRegLUTEntry &entry,
     ThreadContext *tc, const MiscRegOp64 &inst)
 {
+    if (!FullSystem) {
+        return NoFault;
+    }
     const bool el2_enabled = EL2Enabled(tc);
     const HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
     const bool in_host = el2_enabled && hcr.e2h && hcr.tge;
@@ -2462,6 +2474,9 @@ Fault
 faultCntpctEL0(const MiscRegLUTEntry &entry,
     ThreadContext *tc, const MiscRegOp64 &inst)
 {
+    if (!FullSystem) {
+        return NoFault;
+    }
     const bool el2_enabled = EL2Enabled(tc);
     const HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
     const bool in_host = el2_enabled && hcr.e2h && hcr.tge;
@@ -2508,6 +2523,9 @@ Fault
 faultCntvctEL0(const MiscRegLUTEntry &entry,
     ThreadContext *tc, const MiscRegOp64 &inst)
 {
+    if (!FullSystem) {
+        return NoFault;
+    }
     const bool el2_enabled = EL2Enabled(tc);
     const HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
     const bool in_host = el2_enabled && hcr.e2h && hcr.tge;
@@ -2544,6 +2562,9 @@ Fault
 faultCntpCtlEL0(const MiscRegLUTEntry &entry,
     ThreadContext *tc, const MiscRegOp64 &inst)
 {
+    if (!FullSystem) {
+        return NoFault;
+    }
     const bool el2_enabled = EL2Enabled(tc);
     const HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
     const bool in_host = el2_enabled && hcr.e2h && hcr.tge;
@@ -2591,6 +2612,9 @@ Fault
 faultCntvCtlEL0(const MiscRegLUTEntry &entry,
     ThreadContext *tc, const MiscRegOp64 &inst)
 {
+    if (!FullSystem) {
+        return NoFault;
+    }
     const bool el2_enabled = EL2Enabled(tc);
     const HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
     const bool in_host = el2_enabled && hcr.e2h && hcr.tge;

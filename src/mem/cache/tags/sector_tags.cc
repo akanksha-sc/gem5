@@ -51,7 +51,6 @@
 #include "base/intmath.hh"
 #include "base/logging.hh"
 #include "base/types.hh"
-#include "mem/cache/base.hh"
 #include "mem/cache/replacement_policies/base.hh"
 #include "mem/cache/replacement_policies/replaceable_entry.hh"
 #include "mem/cache/tags/indexing_policies/base.hh"

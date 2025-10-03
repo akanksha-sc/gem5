@@ -656,8 +656,15 @@ ISA::readMiscReg(RegIndex idx)
       // Generic Timer registers
       case MISCREG_CNTFRQ ... MISCREG_CNTVOFF:
       case MISCREG_CNTFRQ_EL0 ... MISCREG_CNTVOFF_EL2:
-        return getGenericTimer().readMiscReg(idx);
-
+          if (FullSystem) {
+              return getGenericTimer().readMiscReg(idx);
+          } else {
+              warn("Call to %s attempts to access a system timer which is "
+                   "inaccessible within SE mode. Divergent behaviour is "
+                   "possible.",
+                   miscRegName[idx]);
+              return 0;
+          }
       case MISCREG_ICC_AP0R0 ... MISCREG_ICH_LRC15:
       case MISCREG_ICC_PMR_EL1 ... MISCREG_ICC_IGRPEN1_EL3:
       case MISCREG_ICH_AP0R0_EL2 ... MISCREG_ICH_LR15_EL2:

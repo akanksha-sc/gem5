@@ -49,8 +49,9 @@
 #include "arch/arm/tlbi_op.hh"
 #include "debug/MMU.hh"
 #include "mem/packet_access.hh"
-#include "sim/pseudo_inst.hh"
+#include "params/ArmMMU.hh"
 #include "sim/process.hh"
+#include "sim/pseudo_inst.hh"
 
 namespace gem5
 {

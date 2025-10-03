@@ -50,12 +50,13 @@
 #include "mem/packet_queue.hh"
 #include "mem/qport.hh"
 #include "mem/request.hh"
-#include "params/ArmTableWalker.hh"
 #include "sim/clocked_object.hh"
 #include "sim/eventq.hh"
 
 namespace gem5
 {
+
+struct ArmTableWalkerParams;
 
 class ThreadContext;
 

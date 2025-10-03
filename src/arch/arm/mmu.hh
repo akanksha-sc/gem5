@@ -48,10 +48,11 @@
 #include "base/statistics.hh"
 #include "enums/ArmLookupLevel.hh"
 
-#include "params/ArmMMU.hh"
-
 namespace gem5
 {
+
+struct ArmMMUParams;
+class ArmRelease;
 
 namespace ArmISA {
 

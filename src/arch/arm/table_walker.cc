@@ -53,6 +53,7 @@
 #include "debug/PageTableWalker.hh"
 #include "debug/TLB.hh"
 #include "debug/TLBVerbose.hh"
+#include "params/ArmTableWalker.hh"
 #include "sim/system.hh"
 
 namespace gem5

@@ -2250,6 +2250,51 @@ Fault
 
 }};
 
+
+def template VectorCompressMacroConstructor {{
+
+template<typename ElemType>
+%(class_name)s<ElemType>::%(class_name)s(ExtMachInst _machInst, uint32_t _elen,
+                                         uint32_t _vlen)
+    : %(base_class)s("%(mnemonic)s", _machInst, %(op_class)s, _elen, _vlen)
+{
+    %(set_reg_idx_arr)s;
+    %(constructor)s;
+    const uint32_t num_microops = vtype_regs_per_group(vtype);
+    int32_t tmp_vl = this->vl;
+    const int32_t micro_vlmax = vtype_VLMAX(_machInst.vtype8, vlen, true);
+    int32_t micro_vl = std::min(tmp_vl, micro_vlmax);
+    StaticInstPtr microop;
+
+    if (micro_vl == 0) {
+        microop = new VectorNopMicroInst(_machInst);
+        this->microops.push_back(microop);
+    }
+    for (int i = 0; i < num_microops && micro_vl > 0; ++i) {
+        microop = new %(class_name)sMicro<ElemType>(_machInst, micro_vl, i,
+                                                    _elen, _vlen);
+        microop->setDelayedCommit();
+        this->microops.push_back(microop);
+        micro_vl = std::min(tmp_vl -= micro_vlmax, micro_vlmax);
+    }
+    tmp_vl = this->vl;
+    micro_vl = std::min(tmp_vl, micro_vlmax);
+    for (int i = 0; i < num_microops && micro_vl > 0; ++i) {
+        microop = new %(class_name)sMicro<ElemType>(_machInst, micro_vl,
+                                        i + num_microops, _elen, _vlen);
+        microop->setDelayedCommit();
+        this->microops.push_back(microop);
+        micro_vl = std::min(tmp_vl -= micro_vlmax, micro_vlmax);
+    }
+
+    this->microops.front()->setFirstMicroop();
+    this->microops.back()->setLastMicroop();
+}
+
+%(declare_varith_template)s;
+
+}};
+
 def template VectorSlideMacroDeclare {{
 
 template<typename ElemType>

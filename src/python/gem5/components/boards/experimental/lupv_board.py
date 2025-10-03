@@ -29,7 +29,6 @@ from typing import List
 
 import m5
 from m5.objects import (
-    AddrRange,
     Bridge,
     Clint,
     CowDiskImage,
@@ -44,13 +43,17 @@ from m5.objects import (
     LupioTMR,
     LupioTTY,
     LupV,
+    PciBus,
     Plic,
     PMAChecker,
-    Port,
     RawDiskImage,
     RiscvLinux,
     RiscvRTC,
     Terminal,
+)
+from m5.params import (
+    AddrRange,
+    Port,
 )
 from m5.util.fdthelper import (
     Fdt,
@@ -265,6 +268,17 @@ class LupvBoard(AbstractSystemBoard, KernelDiskWorkload):
     @overrides(AbstractSystemBoard)
     def get_io_bus(self) -> IOXBar:
         return self.iobus
+
+    @overrides(AbstractSystemBoard)
+    def has_pci_bus(self) -> bool:
+        return False
+
+    @overrides(AbstractSystemBoard)
+    def get_pci_bus(self) -> PciBus:
+        raise NotImplementedError(
+            "The LupvBoard does not have PCI bus. "
+            "Use `has_pci_bus()` to check this."
+        )
 
     def has_coherent_io(self) -> bool:
         return True
