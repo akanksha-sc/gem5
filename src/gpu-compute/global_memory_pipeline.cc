@@ -29,14 +29,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "gpu-compute/global_memory_pipeline.hh"
-
+#define __STDC_FORMAT_MACROS
 #include <cinttypes>
-
 #include "debug/GPUCoalescer.hh"
 #include "debug/GPUMem.hh"
 #include "debug/GPUReg.hh"
 #include "gpu-compute/compute_unit.hh"
+#include "gpu-compute/global_memory_pipeline.hh"
 #include "gpu-compute/gpu_dyn_inst.hh"
 #include "gpu-compute/shader.hh"
 #include "gpu-compute/vector_register_file.hh"
