@@ -902,27 +902,6 @@ class InstConfigGenerator:
             self.simobject_file.write("from m5.params import *\n")
             self.simobject_file.write("from m5.proxy import *\n")
             self.simobject_file.write("from m5.SimObject import SimObject\n\n")
-            # define the class
-            self.simobject_file.write("class InstConfig(SimObject):\n")
-            self.simobject_file.write("\t# SimObject type\n")
-            self.simobject_file.write("\ttype = 'InstConfig'\n")
-            self.simobject_file.write("\t# gem5-SALAM attached header\n")
-            self.simobject_file.write(
-                "\tcxx_header ="
-                '"hwacc/HWModeling/src/instruction_config.hh"\n\n'
-            )
-            for inst_name in self.inst_dict["instructions"].keys():
-                self.simobject_file.write(
-                    "\t"
-                    + str(inst_name)
-                    + " = Param."
-                    + "".join(
-                        words.capitalize() for words in inst_name.split("_")
-                    )
-                    + '(Parent.any, "'
-                    + str(inst_name)
-                    + ' instruction SimObject")\n'
-                )
             self.simobject_file.write("\n#AUTO-GENERATED CLASSES\n")
             for inst_name in self.inst_dict["instructions"].keys():
                 self.simobject_file.write(
@@ -980,6 +959,27 @@ class InstConfigGenerator:
                         ]
                     )
                     + ', "Default instruction runtime cycles.")\n\n'
+                )
+            # define the class
+            self.simobject_file.write("class InstConfig(SimObject):\n")
+            self.simobject_file.write("\t# SimObject type\n")
+            self.simobject_file.write("\ttype = 'InstConfig'\n")
+            self.simobject_file.write("\t# gem5-SALAM attached header\n")
+            self.simobject_file.write(
+                "\tcxx_header ="
+                '"hwacc/HWModeling/src/instruction_config.hh"\n\n'
+            )
+            for inst_name in self.inst_dict["instructions"].keys():
+                self.simobject_file.write(
+                    "\t"
+                    + str(inst_name)
+                    + " = Param."
+                    + "".join(
+                        words.capitalize() for words in inst_name.split("_")
+                    )
+                    + '(Parent.any, "'
+                    + str(inst_name)
+                    + ' instruction SimObject")\n'
                 )
 
     def initalize_inst_config_header(self, inst_list=[]):
