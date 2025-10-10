@@ -88,6 +88,8 @@ if env["CONF"]["USE_ARM_ISA"]:
             "Fdiv",
             "Fence",
             "Fmul",
+            "Fmuladd",
+            "Fneg",
             "Fpext",
             "Fptosi",
             "Fptoui",
