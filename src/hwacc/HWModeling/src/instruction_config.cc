@@ -107,4 +107,3 @@ InstConfig::InstConfig(const InstConfigParams &params) :
 	inst_list.push_back(_zext);
 }
 // END OF GENERATED CONSTRUCTOR
-

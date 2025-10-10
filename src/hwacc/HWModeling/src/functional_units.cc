@@ -27,4 +27,3 @@ FunctionalUnits::FunctionalUnits(const FunctionalUnitsParams &params) :
 		functional_unit_list.push_back(_bitwise_operations);
 }
 // END OF GENERATED CONSTRUCTOR
-
