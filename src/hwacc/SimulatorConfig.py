@@ -39,7 +39,7 @@ class SimulatorConfig(SimObject):
     # SimObject type
     type = "SimulatorConfig"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/src/simulator_config.hh"
+    cxx_header = "hwacc/HWModeling/simulator_config.hh"
     ### Templates
     ### YML Type: simulator_config.functional_unit
     ## alias = Param.UInt32(limit,

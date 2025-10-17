@@ -54,7 +54,7 @@ class HWModel:
     def __init__(
         self,
         model="40nm_model",
-        latency="10ns",
+        latency="5ns",
         profile="default_profile",
         benchname=None,
         benchfolder=os.path.join(ACC_BENCH_PATH, "sys_validation"),
@@ -182,8 +182,8 @@ class HWModel:
         ]
 
 
-GEN_BASE = os.path.join(HWACC_DIR, "HWModeling", "generated")
-os.makedirs(os.path.join(GEN_BASE, "functionalunits"), exist_ok=True)
+GEN_BASE = os.path.join(HWACC_DIR, "HWModeling")
+os.makedirs(os.path.join(GEN_BASE, "functional_units"), exist_ok=True)
 os.makedirs(os.path.join(GEN_BASE, "instructions"), exist_ok=True)
 
 benchmark_args = HWArgs()

@@ -39,7 +39,7 @@ class InstOpCodes(SimObject):
     # SimObject type
     type = "InstOpCodes"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/src/opcodes.hh"
+    cxx_header = "hwacc/HWModeling/opcodes.hh"
     # Default Values Below are LLVM Instruction Enumerations from
     # llvm/IR/Instructions.def
     ### Templates

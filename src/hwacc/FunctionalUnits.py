@@ -9,7 +9,7 @@ class FunctionalUnits(SimObject):
     # SimObject type
     type = "FunctionalUnits"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/src/functional_units.hh"
+    cxx_header = "hwacc/HWModeling/functional_units.hh"
 
     float_divider = Param.FloatDivider(
         Parent.any, "float_divider functional unit SimObject."
@@ -51,7 +51,7 @@ class FloatDivider(SimObject):
     # SimObject type
     type = "FloatDivider"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/functionalunits/float_divider.hh"
+    cxx_header = "hwacc/HWModeling/functional_units/float_divider.hh"
     # HW Params
     alias = Param.String(
         "float_divider", "Default values set from float_divider.yml"
@@ -118,7 +118,7 @@ class FloatAdder(SimObject):
     # SimObject type
     type = "FloatAdder"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/functionalunits/float_adder.hh"
+    cxx_header = "hwacc/HWModeling/functional_units/float_adder.hh"
     # HW Params
     alias = Param.String(
         "float_adder", "Default values set from float_adder.yml"
@@ -169,9 +169,7 @@ class DoubleMultiplier(SimObject):
     # SimObject type
     type = "DoubleMultiplier"
     # gem5-SALAM attached header
-    cxx_header = (
-        "hwacc/HWModeling/generated/functionalunits/double_multiplier.hh"
-    )
+    cxx_header = "hwacc/HWModeling/functional_units/double_multiplier.hh"
     # HW Params
     alias = Param.String(
         "double_multiplier", "Default values set from double_multiplier.yml"
@@ -252,7 +250,7 @@ class DoubleAdder(SimObject):
     # SimObject type
     type = "DoubleAdder"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/functionalunits/double_adder.hh"
+    cxx_header = "hwacc/HWModeling/functional_units/double_adder.hh"
     # HW Params
     alias = Param.String(
         "double_adder", "Default values set from double_adder.yml"
@@ -307,7 +305,7 @@ class BitShifter(SimObject):
     # SimObject type
     type = "BitShifter"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/functionalunits/bit_shifter.hh"
+    cxx_header = "hwacc/HWModeling/functional_units/bit_shifter.hh"
     # HW Params
     alias = Param.String(
         "bit_shifter", "Default values set from bit_shifter.yml"
@@ -358,9 +356,7 @@ class IntegerMultiplier(SimObject):
     # SimObject type
     type = "IntegerMultiplier"
     # gem5-SALAM attached header
-    cxx_header = (
-        "hwacc/HWModeling/generated/functionalunits/integer_multiplier.hh"
-    )
+    cxx_header = "hwacc/HWModeling/functional_units/integer_multiplier.hh"
     # HW Params
     alias = Param.String(
         "integer_multiplier", "Default values set from integer_multiplier.yml"
@@ -441,7 +437,7 @@ class BitRegister(SimObject):
     # SimObject type
     type = "BitRegister"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/functionalunits/bit_register.hh"
+    cxx_header = "hwacc/HWModeling/functional_units/bit_register.hh"
     # HW Params
     alias = Param.String(
         "bit_register", "Default values set from bit_register.yml"
@@ -494,7 +490,7 @@ class DoubleDivider(SimObject):
     # SimObject type
     type = "DoubleDivider"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/functionalunits/double_divider.hh"
+    cxx_header = "hwacc/HWModeling/functional_units/double_divider.hh"
     # HW Params
     alias = Param.String(
         "double_divider", "Default values set from double_divider.yml"
@@ -565,9 +561,7 @@ class FloatMultiplier(SimObject):
     # SimObject type
     type = "FloatMultiplier"
     # gem5-SALAM attached header
-    cxx_header = (
-        "hwacc/HWModeling/generated/functionalunits/float_multiplier.hh"
-    )
+    cxx_header = "hwacc/HWModeling/functional_units/float_multiplier.hh"
     # HW Params
     alias = Param.String(
         "float_multiplier", "Default values set from float_multiplier.yml"
@@ -648,7 +642,7 @@ class IntegerAdder(SimObject):
     # SimObject type
     type = "IntegerAdder"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/functionalunits/integer_adder.hh"
+    cxx_header = "hwacc/HWModeling/functional_units/integer_adder.hh"
     # HW Params
     alias = Param.String(
         "integer_adder", "Default values set from integer_adder.yml"
@@ -709,9 +703,7 @@ class BitwiseOperations(SimObject):
     # SimObject type
     type = "BitwiseOperations"
     # gem5-SALAM attached header
-    cxx_header = (
-        "hwacc/HWModeling/generated/functionalunits/bitwise_operations.hh"
-    )
+    cxx_header = "hwacc/HWModeling/functional_units/bitwise_operations.hh"
     # HW Params
     alias = Param.String(
         "bitwise_operations", "Default values set from bitwise_operations.yml"

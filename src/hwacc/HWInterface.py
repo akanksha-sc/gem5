@@ -44,7 +44,7 @@ from m5.SimObject import SimObject
 
 class HWInterface(SimObject):
     type = "HWInterface"
-    cxx_header = "hwacc/HWModeling/src/hw_interface.hh"
+    cxx_header = "hwacc/HWModeling/hw_interface.hh"
 
     cycle_counts = Param.CycleCounts(Parent.any, "Cycle Counts")
     functional_units = Param.FunctionalUnits(Parent.any, "Functional Units")

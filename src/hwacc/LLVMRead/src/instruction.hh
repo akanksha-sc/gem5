@@ -42,7 +42,7 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "../../HWModeling/src/hw_interface.hh"
+#include "../../HWModeling/hw_interface.hh"
 #include "basic_block.hh"
 #include "debug_flags.hh"
 #include "mem_request.hh"

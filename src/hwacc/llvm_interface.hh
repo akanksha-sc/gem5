@@ -65,7 +65,7 @@
 #include <llvm/Transforms/Utils/Cloning.h>
 
 // SALAM Includes
-#include "hwacc/HWModeling/src/hw_interface.hh"
+#include "hwacc/HWModeling/hw_interface.hh"
 #include "hwacc/LLVMRead/src/basic_block.hh"
 #include "hwacc/LLVMRead/src/debug_flags.hh"
 #include "hwacc/LLVMRead/src/function.hh"

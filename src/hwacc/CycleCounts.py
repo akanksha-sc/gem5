@@ -39,7 +39,7 @@ class CycleCounts(SimObject):
     # SimObject type
     type = "CycleCounts"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/src/cycle_counts.hh"
+    cxx_header = "hwacc/HWModeling/cycle_counts.hh"
     ### Templates
     ### YML Type: instruction
     ## SALAM_OpCodeName = Param.UInt32(runtime_cycles,

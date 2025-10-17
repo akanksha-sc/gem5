@@ -34,10 +34,6 @@ Import("*")
 
 if env["CONF"]["USE_ARM_ISA"]:
 
-    # Example
-    # SimObject('IOAcc.py')
-
-    # CommInterface
     SimObject("CommInterface.py", sim_objects=["CommInterface"])
     SimObject("ScratchpadMemory.py", sim_objects=["ScratchpadMemory"])
     SimObject("NoncoherentDma.py", sim_objects=["NoncoherentDma"])
@@ -46,11 +42,9 @@ if env["CONF"]["USE_ARM_ISA"]:
     SimObject("StreamBuffer.py", sim_objects=["StreamBuffer"])
     SimObject("RegisterBank.py", sim_objects=["RegisterBank"])
 
-    # LLVMInterface
     SimObject("AccComputeUnit.py", sim_objects=["AccComputeUnit"])
     SimObject("LLVMInterface.py", sim_objects=["LLVMInterface"])
 
-    # HWInterface
     SimObject("CycleCounts.py", sim_objects=["CycleCounts"])
     SimObject(
         "FunctionalUnits.py",
@@ -132,10 +126,7 @@ if env["CONF"]["USE_ARM_ISA"]:
     SimObject("SALAMPowerModel.py", sim_objects=["SALAMPowerModel"])
     SimObject("SimulatorConfig.py", sim_objects=["SimulatorConfig"])
 
-    # Functional Units
-    # SimObject('Adder.py')
 
-    #
     Source("comm_interface.cc")
     Source("acc_compute_unit.cc")
     Source("llvm_interface.cc")
@@ -148,7 +139,6 @@ if env["CONF"]["USE_ARM_ISA"]:
     Source("scratchpad_memory.cc")
     Source("register_bank.cc")
 
-    #
     Source("LLVMRead/src/value.cc")
     Source("LLVMRead/src/function.cc")
     Source("LLVMRead/src/basic_block.cc")
@@ -158,17 +148,16 @@ if env["CONF"]["USE_ARM_ISA"]:
     Source("LLVMRead/src/registers.cc")
     Source("LLVMRead/src/operand.cc")
 
-    Source("HWModeling/src/cycle_counts.cc")
-    #Source('HWModeling/src/cacti_wrapper.cc')
-    Source("HWModeling/src/functional_units.cc")
-    Source("HWModeling/src/hw_interface.cc")
-    Source("HWModeling/src/hw_statistics.cc")
-    Source("HWModeling/src/instruction_config.cc")
-    Source("HWModeling/src/opcodes.cc")
-    Source("HWModeling/src/salam_power_model.cc")
-    Source("HWModeling/src/simulator_config.cc")
+    Source("HWModeling/cycle_counts.cc")
+    # Source('HWModeling/cacti_wrapper.cc')
+    Source("HWModeling/functional_units.cc")
+    Source("HWModeling/hw_interface.cc")
+    Source("HWModeling/hw_statistics.cc")
+    Source("HWModeling/instruction_config.cc")
+    Source("HWModeling/opcodes.cc")
+    Source("HWModeling/salam_power_model.cc")
+    Source("HWModeling/simulator_config.cc")
 
-    #
     DebugFlag("CommInterface")
     DebugFlag("CommInterfaceQueues")
     DebugFlag("DeviceMMR")
@@ -184,7 +173,6 @@ if env["CONF"]["USE_ARM_ISA"]:
     DebugFlag("Trace")
     DebugFlag("Step")
 
-    #
     CompoundFlag(
         "JDEV",
         [

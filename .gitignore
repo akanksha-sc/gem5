@@ -12,13 +12,6 @@ cscope.out
 .*.swo
 m5out
 /src/doxygen/html
-/src/hwacc/FunctionalUnits.py
-/src/hwacc/HWModeling/generated/
-/src/hwacc/HWModeling/src/functional_units.cc
-/src/hwacc/HWModeling/src/functional_units.hh
-/src/hwacc/HWModeling/src/instruction_config.cc
-/src/hwacc/HWModeling/src/instruction_config.hh
-/src/hwacc/InstConfig.py
 /docs/_build
 /ext/dramsim2/DRAMSim2
 /ext/mcpat/regression/*/*.out

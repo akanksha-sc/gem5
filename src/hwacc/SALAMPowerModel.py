@@ -39,7 +39,7 @@ class SALAMPowerModel(SimObject):
     # SimObject type
     type = "SALAMPowerModel"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/src/salam_power_model.hh"
+    cxx_header = "hwacc/HWModeling/salam_power_model.hh"
     ### Templates
     ### YML Type: functional_unit.power_model
     ## 'power_units' = Param.String(units.power, "Hardware Model Power Units")

@@ -39,7 +39,7 @@ class HWStatistics(SimObject):
     # SimObject type
     type = "HWStatistics"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/src/hw_statistics.hh"
+    cxx_header = "hwacc/HWModeling/hw_statistics.hh"
     ### Templates
     ### YML Type: statistics
     ## 'quick_stats' = Param.Bool(quick_stats,

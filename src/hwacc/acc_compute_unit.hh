@@ -35,7 +35,7 @@
 #ifndef __HWACC_ACC_COMPUTE_UNIT_HH__
 #define __HWACC_ACC_COMPUTE_UNIT_HH__
 
-#include "hwacc/HWModeling/src/hw_interface.hh"
+#include "hwacc/HWModeling/hw_interface.hh"
 #include "hwacc/LLVMRead/src/debug_flags.hh"
 #include "hwacc/LLVMRead/src/mem_request.hh"
 #include "hwacc/comm_interface.hh"

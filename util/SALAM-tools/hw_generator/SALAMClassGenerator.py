@@ -47,23 +47,17 @@ class FunctionalUnitGenerator:
         self.classname = ""
         self.header_name = ""
         self.cxx_header = os.path.join(
-            HWACC_DIR, "HWModeling", "src", "functional_units.hh"
+            HWACC_DIR, "HWModeling", "functional_units.hh"
         )
-        self.cxx_header_py_path = "hwacc/HWModeling/src/functional_units.hh"
+        self.cxx_header_py_path = "hwacc/HWModeling/functional_units.hh"
         self.fu_base_directory = (
-            os.path.join(
-                HWACC_DIR, "HWModeling", "generated", "functionalunits"
-            )
-            + os.sep
+            os.path.join(HWACC_DIR, "HWModeling", "functional_units") + os.sep
         )
-        self.fu_base_directory_py_path = (
-            "hwacc/HWModeling/generated/functionalunits/"
-        )
+        self.fu_base_directory_py_path = "hwacc/HWModeling/functional_units/"
         self.scons_dir_fu = os.path.join(
             HWACC_DIR,
             "HWModeling",
-            "generated",
-            "functionalunits",
+            "functional_units",
             "SConscript",
         )
 
@@ -221,12 +215,12 @@ class FunctionalUnitGenerator:
                 "// GENERATED HEADERS - DO NOT MODIFY\n"
             )
             self.fu_list_header_file.write(
-                '#include "../generated/functionalunits/base.hh"\n'
+                '#include "functional_units/base.hh"\n'
             )
             for unit in self.fu_list:
                 # Add include headers to files
                 self.fu_list_header_file.write(
-                    '#include "../generated/functionalunits/' + unit + '.hh"\n'
+                    '#include "functional_units/' + unit + '.hh"\n'
                 )
 
             self.fu_list_header_file.write("#include <iostream>\n")
@@ -277,7 +271,7 @@ class FunctionalUnitGenerator:
 
     def generate_fu_list_source(self, fu_list=[]):
         agg_source_path = os.path.join(
-            HWACC_DIR, "HWModeling", "src", "functional_units.cc"
+            HWACC_DIR, "HWModeling", "functional_units.cc"
         )
         with open(agg_source_path, "w+") as self.fu_list_source_file:
             self.fu_list_source_file.write(
@@ -319,7 +313,7 @@ class FunctionalUnitGenerator:
                 "#define __HWMODEL_FUNCTIONAL_UNIT_BASE_HH__\n\n"
             )
             self.base_header_file.write(
-                '#include "../../src/salam_power_model.hh"\n\n'
+                '#include "../salam_power_model.hh"\n\n'
             )
             self.base_header_file.write("#include <map>\n")
             self.base_header_file.write("#include <iostream>\n")
@@ -380,111 +374,65 @@ class FunctionalUnitGenerator:
             self.base_header_file.write(
                 "\t\tFunctionalUnitBase( std::string alias,\n"
             )
-            self.base_header_file.write("\t\t\t\t\t\t\tuint32_t stages,\n")
-            self.base_header_file.write("\t\t\t\t\t\t\tuint32_t cycles,\n")
-            self.base_header_file.write("\t\t\t\t\t\t\tuint32_t enum_value,\n")
+            self.base_header_file.write("\t\t\tuint32_t stages,\n")
+            self.base_header_file.write("\t\t\tuint32_t cycles,\n")
+            self.base_header_file.write("\t\t\tuint32_t enum_value,\n")
+            self.base_header_file.write("\t\t\tstd::string int_size,\n")
+            self.base_header_file.write("\t\t\tstd::string int_sign,\n")
+            self.base_header_file.write("\t\t\tbool int_apmode,\n")
+            self.base_header_file.write("\t\t\tstd::string fp_size,\n")
+            self.base_header_file.write("\t\t\tstd::string fp_sign,\n")
+            self.base_header_file.write("\t\t\tbool fp_apmode,\n")
+            self.base_header_file.write("\t\t\tstd::string ptr_size,\n")
+            self.base_header_file.write("\t\t\tstd::string ptr_sign,\n")
+            self.base_header_file.write("\t\t\tbool ptr_apmode,\n")
+            self.base_header_file.write("\t\t\tuint32_t limit,\n")
+            self.base_header_file.write("\t\t\tstd::string power_units,\n")
+            self.base_header_file.write("\t\t\tstd::string energy_units,\n")
+            self.base_header_file.write("\t\t\tstd::string time_units,\n")
+            self.base_header_file.write("\t\t\tstd::string area_units,\n")
+            self.base_header_file.write("\t\t\tuint32_t fu_latency,\n")
+            self.base_header_file.write("\t\t\tdouble internal_power,\n")
+            self.base_header_file.write("\t\t\tdouble switch_power,\n")
+            self.base_header_file.write("\t\t\tdouble dynamic_power,\n")
+            self.base_header_file.write("\t\t\tdouble dynamic_energy,\n")
+            self.base_header_file.write("\t\t\tdouble leakage_power,\n")
+            self.base_header_file.write("\t\t\tdouble area,\n")
+            self.base_header_file.write("\t\t\tdouble path_delay) :\n")
+            self.base_header_file.write("\t\t\t_alias(alias),\n")
+            self.base_header_file.write("\t\t\t_stages(stages),\n")
+            self.base_header_file.write("\t\t\t_cycles(cycles),\n")
+            self.base_header_file.write("\t\t\t_enum_value(enum_value),\n")
+            self.base_header_file.write("\t\t\t_int_size(int_size),\n")
+            self.base_header_file.write("\t\t\t_int_sign(int_sign),\n")
+            self.base_header_file.write("\t\t\t_int_apmode(int_apmode),\n")
+            self.base_header_file.write("\t\t\t_fp_size(fp_size),\n")
+            self.base_header_file.write("\t\t\t_fp_sign(fp_sign),\n")
+            self.base_header_file.write("\t\t\t_fp_apmode(fp_apmode),\n")
+            self.base_header_file.write("\t\t\t_ptr_size(ptr_size),\n")
+            self.base_header_file.write("\t\t\t_ptr_sign(ptr_sign),\n")
+            self.base_header_file.write("\t\t\t_ptr_apmode(ptr_apmode),\n")
+            self.base_header_file.write("\t\t\t_limit(limit),\n")
+            self.base_header_file.write("\t\t\t_power_units(power_units),\n")
+            self.base_header_file.write("\t\t\t_energy_units(energy_units),\n")
+            self.base_header_file.write("\t\t\t_time_units(time_units),\n")
+            self.base_header_file.write("\t\t\t_area_units(area_units),\n")
+            self.base_header_file.write("\t\t\t_fu_latency(fu_latency),\n")
             self.base_header_file.write(
-                "\t\t\t\t\t\t\tstd::string int_size,\n"
+                "\t\t\t_internal_power(internal_power),\n"
+            )
+            self.base_header_file.write("\t\t\t_switch_power(switch_power),\n")
+            self.base_header_file.write(
+                "\t\t\t_dynamic_power(dynamic_power),\n"
             )
             self.base_header_file.write(
-                "\t\t\t\t\t\t\tstd::string int_sign,\n"
-            )
-            self.base_header_file.write("\t\t\t\t\t\t\tbool int_apmode,\n")
-            self.base_header_file.write("\t\t\t\t\t\t\tstd::string fp_size,\n")
-            self.base_header_file.write("\t\t\t\t\t\t\tstd::string fp_sign,\n")
-            self.base_header_file.write("\t\t\t\t\t\t\tbool fp_apmode,\n")
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\tstd::string ptr_size,\n"
+                "\t\t\t_dynamic_energy(dynamic_energy),\n"
             )
             self.base_header_file.write(
-                "\t\t\t\t\t\t\tstd::string ptr_sign,\n"
+                "\t\t\t_leakage_power(leakage_power),\n"
             )
-            self.base_header_file.write("\t\t\t\t\t\t\tbool ptr_apmode,\n")
-            self.base_header_file.write("\t\t\t\t\t\t\tuint32_t limit,\n")
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\tstd::string power_units,\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\tstd::string energy_units,\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\tstd::string time_units,\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\tstd::string area_units,\n"
-            )
-            self.base_header_file.write("\t\t\t\t\t\t\tuint32_t fu_latency,\n")
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\tdouble internal_power,\n"
-            )
-            self.base_header_file.write("\t\t\t\t\t\t\tdouble switch_power,\n")
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\tdouble dynamic_power,\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\tdouble dynamic_energy,\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\tdouble leakage_power,\n"
-            )
-            self.base_header_file.write("\t\t\t\t\t\t\tdouble area,\n")
-            self.base_header_file.write("\t\t\t\t\t\t\tdouble path_delay) :\n")
-            self.base_header_file.write("\t\t\t\t\t\t\t_alias(alias),\n")
-            self.base_header_file.write("\t\t\t\t\t\t\t_stages(stages),\n")
-            self.base_header_file.write("\t\t\t\t\t\t\t_cycles(cycles),\n")
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_enum_value(enum_value),\n"
-            )
-            self.base_header_file.write("\t\t\t\t\t\t\t_int_size(int_size),\n")
-            self.base_header_file.write("\t\t\t\t\t\t\t_int_sign(int_sign),\n")
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_int_apmode(int_apmode),\n"
-            )
-            self.base_header_file.write("\t\t\t\t\t\t\t_fp_size(fp_size),\n")
-            self.base_header_file.write("\t\t\t\t\t\t\t_fp_sign(fp_sign),\n")
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_fp_apmode(fp_apmode),\n"
-            )
-            self.base_header_file.write("\t\t\t\t\t\t\t_ptr_size(ptr_size),\n")
-            self.base_header_file.write("\t\t\t\t\t\t\t_ptr_sign(ptr_sign),\n")
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_ptr_apmode(ptr_apmode),\n"
-            )
-            self.base_header_file.write("\t\t\t\t\t\t\t_limit(limit),\n")
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_power_units(power_units),\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_energy_units(energy_units),\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_time_units(time_units),\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_area_units(area_units),\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_fu_latency(fu_latency),\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_internal_power(internal_power),\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_switch_power(switch_power),\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_dynamic_power(dynamic_power),\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_dynamic_energy(dynamic_energy),\n"
-            )
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_leakage_power(leakage_power),\n"
-            )
-            self.base_header_file.write("\t\t\t\t\t\t\t_area(area),\n")
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\t_path_delay(path_delay) { }\n"
-            )
+            self.base_header_file.write("\t\t\t_area(area),\n")
+            self.base_header_file.write("\t\t\t_path_delay(path_delay) { }\n")
 
             # Getters / Setters
             self.base_header_file.write(
@@ -838,23 +786,20 @@ class InstConfigGenerator:
         self.alias = ""
         self.classname = ""
         self.header_name = ""
-        self.cxx_header = os.path.join(HWACC_DIR, "HWModeling", "src", ".hh")
-        self.cxx_header_py_path = "hwacc/HWModeling/src/instruction_config"
+        self.cxx_header = os.path.join(HWACC_DIR, "HWModeling", ".hh")
+        self.cxx_header_py_path = "hwacc/HWModeling/instruction_config"
         self.inst_base_directory = (
-            os.path.join(HWACC_DIR, "HWModeling", "generated", "instructions")
-            + os.sep
+            os.path.join(HWACC_DIR, "HWModeling", "instructions") + os.sep
         )
-        self.inst_base_directory_py_path = (
-            "hwacc/HWModeling/generated/instructions/"
-        )
+        self.inst_base_directory_py_path = "hwacc/HWModeling/instructions/"
         self.scons_dir_inst = os.path.join(
-            HWACC_DIR, "HWModeling", "generated", "instructions", "SConscript"
+            HWACC_DIR, "HWModeling", "instructions", "SConscript"
         )
 
     def generate_inst_config_source(self, inst_list_dict={}):
         instructions = list(inst_list_dict["instructions"].keys())
         agg_source_path = os.path.join(
-            HWACC_DIR, "HWModeling", "src", "instruction_config.cc"
+            HWACC_DIR, "HWModeling", "instruction_config.cc"
         )
         with open(agg_source_path, "w+") as self.inst_config_source_file:
             self.inst_config_source_file.write(
@@ -921,7 +866,7 @@ class InstConfigGenerator:
                 )
                 self.simobject_file.write("\t# gem5-SALAM attached header\n")
                 self.simobject_file.write(
-                    '\tcxx_header = "hwacc/HWModeling/generated/instructions/'
+                    '\tcxx_header = "hwacc/HWModeling/instructions/'
                     + str(inst_name)
                     + '.hh"\n'
                 )
@@ -966,8 +911,7 @@ class InstConfigGenerator:
             self.simobject_file.write("\ttype = 'InstConfig'\n")
             self.simobject_file.write("\t# gem5-SALAM attached header\n")
             self.simobject_file.write(
-                "\tcxx_header ="
-                '"hwacc/HWModeling/src/instruction_config.hh"\n\n'
+                "\tcxx_header =" '"hwacc/HWModeling/instruction_config.hh"\n\n'
             )
             for inst_name in self.inst_dict["instructions"].keys():
                 self.simobject_file.write(
@@ -985,7 +929,7 @@ class InstConfigGenerator:
     def initalize_inst_config_header(self, inst_list=[]):
         self.inst_list = inst_list["instructions"]
         with open(
-            "src/hwacc/HWModeling/src/instruction_config.hh", "w+"
+            "src/hwacc/HWModeling/instruction_config.hh", "w+"
         ) as self.inst_config_header_file:
             self.inst_config_header_file.write(
                 "#ifndef __HWMODEL_INSTRUCTION_CONFIG_HH__\n"
@@ -1004,12 +948,12 @@ class InstConfigGenerator:
                 "// GENERATED HEADERS - DO NOT MODIFY\n"
             )
             self.inst_config_header_file.write(
-                '#include "../generated/instructions/base.hh"\n'
+                '#include "instructions/base.hh"\n'
             )
             for inst in self.inst_list:
                 # Add include headers to files
                 self.inst_config_header_file.write(
-                    '#include "../generated/instructions/' + inst + '.hh"\n'
+                    '#include "instructions/' + inst + '.hh"\n'
                 )
 
             self.inst_config_header_file.write("#include <iostream>\n")
@@ -1063,14 +1007,10 @@ class InstConfigGenerator:
     def inst_config_header_generator(self, inst_params={}):
         self.inst_params = inst_params
         self.header_name = (
-            "src/hwacc/HWModeling/generated/instructions/"
-            + str(inst_params)
-            + ".hh"
+            "src/hwacc/HWModeling/instructions/" + str(inst_params) + ".hh"
         )
         self.source_name = (
-            "src/hwacc/HWModeling/generated/instructions/"
-            + str(inst_params)
-            + ".cc"
+            "src/hwacc/HWModeling/instructions/" + str(inst_params) + ".cc"
         )
 
         self.new_header = open(self.header_name, "w")
@@ -1167,9 +1107,7 @@ class InstConfigGenerator:
         self.new_source.write("\t\t\tparams.runtime_cycles) { }\n")
 
     def initialize_inst_config_base_header_file(self):
-        self.base_header = (
-            "src/hwacc/HWModeling/generated/instructions/base.hh"
-        )
+        self.base_header = "src/hwacc/HWModeling/instructions/base.hh"
         with open(self.base_header, "w+") as self.base_header_file:
 
             self.base_header_file.write(
@@ -1217,12 +1155,10 @@ class InstConfigGenerator:
                 "\t\tInstConfigBase( uint32_t functional_unit,\n"
             )
             self.base_header_file.write(
-                "\t\t\t\t\t\t\tuint32_t functional_unit_limit,\n"
+                "\t\t\tuint32_t functional_unit_limit,\n"
             )
-            self.base_header_file.write("\t\t\t\t\t\t\tuint32_t opcode_num,\n")
-            self.base_header_file.write(
-                "\t\t\t\t\t\t\tuint32_t runtime_cycles) { }\n"
-            )
+            self.base_header_file.write("\t\t\tuint32_t opcode_num,\n")
+            self.base_header_file.write("\t\t\tuint32_t runtime_cycles) { }\n")
 
             # Getters / Setters
             self.base_header_file.write(

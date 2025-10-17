@@ -9,7 +9,7 @@ from m5.SimObject import SimObject
 class Add(SimObject):
     # SimObject type
     type = "Add"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/add.hh"
+    cxx_header = "hwacc/HWModeling/instructions/add.hh"
     # Instruction params
     functional_unit = Param.UInt32(1, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -22,7 +22,7 @@ class Add(SimObject):
 class Addrspacecast(SimObject):
     # SimObject type
     type = "Addrspacecast"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/addrspacecast.hh"
+    cxx_header = "hwacc/HWModeling/instructions/addrspacecast.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -35,7 +35,7 @@ class Addrspacecast(SimObject):
 class Alloca(SimObject):
     # SimObject type
     type = "Alloca"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/alloca.hh"
+    cxx_header = "hwacc/HWModeling/instructions/alloca.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -48,7 +48,7 @@ class Alloca(SimObject):
 class AndInst(SimObject):
     # SimObject type
     type = "AndInst"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/and_inst.hh"
+    cxx_header = "hwacc/HWModeling/instructions/and_inst.hh"
     # Instruction params
     functional_unit = Param.UInt32(4, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -61,7 +61,7 @@ class AndInst(SimObject):
 class Ashr(SimObject):
     # SimObject type
     type = "Ashr"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/ashr.hh"
+    cxx_header = "hwacc/HWModeling/instructions/ashr.hh"
     # Instruction params
     functional_unit = Param.UInt32(3, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -74,7 +74,7 @@ class Ashr(SimObject):
 class Bitcast(SimObject):
     # SimObject type
     type = "Bitcast"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/bitcast.hh"
+    cxx_header = "hwacc/HWModeling/instructions/bitcast.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -87,7 +87,7 @@ class Bitcast(SimObject):
 class Br(SimObject):
     # SimObject type
     type = "Br"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/br.hh"
+    cxx_header = "hwacc/HWModeling/instructions/br.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -98,7 +98,7 @@ class Br(SimObject):
 class Call(SimObject):
     # SimObject type
     type = "Call"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/call.hh"
+    cxx_header = "hwacc/HWModeling/instructions/call.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -111,7 +111,7 @@ class Call(SimObject):
 class Fadd(SimObject):
     # SimObject type
     type = "Fadd"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/fadd.hh"
+    cxx_header = "hwacc/HWModeling/instructions/fadd.hh"
     # Instruction params
     functional_unit = Param.UInt32(6, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -124,7 +124,7 @@ class Fadd(SimObject):
 class Fcmp(SimObject):
     # SimObject type
     type = "Fcmp"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/fcmp.hh"
+    cxx_header = "hwacc/HWModeling/instructions/fcmp.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -137,7 +137,7 @@ class Fcmp(SimObject):
 class Fdiv(SimObject):
     # SimObject type
     type = "Fdiv"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/fdiv.hh"
+    cxx_header = "hwacc/HWModeling/instructions/fdiv.hh"
     # Instruction params
     functional_unit = Param.UInt32(10, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -150,7 +150,7 @@ class Fdiv(SimObject):
 class Fence(SimObject):
     # SimObject type
     type = "Fence"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/fence.hh"
+    cxx_header = "hwacc/HWModeling/instructions/fence.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -163,7 +163,7 @@ class Fence(SimObject):
 class Fmul(SimObject):
     # SimObject type
     type = "Fmul"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/fmul.hh"
+    cxx_header = "hwacc/HWModeling/instructions/fmul.hh"
     # Instruction params
     functional_unit = Param.UInt32(7, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -176,7 +176,7 @@ class Fmul(SimObject):
 class Fmuladd(SimObject):
     # SimObject type
     type = "Fmuladd"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/fmuladd.hh"
+    cxx_header = "hwacc/HWModeling/instructions/fmuladd.hh"
     # Instruction params
     functional_unit = Param.UInt32(9, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -189,7 +189,7 @@ class Fmuladd(SimObject):
 class Fneg(SimObject):
     # SimObject type
     type = "Fneg"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/fneg.hh"
+    cxx_header = "hwacc/HWModeling/instructions/fneg.hh"
     # Instruction params
     functional_unit = Param.UInt32(6, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -202,7 +202,7 @@ class Fneg(SimObject):
 class Fpext(SimObject):
     # SimObject type
     type = "Fpext"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/fpext.hh"
+    cxx_header = "hwacc/HWModeling/instructions/fpext.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -215,7 +215,7 @@ class Fpext(SimObject):
 class Fptosi(SimObject):
     # SimObject type
     type = "Fptosi"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/fptosi.hh"
+    cxx_header = "hwacc/HWModeling/instructions/fptosi.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -228,7 +228,7 @@ class Fptosi(SimObject):
 class Fptoui(SimObject):
     # SimObject type
     type = "Fptoui"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/fptoui.hh"
+    cxx_header = "hwacc/HWModeling/instructions/fptoui.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -241,7 +241,7 @@ class Fptoui(SimObject):
 class Fptrunc(SimObject):
     # SimObject type
     type = "Fptrunc"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/fptrunc.hh"
+    cxx_header = "hwacc/HWModeling/instructions/fptrunc.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -254,7 +254,7 @@ class Fptrunc(SimObject):
 class Frem(SimObject):
     # SimObject type
     type = "Frem"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/frem.hh"
+    cxx_header = "hwacc/HWModeling/instructions/frem.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -267,7 +267,7 @@ class Frem(SimObject):
 class Fsub(SimObject):
     # SimObject type
     type = "Fsub"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/fsub.hh"
+    cxx_header = "hwacc/HWModeling/instructions/fsub.hh"
     # Instruction params
     functional_unit = Param.UInt32(6, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -280,7 +280,7 @@ class Fsub(SimObject):
 class Gep(SimObject):
     # SimObject type
     type = "Gep"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/gep.hh"
+    cxx_header = "hwacc/HWModeling/instructions/gep.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -293,7 +293,7 @@ class Gep(SimObject):
 class Icmp(SimObject):
     # SimObject type
     type = "Icmp"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/icmp.hh"
+    cxx_header = "hwacc/HWModeling/instructions/icmp.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -306,7 +306,7 @@ class Icmp(SimObject):
 class Indirectbr(SimObject):
     # SimObject type
     type = "Indirectbr"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/indirectbr.hh"
+    cxx_header = "hwacc/HWModeling/instructions/indirectbr.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -317,7 +317,7 @@ class Indirectbr(SimObject):
 class Inttoptr(SimObject):
     # SimObject type
     type = "Inttoptr"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/inttoptr.hh"
+    cxx_header = "hwacc/HWModeling/instructions/inttoptr.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -330,7 +330,7 @@ class Inttoptr(SimObject):
 class Invoke(SimObject):
     # SimObject type
     type = "Invoke"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/invoke.hh"
+    cxx_header = "hwacc/HWModeling/instructions/invoke.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -341,7 +341,7 @@ class Invoke(SimObject):
 class Landingpad(SimObject):
     # SimObject type
     type = "Landingpad"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/landingpad.hh"
+    cxx_header = "hwacc/HWModeling/instructions/landingpad.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -354,7 +354,7 @@ class Landingpad(SimObject):
 class Load(SimObject):
     # SimObject type
     type = "Load"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/load.hh"
+    cxx_header = "hwacc/HWModeling/instructions/load.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -367,7 +367,7 @@ class Load(SimObject):
 class Lshr(SimObject):
     # SimObject type
     type = "Lshr"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/lshr.hh"
+    cxx_header = "hwacc/HWModeling/instructions/lshr.hh"
     # Instruction params
     functional_unit = Param.UInt32(3, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -380,7 +380,7 @@ class Lshr(SimObject):
 class Mul(SimObject):
     # SimObject type
     type = "Mul"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/mul.hh"
+    cxx_header = "hwacc/HWModeling/instructions/mul.hh"
     # Instruction params
     functional_unit = Param.UInt32(2, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -393,7 +393,7 @@ class Mul(SimObject):
 class OrInst(SimObject):
     # SimObject type
     type = "OrInst"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/or_inst.hh"
+    cxx_header = "hwacc/HWModeling/instructions/or_inst.hh"
     # Instruction params
     functional_unit = Param.UInt32(4, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -406,7 +406,7 @@ class OrInst(SimObject):
 class Phi(SimObject):
     # SimObject type
     type = "Phi"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/phi.hh"
+    cxx_header = "hwacc/HWModeling/instructions/phi.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -419,7 +419,7 @@ class Phi(SimObject):
 class Ptrtoint(SimObject):
     # SimObject type
     type = "Ptrtoint"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/ptrtoint.hh"
+    cxx_header = "hwacc/HWModeling/instructions/ptrtoint.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -432,7 +432,7 @@ class Ptrtoint(SimObject):
 class Resume(SimObject):
     # SimObject type
     type = "Resume"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/resume.hh"
+    cxx_header = "hwacc/HWModeling/instructions/resume.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -443,7 +443,7 @@ class Resume(SimObject):
 class Ret(SimObject):
     # SimObject type
     type = "Ret"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/ret.hh"
+    cxx_header = "hwacc/HWModeling/instructions/ret.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -454,7 +454,7 @@ class Ret(SimObject):
 class Sdiv(SimObject):
     # SimObject type
     type = "Sdiv"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/sdiv.hh"
+    cxx_header = "hwacc/HWModeling/instructions/sdiv.hh"
     # Instruction params
     functional_unit = Param.UInt32(2, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -467,7 +467,7 @@ class Sdiv(SimObject):
 class Select(SimObject):
     # SimObject type
     type = "Select"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/select.hh"
+    cxx_header = "hwacc/HWModeling/instructions/select.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -480,7 +480,7 @@ class Select(SimObject):
 class Sext(SimObject):
     # SimObject type
     type = "Sext"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/sext.hh"
+    cxx_header = "hwacc/HWModeling/instructions/sext.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -493,7 +493,7 @@ class Sext(SimObject):
 class Shl(SimObject):
     # SimObject type
     type = "Shl"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/shl.hh"
+    cxx_header = "hwacc/HWModeling/instructions/shl.hh"
     # Instruction params
     functional_unit = Param.UInt32(3, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -506,7 +506,7 @@ class Shl(SimObject):
 class Srem(SimObject):
     # SimObject type
     type = "Srem"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/srem.hh"
+    cxx_header = "hwacc/HWModeling/instructions/srem.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -519,7 +519,7 @@ class Srem(SimObject):
 class Store(SimObject):
     # SimObject type
     type = "Store"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/store.hh"
+    cxx_header = "hwacc/HWModeling/instructions/store.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -532,7 +532,7 @@ class Store(SimObject):
 class Sub(SimObject):
     # SimObject type
     type = "Sub"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/sub.hh"
+    cxx_header = "hwacc/HWModeling/instructions/sub.hh"
     # Instruction params
     functional_unit = Param.UInt32(1, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -545,7 +545,7 @@ class Sub(SimObject):
 class SwitchInst(SimObject):
     # SimObject type
     type = "SwitchInst"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/switch_inst.hh"
+    cxx_header = "hwacc/HWModeling/instructions/switch_inst.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -556,7 +556,7 @@ class SwitchInst(SimObject):
 class Trunc(SimObject):
     # SimObject type
     type = "Trunc"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/trunc.hh"
+    cxx_header = "hwacc/HWModeling/instructions/trunc.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -569,7 +569,7 @@ class Trunc(SimObject):
 class Udiv(SimObject):
     # SimObject type
     type = "Udiv"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/udiv.hh"
+    cxx_header = "hwacc/HWModeling/instructions/udiv.hh"
     # Instruction params
     functional_unit = Param.UInt32(2, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -582,7 +582,7 @@ class Udiv(SimObject):
 class Uitofp(SimObject):
     # SimObject type
     type = "Uitofp"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/uitofp.hh"
+    cxx_header = "hwacc/HWModeling/instructions/uitofp.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -595,7 +595,7 @@ class Uitofp(SimObject):
 class Unreachable(SimObject):
     # SimObject type
     type = "Unreachable"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/unreachable.hh"
+    cxx_header = "hwacc/HWModeling/instructions/unreachable.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -606,7 +606,7 @@ class Unreachable(SimObject):
 class Urem(SimObject):
     # SimObject type
     type = "Urem"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/urem.hh"
+    cxx_header = "hwacc/HWModeling/instructions/urem.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -619,7 +619,7 @@ class Urem(SimObject):
 class Vaarg(SimObject):
     # SimObject type
     type = "Vaarg"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/vaarg.hh"
+    cxx_header = "hwacc/HWModeling/instructions/vaarg.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -632,7 +632,7 @@ class Vaarg(SimObject):
 class XorInst(SimObject):
     # SimObject type
     type = "XorInst"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/xor_inst.hh"
+    cxx_header = "hwacc/HWModeling/instructions/xor_inst.hh"
     # Instruction params
     functional_unit = Param.UInt32(4, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -645,7 +645,7 @@ class XorInst(SimObject):
 class Zext(SimObject):
     # SimObject type
     type = "Zext"  # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/generated/instructions/zext.hh"
+    cxx_header = "hwacc/HWModeling/instructions/zext.hh"
     # Instruction params
     functional_unit = Param.UInt32(0, "Default functional unit assignment.")
     functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
@@ -659,7 +659,7 @@ class InstConfig(SimObject):
     # SimObject type
     type = "InstConfig"
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/src/instruction_config.hh"
+    cxx_header = "hwacc/HWModeling/instruction_config.hh"
 
     add = Param.Add(Parent.any, "add instruction SimObject")
     addrspacecast = Param.Addrspacecast(
