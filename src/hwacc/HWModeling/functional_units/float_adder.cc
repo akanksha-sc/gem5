@@ -34,7 +34,7 @@
 
 #include "float_adder.hh"
 
-//AUTO-GENERATED FILE
+// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md for details)
 
 FloatAdder::FloatAdder(const FloatAdderParams &params) :
         SimObject(params),

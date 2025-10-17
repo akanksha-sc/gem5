@@ -30,20 +30,6 @@ Alternatively, you can install the latest version of LLVM via your system packag
 
 # Building gem5-SALAM
 
-Once you have successfully installed all of the necessary dependencies, you can go ahead and clone the gem5-SALAM repository to begin working with it.
-
-```bash
-git clone https://github.com/TeCSAR-UNCC/gem5-SALAM
-```
-
-Before building gem5-SALAM, you must generate source and header files for hardware modeling using the provided script:
-
-```bash
-$M5_PATH/tools/hw_generator/generate_hw.sh
-```
-
-This script generates necessary functional unit and instruction configuration files required for successful compilation. Be sure to run it before invoking scons.
-
 When building gem5-SALAM, there are multiple different binary types that can be created. Just like in gem5 the options are debug, opt, fast, prof, and perf. We recommend that users either use the opt or debug builds, as these are the build types we develop and test on.
 
 Below are the bash commands you would use to build the opt or debug binary.
@@ -72,10 +58,8 @@ To use gem5-SALAM you need to define the computation model of you accelerator in
 
 Below are some resources in the gem5-SALAM directory that can be used when getting started:
 
-- Examples for system-level configuration can be found in **configs/common/HWAcc.py**.
-- Accelerator benchmarks and examples can be found in the **benchmarks** directory.
-- The **benchmarks/common** directory contains basic drivers and syscalls for baremetal simulation.
-- **benchmarks/sys_validation** contains examples for configuring and using gem5-SALAM with different algorithms.
+- Examples for system-level configuration can be found in **configs/SALAM/HWAcc.py**.
+- Accelerator benchmarks and examples can be found in **gem5-resources**.
 
 ## System Validation Examples
 
@@ -120,7 +104,11 @@ $M5_PATH/util/SALAM-tools/run_system.sh --bench bfs --bench-path sys_validation/
 
 If you would like to see the gem5-SALAM command created by the shell file you would just need to inspect the **RUN_SCRIPT** variable in the shell file.
 
-## Using Custom Hardware Profiles
+## Hardware Profiles
+
+gem5-SALAM ships with an auto-generated default 40nm technology node, 5ns latency hardware profile that supports all the example benchmarks included in gem5-resources. An automated toolchain has been provided for generating custom hardware profiles if required:
+
+### Using Custom Hardware Profiles
 
 The gem5-SALAM toolchain also allows you to run benchmarks with custom hardware profiles to be specified in YAML files. The hardware generator in **util/SALAM-tools/hw_generator** auto-generates functional unit and instruction files using the specified YAML profile.
 

@@ -34,7 +34,7 @@
 
 #include "or_inst.hh"
 
-//AUTO-GENERATED FILE
+// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md for details)
 
 OrInst::OrInst(const OrInstParams &params) :
         SimObject(params),

@@ -34,7 +34,7 @@
 
 #include "fcmp.hh"
 
-//AUTO-GENERATED FILE
+// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md for details)
 
 Fcmp::Fcmp(const FcmpParams &params) :
         SimObject(params),

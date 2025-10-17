@@ -34,7 +34,7 @@
 
 #include "sdiv.hh"
 
-//AUTO-GENERATED FILE
+// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md for details)
 
 Sdiv::Sdiv(const SdivParams &params) :
         SimObject(params),

@@ -152,7 +152,10 @@ class FunctionalUnitGenerator:
         self.new_source.write('#include "' + self.alias + '.hh"\n\n')
 
         # Warning
-        self.new_source.write("//AUTO-GENERATED FILE\n\n")
+        self.new_source.write(
+            "// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md"
+            " for details)\n\n"
+        )
         self.new_source.write(
             self.classname
             + "::"
@@ -551,7 +554,10 @@ class FunctionalUnitGenerator:
         self.fu_list = fu_list
         with open(self.fu_directory, "w+") as self.simobject_file:
             # Warning
-            self.simobject_file.write("# AUTO-GENERATED FILE\n\n")
+            self.simobject_file.write(
+                "# AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md"
+                " for details)\n\n"
+            )
             # imports
             self.simobject_file.write("from m5.params import *\n")
             self.simobject_file.write("from m5.proxy import *\n")
@@ -576,7 +582,10 @@ class FunctionalUnitGenerator:
                     '(Parent.any, "' + unit + ' functional unit SimObject.")\n'
                 )
 
-            self.simobject_file.write("\n#AUTO-GENERATED CLASSES\n")
+            self.simobject_file.write(
+                "\n# AUTO-GENERATED CLASSES (See"
+                " util/SALAM-docs/README_SALAM.md for details)\n"
+            )
 
     def simobject_generator(self, hwmodel):
         self.hwmodel = hwmodel
@@ -842,12 +851,18 @@ class InstConfigGenerator:
         self.inst_dict = hwmodel.get_instruction_list()
         with open("src/hwacc/InstConfig.py", "w+") as self.simobject_file:
             # Warning
-            self.simobject_file.write("# AUTO-GENERATED FILE\n\n")
+            self.simobject_file.write(
+                "# AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md"
+                " for details)\n\n"
+            )
             # imports
             self.simobject_file.write("from m5.params import *\n")
             self.simobject_file.write("from m5.proxy import *\n")
             self.simobject_file.write("from m5.SimObject import SimObject\n\n")
-            self.simobject_file.write("\n#AUTO-GENERATED CLASSES\n")
+            self.simobject_file.write(
+                "\n# AUTO-GENERATED CLASSES (See"
+                " util/SALAM-docs/README_SALAM.md for details)\n"
+            )
             for inst_name in self.inst_dict["instructions"].keys():
                 self.simobject_file.write(
                     "class "
@@ -1091,7 +1106,10 @@ class InstConfigGenerator:
         self.new_source.write('#include "' + str(inst_params) + '.hh"\n\n')
 
         # Warning
-        self.new_source.write("//AUTO-GENERATED FILE\n\n")
+        self.new_source.write(
+            "// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md"
+            " for details)\n\n"
+        )
         self.new_source.write(
             self.classname
             + "::"

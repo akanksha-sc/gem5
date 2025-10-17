@@ -34,7 +34,7 @@
 
 #include "fptoui.hh"
 
-//AUTO-GENERATED FILE
+// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md for details)
 
 Fptoui::Fptoui(const FptouiParams &params) :
         SimObject(params),

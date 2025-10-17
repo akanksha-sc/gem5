@@ -34,7 +34,7 @@
 
 #include "bitwise_operations.hh"
 
-//AUTO-GENERATED FILE
+// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md for details)
 
 BitwiseOperations::BitwiseOperations(const BitwiseOperationsParams &params) :
         SimObject(params),

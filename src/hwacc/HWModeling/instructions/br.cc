@@ -34,7 +34,7 @@
 
 #include "br.hh"
 
-//AUTO-GENERATED FILE
+// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md for details)
 
 Br::Br(const BrParams &params) :
         SimObject(params),

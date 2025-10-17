@@ -34,7 +34,7 @@
 
 #include "sub.hh"
 
-//AUTO-GENERATED FILE
+// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md for details)
 
 Sub::Sub(const SubParams &params) :
         SimObject(params),

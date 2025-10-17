@@ -34,7 +34,7 @@
 
 #include "udiv.hh"
 
-//AUTO-GENERATED FILE
+// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md for details)
 
 Udiv::Udiv(const UdivParams &params) :
         SimObject(params),

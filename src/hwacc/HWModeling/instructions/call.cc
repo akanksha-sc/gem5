@@ -34,7 +34,7 @@
 
 #include "call.hh"
 
-//AUTO-GENERATED FILE
+// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md for details)
 
 Call::Call(const CallParams &params) :
         SimObject(params),

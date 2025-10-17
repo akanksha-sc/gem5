@@ -34,7 +34,7 @@
 
 #include "gep.hh"
 
-//AUTO-GENERATED FILE
+// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md for details)
 
 Gep::Gep(const GepParams &params) :
         SimObject(params),

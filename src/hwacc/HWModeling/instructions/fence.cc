@@ -34,7 +34,7 @@
 
 #include "fence.hh"
 
-//AUTO-GENERATED FILE
+// AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md for details)
 
 Fence::Fence(const FenceParams &params) :
         SimObject(params),
