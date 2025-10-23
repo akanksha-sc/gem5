@@ -36,8 +36,8 @@
 #define __HWACC_ACC_COMPUTE_UNIT_HH__
 
 #include "hwacc/HWModeling/hw_interface.hh"
-#include "hwacc/LLVMRead/src/debug_flags.hh"
-#include "hwacc/LLVMRead/src/mem_request.hh"
+#include "hwacc/LLVMRead/debug_flags.hh"
+#include "hwacc/LLVMRead/mem_request.hh"
 #include "hwacc/comm_interface.hh"
 #include "params/AccComputeUnit.hh"
 #include "sim/sim_object.hh"

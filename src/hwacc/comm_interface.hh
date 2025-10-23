@@ -41,8 +41,8 @@
 
 #include "dev/arm/base_gic.hh"
 #include "dev/io_device.hh"
-#include "hwacc/LLVMRead/src/debug_flags.hh"
-#include "hwacc/LLVMRead/src/mem_request.hh"
+#include "hwacc/LLVMRead/debug_flags.hh"
+#include "hwacc/LLVMRead/mem_request.hh"
 #include "hwacc/acc_compute_unit.hh"
 #include "hwacc/scratchpad_memory.hh"
 #include "hwacc/stream_port.hh"

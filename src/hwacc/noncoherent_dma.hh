@@ -37,7 +37,7 @@
 
 #include "dev/arm/base_gic.hh"
 #include "dev/dma_device.hh"
-#include "hwacc/LLVMRead/src/debug_flags.hh"
+#include "hwacc/LLVMRead/debug_flags.hh"
 #include "hwacc/dma_write_fifo.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"

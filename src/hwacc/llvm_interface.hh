@@ -66,10 +66,10 @@
 
 // SALAM Includes
 #include "hwacc/HWModeling/hw_interface.hh"
-#include "hwacc/LLVMRead/src/basic_block.hh"
-#include "hwacc/LLVMRead/src/debug_flags.hh"
-#include "hwacc/LLVMRead/src/function.hh"
-#include "hwacc/LLVMRead/src/operand.hh"
+#include "hwacc/LLVMRead/basic_block.hh"
+#include "hwacc/LLVMRead/debug_flags.hh"
+#include "hwacc/LLVMRead/function.hh"
+#include "hwacc/LLVMRead/operand.hh"
 #include "hwacc/acc_compute_unit.hh"
 #include "params/LLVMInterface.hh"
 

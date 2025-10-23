@@ -42,7 +42,7 @@
 #include "base/trace.hh"
 #include "dev/arm/base_gic.hh"
 #include "dev/io_device.hh"
-#include "hwacc/LLVMRead/src/debug_flags.hh"
+#include "hwacc/LLVMRead/debug_flags.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 #include "params/IOAcc.hh"

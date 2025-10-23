@@ -61,7 +61,8 @@ class BasicBlock; // Required Declaration
 class Instruction : public Value
 {
     private:
-        std::map<uint64_t, std::shared_ptr<SALAM::Instruction>> dynamicDependencies;
+        std::map<uint64_t, std::shared_ptr<SALAM::Instruction>>
+                dynamicDependencies;
         std::vector<std::shared_ptr<SALAM::Instruction>> dynamicUsers;
         uint64_t llvmOpCode;
         uint64_t cycleCount;

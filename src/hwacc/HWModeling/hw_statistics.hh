@@ -40,7 +40,7 @@
 #include <iostream>
 #include <vector>
 
-#include "hwacc/LLVMRead/src/debug_flags.hh"
+#include "hwacc/LLVMRead/debug_flags.hh"
 #include "params/HWStatistics.hh"
 #include "sim/sim_object.hh"
 

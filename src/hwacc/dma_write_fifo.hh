@@ -36,7 +36,7 @@
 #define __HWACC_DMA_WRITE_FIFO_HH__
 
 #include "dev/dma_device.hh"
-#include "hwacc/LLVMRead/src/debug_flags.hh"
+#include "hwacc/LLVMRead/debug_flags.hh"
 
 using namespace gem5;
 

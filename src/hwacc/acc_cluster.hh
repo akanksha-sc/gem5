@@ -36,7 +36,7 @@
 #define __HWACC_ACC_CLUSTER_HH__
 
 #include "dev/platform.hh"
-#include "hwacc/LLVMRead/src/debug_flags.hh"
+#include "hwacc/LLVMRead/debug_flags.hh"
 #include "params/AccCluster.hh"
 
 using namespace gem5;
