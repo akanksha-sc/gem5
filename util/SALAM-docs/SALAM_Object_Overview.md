@@ -1,6 +1,6 @@
 # SALAM Object Overview
 
-All source code for these objects are stored in **src/hwacc**
+All source code for these objects are stored in **src/salam**
 
 ## CommInterface
 

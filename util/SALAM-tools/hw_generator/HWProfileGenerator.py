@@ -47,7 +47,7 @@ ACC_BENCH_PATH = os.environ.get("ACC_BENCH_PATH")
 if not ACC_BENCH_PATH:
     raise RuntimeError("Environment variable ACC_BENCH_PATH must be set")
 
-HWACC_DIR = os.path.join(M5_PATH, "src", "hwacc")
+SALAM_DIR = os.path.join(M5_PATH, "src", "salam")
 
 
 class HWModel:
@@ -182,14 +182,14 @@ class HWModel:
         ]
 
 
-GEN_BASE = os.path.join(HWACC_DIR, "HWModeling")
+GEN_BASE = os.path.join(SALAM_DIR, "HWModeling")
 os.makedirs(os.path.join(GEN_BASE, "functional_units"), exist_ok=True)
 os.makedirs(os.path.join(GEN_BASE, "instructions"), exist_ok=True)
 
 benchmark_args = HWArgs()
 generate_hw_models = HWModel(benchname=benchmark_args.bench, latency="5ns")
 fu_file_generator = FunctionalUnitGenerator(
-    fu_directory=os.path.join(HWACC_DIR, "FunctionalUnits.py")
+    fu_directory=os.path.join(SALAM_DIR, "FunctionalUnits.py")
 )
 fu_file_generator.initialize_functional_unit_base_header_file()
 fu_file_generator.initalize_fu_list_header(generate_hw_models.get_fu_list())

@@ -36,7 +36,7 @@ M5_PATH = os.environ.get("M5_PATH")
 if not M5_PATH:
     raise RuntimeError("Environment variable M5_PATH must be set.")
 
-HWACC_DIR = os.path.join(M5_PATH, "src", "hwacc")
+SALAM_DIR = os.path.join(M5_PATH, "src", "salam")
 
 
 class FunctionalUnitGenerator:
@@ -47,15 +47,15 @@ class FunctionalUnitGenerator:
         self.classname = ""
         self.header_name = ""
         self.cxx_header = os.path.join(
-            HWACC_DIR, "HWModeling", "functional_units.hh"
+            SALAM_DIR, "HWModeling", "functional_units.hh"
         )
-        self.cxx_header_py_path = "hwacc/HWModeling/functional_units.hh"
+        self.cxx_header_py_path = "salam/HWModeling/functional_units.hh"
         self.fu_base_directory = (
-            os.path.join(HWACC_DIR, "HWModeling", "functional_units") + os.sep
+            os.path.join(SALAM_DIR, "HWModeling", "functional_units") + os.sep
         )
-        self.fu_base_directory_py_path = "hwacc/HWModeling/functional_units/"
+        self.fu_base_directory_py_path = "salam/HWModeling/functional_units/"
         self.scons_dir_fu = os.path.join(
-            HWACC_DIR,
+            SALAM_DIR,
             "HWModeling",
             "functional_units",
             "SConscript",
@@ -274,7 +274,7 @@ class FunctionalUnitGenerator:
 
     def generate_fu_list_source(self, fu_list=[]):
         agg_source_path = os.path.join(
-            HWACC_DIR, "HWModeling", "functional_units.cc"
+            SALAM_DIR, "HWModeling", "functional_units.cc"
         )
         with open(agg_source_path, "w+") as self.fu_list_source_file:
             self.fu_list_source_file.write(
@@ -795,20 +795,20 @@ class InstConfigGenerator:
         self.alias = ""
         self.classname = ""
         self.header_name = ""
-        self.cxx_header = os.path.join(HWACC_DIR, "HWModeling", ".hh")
-        self.cxx_header_py_path = "hwacc/HWModeling/instruction_config"
+        self.cxx_header = os.path.join(SALAM_DIR, "HWModeling", ".hh")
+        self.cxx_header_py_path = "salam/HWModeling/instruction_config"
         self.inst_base_directory = (
-            os.path.join(HWACC_DIR, "HWModeling", "instructions") + os.sep
+            os.path.join(SALAM_DIR, "HWModeling", "instructions") + os.sep
         )
-        self.inst_base_directory_py_path = "hwacc/HWModeling/instructions/"
+        self.inst_base_directory_py_path = "salam/HWModeling/instructions/"
         self.scons_dir_inst = os.path.join(
-            HWACC_DIR, "HWModeling", "instructions", "SConscript"
+            SALAM_DIR, "HWModeling", "instructions", "SConscript"
         )
 
     def generate_inst_config_source(self, inst_list_dict={}):
         instructions = list(inst_list_dict["instructions"].keys())
         agg_source_path = os.path.join(
-            HWACC_DIR, "HWModeling", "instruction_config.cc"
+            SALAM_DIR, "HWModeling", "instruction_config.cc"
         )
         with open(agg_source_path, "w+") as self.inst_config_source_file:
             self.inst_config_source_file.write(
@@ -849,7 +849,7 @@ class InstConfigGenerator:
     def instruction_simobject_generator(self, hwmodel):
         self.hwmodel = hwmodel
         self.inst_dict = hwmodel.get_instruction_list()
-        with open("src/hwacc/InstConfig.py", "w+") as self.simobject_file:
+        with open("src/salam/InstConfig.py", "w+") as self.simobject_file:
             # Warning
             self.simobject_file.write(
                 "# AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md"
@@ -881,7 +881,7 @@ class InstConfigGenerator:
                 )
                 self.simobject_file.write("\t# gem5-SALAM attached header\n")
                 self.simobject_file.write(
-                    '\tcxx_header = "hwacc/HWModeling/instructions/'
+                    '\tcxx_header = "salam/HWModeling/instructions/'
                     + str(inst_name)
                     + '.hh"\n'
                 )
@@ -926,7 +926,7 @@ class InstConfigGenerator:
             self.simobject_file.write("\ttype = 'InstConfig'\n")
             self.simobject_file.write("\t# gem5-SALAM attached header\n")
             self.simobject_file.write(
-                "\tcxx_header =" '"hwacc/HWModeling/instruction_config.hh"\n\n'
+                "\tcxx_header =" '"salam/HWModeling/instruction_config.hh"\n\n'
             )
             for inst_name in self.inst_dict["instructions"].keys():
                 self.simobject_file.write(
@@ -944,7 +944,7 @@ class InstConfigGenerator:
     def initalize_inst_config_header(self, inst_list=[]):
         self.inst_list = inst_list["instructions"]
         with open(
-            "src/hwacc/HWModeling/instruction_config.hh", "w+"
+            "src/salam/HWModeling/instruction_config.hh", "w+"
         ) as self.inst_config_header_file:
             self.inst_config_header_file.write(
                 "#ifndef __HWMODEL_INSTRUCTION_CONFIG_HH__\n"
@@ -1022,10 +1022,10 @@ class InstConfigGenerator:
     def inst_config_header_generator(self, inst_params={}):
         self.inst_params = inst_params
         self.header_name = (
-            "src/hwacc/HWModeling/instructions/" + str(inst_params) + ".hh"
+            "src/salam/HWModeling/instructions/" + str(inst_params) + ".hh"
         )
         self.source_name = (
-            "src/hwacc/HWModeling/instructions/" + str(inst_params) + ".cc"
+            "src/salam/HWModeling/instructions/" + str(inst_params) + ".cc"
         )
 
         self.new_header = open(self.header_name, "w")
@@ -1125,7 +1125,7 @@ class InstConfigGenerator:
         self.new_source.write("\t\t\tparams.runtime_cycles) { }\n")
 
     def initialize_inst_config_base_header_file(self):
-        self.base_header = "src/hwacc/HWModeling/instructions/base.hh"
+        self.base_header = "src/salam/HWModeling/instructions/base.hh"
         with open(self.base_header, "w+") as self.base_header_file:
 
             self.base_header_file.write(

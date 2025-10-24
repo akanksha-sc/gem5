@@ -167,7 +167,7 @@ We then invoke the *_connect_caches* function (line 20) in order to connect any 
 system.acctest._connect_caches(system, options, l2coherent=False)
 ```
 
-These functions are defined in **src/hwacc/AccCluster.py**
+These functions are defined in **src/salam/AccCluster.py**
 
 ### Adding Accelerators to the Cluster
 
