@@ -35,6 +35,7 @@
 #ifndef __HWMODEL_HW_STATISTICS_HH__
 #define __HWMODEL_HW_STATISTICS_HH__
 
+#include <cstdint>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -67,7 +68,7 @@ struct HW_Cycle_Stats
 
     int loadInFlight;
     int loadInternal;
-    int loadAcitve;
+    int loadActive;
     int loadRawStall;
 
     int storeInFlight;
@@ -79,14 +80,32 @@ struct HW_Cycle_Stats
     int compFUStall;
     int compCommited;
 
-
+    int compCommitThisCycle;
+    int memCommitThisCycle;
+    int anyCommit;
 
     void reset() {
         cycle = 0;
+
         resInFlight = 0;
+
         loadInFlight = 0;
+        loadInternal = 0;
+        loadActive = 0;
+        loadRawStall = 0;
+
         storeInFlight = 0;
+        storeActive = 0;
+
         compInFlight = 0;
+        compLaunched = 0;
+        compActive = 0;
+        compFUStall = 0;
+        compCommited = 0;
+
+        compCommitThisCycle = 0;
+        memCommitThisCycle  = 0;
+        anyCommit = 0;
     }
 };
 
@@ -95,9 +114,7 @@ class HWStatistics : public SimObject
     private:
         HW_Params hw_params;
         HW_Cycle_Stats current_cycle_stats;
-        std::vector<HW_Cycle_Stats>::iterator cycle_buffer;
         std::vector<std::vector<HW_Cycle_Stats>> hw_buffer_list;
-        std::vector<std::vector<HW_Cycle_Stats>>::iterator hw_buffer;
 
         // Make Into SimObjects to pass from config.yml
         bool cycle_tracking = false;
@@ -105,10 +122,24 @@ class HWStatistics : public SimObject
         int statBufferSize;
         int statBufferPreDefine;
 
-
         // Class Only
         int current_buffer_index = 0;
 
+        // Latency accumulators
+        uint64_t ldLatSum = 0, ldLatMax = 0, ldDone = 0;
+        uint64_t stLatSum = 0, stLatMax = 0, stDone = 0;
+        uint64_t compLatSum = 0, compLatMax = 0, compDone = 0;
+
+        uint64_t totalCompOps = 0;         // weighted ops
+        uint64_t totalLoadBytes = 0;       // bytes read by acc
+        uint64_t totalStoreBytes = 0;      // bytes written by acc
+        uint64_t totalComputeCommits = 0;
+        uint64_t totalLoadCount = 0;
+        uint64_t totalStoreCount = 0;
+
+        double   clockGHz = 0.0;
+        uint64_t opsPerCyclePeak = 0;
+        uint64_t bytesPerCyclePeak = 0;
 
     public:
         HWStatistics();
@@ -116,10 +147,72 @@ class HWStatistics : public SimObject
         bool use_cycle_tracking() { return cycle_tracking; }
 
         void print();
-        void updateHWStatsCycleStart();
-        void updateHWStatsCycleEnd(int curr_cycle);
         void updateBuffer();
         void clearStats();
+
+        // Aggregation from LLVMInterface (called multiple times per cycle)
+        void accumulateCycleStart(const HW_Cycle_Stats& s);
+        void accumulateCycleEvents(const HW_Cycle_Stats& s);
+
+        // Called once per modeled cycle (after all ActiveFunctions processed)
+        void finalizeCycle(int curr_cycle);
+
+        // Compute a progress/stall partition over recorded cycles
+        void computeCyclePartition(uint64_t &progressCycles,
+                                   uint64_t &stallCycles,
+                                   uint64_t &totalCycles) const;
+
+        // Record a completed op's latency in modeled cycles
+        inline void
+        noteLoadLatency(uint64_t lat) {
+            ldLatSum += lat;
+            if (lat > ldLatMax)
+                ldLatMax = lat;
+            ldDone++;
+        }
+
+        inline void
+        noteStoreLatency(uint64_t lat) {
+             stLatSum += lat;
+             if (lat > stLatMax)
+                 stLatMax = lat;
+             stDone++;
+        }
+
+        inline void
+        noteComputeLatency(uint64_t lat) {
+           compLatSum += lat;
+           if (lat > compLatMax)
+               compLatMax = lat;
+           compDone++;
+        }
+
+        inline void countCompute(uint32_t op_weight) {
+            totalCompOps += op_weight;
+            totalComputeCommits++;
+        }
+        inline void countLoad(uint64_t bytes /*, bool internal*/) {
+           // If later you can distinguish internal SPM hits, gate this here.
+           totalLoadBytes += bytes;
+           totalLoadCount++;
+        }
+        inline void countStore(uint64_t bytes) {
+            totalStoreBytes += bytes;
+            totalStoreCount++;
+        }
+        inline void setClockGHz(double ghz) { clockGHz = ghz; }
+
+        uint64_t getTotalCompOps()   const { return totalCompOps; }
+        uint64_t getTotalLoadBytes() const { return totalLoadBytes; }
+        uint64_t getTotalStoreBytes()const { return totalStoreBytes; }
+        uint64_t getTotalComputeCommits() const { return totalComputeCommits; }
+        uint64_t getTotalLoadCount() const { return totalLoadCount; }
+        uint64_t getTotalStoreCount()const { return totalStoreCount; }
+        double   getClockGHz()       const { return clockGHz; }
+
+        uint64_t getOpsPerCyclePeak()   const { return opsPerCyclePeak; }
+        uint64_t getBytesPerCyclePeak() const { return bytesPerCyclePeak; }
+
 };
 
 #endif //__HWMODEL_HW_STATISTICS_HH__

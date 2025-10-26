@@ -120,19 +120,19 @@ LLVMInterface::ActiveFunction::processQueues()
     if (owner->hw->hw_statistics->use_cycle_tracking()) {
         auto hwStart = std::chrono::high_resolution_clock::now();
         hw_cycle_stats.reset();
-        owner->hw->hw_statistics->updateHWStatsCycleStart();
 
-        // Update Params
-        hw_cycle_stats.cycle = owner->cycle;
-        hw_cycle_stats.resInFlight = reservation.size();
+        // Snapshot in-flight occupancies at cycle start
+        hw_cycle_stats.cycle        = owner->cycle;
+        hw_cycle_stats.resInFlight  = reservation.size();
         hw_cycle_stats.loadInFlight = readQueue.size();
-        hw_cycle_stats.storeInFlight = writeQueue.size();
+        hw_cycle_stats.storeInFlight= writeQueue.size();
         hw_cycle_stats.compInFlight = computeQueue.size();
 
+        // Accumulate into HWStatistics (summed across ActiveFunctions)
+        owner->hw->hw_statistics->accumulateCycleStart(hw_cycle_stats);
 
-        //
         auto hwStop = std::chrono::high_resolution_clock::now();
-        owner->addHWTime(hwStop-hwStart);
+        owner->addHWTime(hwStop - hwStart);
     }
 
     if (dbg) {
@@ -142,25 +142,58 @@ LLVMInterface::ActiveFunction::processQueues()
         reservation.size(), computeQueue.size(), readQueue.size(),
         writeQueue.size());
     }
+
+
     // First pass, computeQueue is empty
     for (auto queue_iter = computeQueue.begin();
                     queue_iter != computeQueue.end();) {
-        if (dbg) DPRINTFS(Runtime, owner,  "\n\t\t %s \n\t\t %s%s%s%d%s \n",
-        " |-[Compute Queue]--------------",
-        " | Instruction: ", llvm::Instruction::getOpcodeName(
+
+        if (dbg) {
+            DPRINTFS(Runtime, owner,  "\n\t\t %s \n\t\t %s%s%s%d%s \n",
+            " |-[Compute Queue]--------------",
+            " | Instruction: ", llvm::Instruction::getOpcodeName(
                 (queue_iter->second)->getOpode()),
-        " | UID[", (queue_iter->first), "]"
-        );
+            " | UID[", (queue_iter->first), "]"
+            );
+        }
+
+        const uint64_t uid = queue_iter->first;
 
         if ((queue_iter->second)->commit()) {
             (queue_iter->second)->reset();
+
+            // auto *inst = queue_iter->second.get();
+            // auto opcode = inst->getOpode(); // LLVM opcode
+            // Default 1 per committed compute instruction
+            // TODO: FMA / other multi-op instructions, bump weight here
+            uint32_t op_weight = 1;
+            // Example (enable if you have fused ops exposed):
+            // if (opcode == llvm::Instruction::FMA) op_weight = 2;
+            owner->hw->hw_statistics->countCompute(op_weight);
+            // note latency = commit_cycle - launch_cycle
+            if (owner->hw->hw_statistics->use_cycle_tracking()) {
+                auto cit = compLaunchCycle.find(uid);
+                if (cit != compLaunchCycle.end()) {
+                    const uint64_t lat =
+                        (owner->cycle >= cit->second) ?
+                            static_cast<uint64_t>(owner->cycle
+                                            - cit->second) : 0;
+                    owner->hw->hw_statistics->noteComputeLatency(lat);
+                    compLaunchCycle.erase(cit);
+                }
+            }
+
             queue_iter = computeQueue.erase(queue_iter);
             hw_cycle_stats.compCommited++;
-        } else {
+            hw_cycle_stats.compCommitThisCycle++;
+            hw_cycle_stats.anyCommit = 1;
+        }
+        else {
             ++queue_iter;
             hw_cycle_stats.compFUStall++;
         }
     }
+
     if (canReturn()) {
         // Handle function return
         if (dbg) {
@@ -178,7 +211,9 @@ LLVMInterface::ActiveFunction::processQueues()
         }
         returned = true;
         return;
-    } else if (lockstepReady()) {
+    }
+
+    else if (lockstepReady()) {
         // TODO: Look into for_each here
         for (auto queue_iter = reservation.begin();
                         queue_iter != reservation.end();) {
@@ -228,7 +263,7 @@ LLVMInterface::ActiveFunction::processQueues()
                                 );
                             }
                             queue_iter = reservation.erase(queue_iter);
-                            hw_cycle_stats.loadAcitve++;
+                            hw_cycle_stats.loadActive++;
                         }
                         else {
                             auto activeWrite = getActiveWrite(
@@ -238,7 +273,8 @@ LLVMInterface::ActiveFunction::processQueues()
                             ++queue_iter;
                             hw_cycle_stats.loadRawStall++;
                         }
-                    } else if ((inst)->isStore()) {
+                    }
+                    else if ((inst)->isStore()) {
                         // WAR Protection to insure reading
                         // finishes before a write
                         launchWrite(inst);
@@ -326,6 +362,11 @@ LLVMInterface::ActiveFunction::processQueues()
                             computeQueue.insert({(inst)->getUID(), inst});
                             hw_cycle_stats.compLaunched++;
                         }
+
+                        if (owner->hw->hw_statistics->use_cycle_tracking()) {
+                             compLaunchCycle[(inst)->getUID()] = owner->cycle;
+                        }
+
                         auto computeStop =
                                 std::chrono::high_resolution_clock::now();
                         owner->addComputeTime(computeStop-computeStart);
@@ -353,16 +394,22 @@ LLVMInterface::ActiveFunction::processQueues()
 
     if (owner->hw->hw_statistics->use_cycle_tracking()) {
         auto hwStart = std::chrono::high_resolution_clock::now();
-        for (auto fu : hw->functional_units->functional_unit_list) {
-            std::cout << fu->get_alias() << " - " << fu->get_in_use() << "\n";
-        }
 
-        owner->hw->hw_statistics->updateHWStatsCycleEnd(owner->cycle);
+        // Live FU usage debug
+        // for (auto fu : hw->functional_units->functional_unit_list) {
+        //     std::cout << fu->get_alias()
+        //         << " - " << fu->get_in_use() << "\n";
+        // }
+
+        // Accumulate event counters for this ActiveFunction into HWStatistics
+        owner->hw->hw_statistics->accumulateCycleEvents(hw_cycle_stats);
+
         auto hwStop = std::chrono::high_resolution_clock::now();
-        owner->addHWTime(hwStop-hwStart);
+        owner->addHWTime(hwStop - hwStart);
     }
+
     auto queueStop = std::chrono::high_resolution_clock::now();
-    owner->addQueueTime(queueStop-queueStart);
+    owner->addQueueTime(queueStop - queueStart);
 }
 
 
@@ -407,6 +454,12 @@ LLVMInterface::tick()
             func_iter = activeFunctions.erase(func_iter);
         }
     }
+
+    // Aggregate one record per cycle (across all ActiveFunctions)
+    if (hw->hw_statistics->use_cycle_tracking()) {
+        hw->hw_statistics->finalizeCycle(cycle);
+    }
+
     if (activeFunctions.empty()) {
         // We are finished executing all functions.
         // Signal completion to the CommInterface
@@ -685,9 +738,14 @@ LLVMInterface::ActiveFunction::launchRead(std::shared_ptr<SALAM::Instruction>
     } else {
         auto memReq = (readInst)->createMemoryRequest();
         auto rd_uid = readInst->getUID();
+        uint64_t bytes = readInst->getSizeInBytes();
+        owner->hw->hw_statistics->countLoad(bytes /*internal=false*/);
         readQueue.insert({rd_uid, (readInst)});
         readQueueMap.insert({memReq, rd_uid});
         owner->launchRead(memReq, this);
+        if (owner->hw->hw_statistics->use_cycle_tracking()) {
+            rdLaunchCycle[rd_uid] = owner->cycle;
+        }
     }
 }
 
@@ -703,8 +761,13 @@ LLVMInterface::ActiveFunction::launchWrite(std::shared_ptr<SALAM::Instruction>
     auto memReq = (writeInst)->createMemoryRequest();
     trackWrite(memReq->getAddress(), writeInst);
     auto wr_uid = writeInst->getUID();
+    uint64_t bytes = writeInst->getSizeInBytes();
+    owner->hw->hw_statistics->countStore(bytes);
     writeQueue.insert({wr_uid, (writeInst)});
     writeQueueMap.insert({memReq, wr_uid});
+    if (owner->hw->hw_statistics->use_cycle_tracking()) {
+        wrLaunchCycle[wr_uid] = owner->cycle;
+    }
     owner->launchWrite(memReq, this);
 }
 
@@ -742,6 +805,21 @@ LLVMInterface::ActiveFunction::readCommit(MemoryRequest * req) {
             load_inst->commit();
             readQueue.erase(queue_iter);
             readQueueMap.erase(map_iter);
+
+            // Latency: commit - launch (in modeled cycles)
+            if (owner->hw->hw_statistics->use_cycle_tracking()) {
+                uint64_t uid = map_iter->second;
+                auto it = rdLaunchCycle.find(uid);
+                if (it != rdLaunchCycle.end()) {
+                    uint64_t lat = (owner->cycle >= it->second) ?
+                                   (uint64_t)(owner->cycle - it->second) : 0;
+                    owner->hw->hw_statistics->noteLoadLatency(lat);
+                    rdLaunchCycle.erase(it);
+                }
+            }
+
+            hw_cycle_stats.memCommitThisCycle++;
+            hw_cycle_stats.anyCommit = 1;
         }
         else {
             panic("No memory request in read queue for function %u!",
@@ -763,7 +841,8 @@ LLVMInterface::writeCommit(MemoryRequest * req) {
     if (queue_iter != globalWriteQueue.end()) {
         queue_iter->second->writeCommit(req);
         globalWriteQueue.erase(queue_iter);
-    } else {
+    }
+    else {
         panic("No memory request in global write queue!");
     }
 }
@@ -782,6 +861,21 @@ LLVMInterface::ActiveFunction::writeCommit(MemoryRequest * req) {
             untrackWrite(addressWritten);
             writeQueue.erase(queue_iter);
             writeQueueMap.erase(map_iter);
+
+            // Latency: commit - launch (in modeled cycles)
+            if (owner->hw->hw_statistics->use_cycle_tracking()) {
+                uint64_t uid = map_iter->second;
+                auto it = wrLaunchCycle.find(uid);
+                if (it != wrLaunchCycle.end()) {
+                    uint64_t lat = (owner->cycle >= it->second) ?
+                                   (uint64_t)(owner->cycle - it->second) : 0;
+                    owner->hw->hw_statistics->noteStoreLatency(lat);
+                    wrLaunchCycle.erase(it);
+                }
+            }
+
+            hw_cycle_stats.memCommitThisCycle++;
+            hw_cycle_stats.anyCommit = 1;
         }
         else {
             panic("No memory request in write queue for function %u!",
@@ -864,9 +958,18 @@ LLVMInterface::finalize() {
     // Simulation Times
     simStop = std::chrono::high_resolution_clock::now();
     simTotal = simStop - timeStart;
+
+    // get stall/progress from HWStatistics
+    if (hw->hw_statistics->use_cycle_tracking()) {
+        uint64_t progress=0, stall=0, total=0;
+        hw->hw_statistics->computeCyclePartition(progress, stall, total);
+        stalls = (int)stall;
+    }
+
     printResults();
     functions.clear();
     values.clear();
+
     comm->finish();
 }
 
@@ -874,6 +977,9 @@ void
 LLVMInterface::printResults() {
     std::map<uint64_t, uint64_t> totals_reads;
     std::map<uint64_t, uint64_t> totals_writes;
+
+    double sysClockGHz = 1.0 / (clock_period / 1000);
+    hw->hw_statistics->setClockGHz(sysClockGHz);
 
     std::cout << "*********************************************" << std::endl;
     std::cout << name() << std::endl;
@@ -937,7 +1043,6 @@ LLVMInterface::printResults() {
     std::cout << "\nTotal Power Static: " << total_power_static << "\n";
     std::cout << "\nTotal Power Dynamic: " << total_power_dynamic << "\n";
 
-    // Tick cycle_time = clock_period/1000;
 
     auto hwTimingMS = std::chrono::duration_cast<std::chrono::milliseconds>(
                     hwTime);
@@ -1047,6 +1152,64 @@ LLVMInterface::printResults() {
     std::cout << "   Executed Nodes:                  " << (cycle-stalls-1)
             << " cycles" << std::endl;
     std::cout << std::endl;
+
+    if (hw->hw_statistics->use_cycle_tracking()) {
+            hw->hw_statistics->print();
+    }
+    auto *S = hw->hw_statistics;
+    const uint64_t cycles = cycle;
+    const uint64_t ops    = S->getTotalCompOps();
+    const uint64_t bytes  = S->getTotalLoadBytes() + S->getTotalStoreBytes();
+    const double   fGHz   = S->getClockGHz();
+
+    // Per-cycle rates
+    const double perf_ops_per_cycle = (cycles ?
+        (double)ops / (double)cycles : 0.0);
+    const double bw_bytes_per_cycle = (cycles ?
+        (double)bytes / (double)cycles : 0.0);
+    const double intensity_ops_per_byte = (bytes ?
+        (double)ops / (double)bytes : 0.0);
+
+    // Absolute rates (if clock is set)
+    const double perf_ops_per_sec = (fGHz > 0.0) ?
+        perf_ops_per_cycle * fGHz * 1e9 : 0.0;
+    const double bw_bytes_per_sec = (fGHz > 0.0) ?
+        bw_bytes_per_cycle * fGHz * 1e9 : 0.0;
+
+    std::cout << "\n   ========= Roofline Summary (Measured) =========\n";
+    std::cout << "   Ops (weighted):                 " << ops << "\n";
+    std::cout << "   Bytes (R+W):                    " << bytes << "\n";
+    std::cout << "   Intensity (ops/byte):           " << std::fixed
+        << std::setprecision(4) << intensity_ops_per_byte << "\n";
+    std::cout << "   Perf_eff:                       " << std::setprecision(6)
+              << perf_ops_per_cycle << " ops/cycle";
+    if (fGHz > 0.0) std::cout << "  (" << perf_ops_per_sec/1e9 << " GOps/s)";
+    std::cout << "\n";
+    std::cout << "   BW_eff:                         " << std::setprecision(6)
+              << bw_bytes_per_cycle << " B/cycle";
+    if (fGHz > 0.0) std::cout << "  (" << bw_bytes_per_sec/1e9 << " GB/s)";
+    std::cout << "\n";
+
+    // Optional ceilings if provided
+    if (S->getOpsPerCyclePeak() > 0 && S->getBytesPerCyclePeak() > 0
+        && fGHz > 0.0) {
+        const double P_peak = (double)S->getOpsPerCyclePeak()
+            * fGHz * 1e9; // ops/s
+        const double B_peak = (double)S->getBytesPerCyclePeak()
+            * fGHz * 1e9; // B/s
+        const double bound_perf = std::min(P_peak, B_peak
+            * intensity_ops_per_byte);
+        const char *bound = (P_peak <= B_peak * intensity_ops_per_byte) ?
+            "Compute-bound" : "Memory-bound";
+
+        std::cout << "   P_peak:                         " <<
+            (P_peak/1e9) << " GOps/s\n";
+        std::cout << "   B_peak:                         " <<
+            (B_peak/1e9) << " GB/s\n";
+        std::cout << "   Roofline bound(min):            " <<
+            (bound_perf/1e9) << " Gop/s  [" << bound << "]\n";
+    }
+    std::cout << "   ==============================================\n";
 }
 
 void

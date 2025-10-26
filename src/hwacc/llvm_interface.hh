@@ -50,6 +50,7 @@
 #include <ratio>
 #include <type_traits>
 #include <typeinfo>
+#include <unordered_map>
 
 // LLVM Includes
 #include <llvm-c/Core.h>
@@ -100,10 +101,9 @@ class LLVMInterface : public AccComputeUnit
     std::chrono::high_resolution_clock::time_point setupStop;
     std::chrono::high_resolution_clock::time_point timeStart;
 
-
-    class ActiveFunction
-    {
-      friend class LLVMInterface;
+class ActiveFunction
+{
+    friend class LLVMInterface;
     private:
         LLVMInterface * owner;
         HWInterface* hw;
@@ -121,6 +121,9 @@ class LLVMInterface : public AccComputeUnit
         bool returned = false;
         bool lockstep;
         bool dbg;
+        std::unordered_map<uint64_t, int> rdLaunchCycle;
+        std::unordered_map<uint64_t, int> wrLaunchCycle;
+        std::unordered_map<uint64_t, int> compLaunchCycle;
 
         inline bool uidActive(uint64_t id) {
           return computeUIDActive(id) || readUIDActive(id) ||
