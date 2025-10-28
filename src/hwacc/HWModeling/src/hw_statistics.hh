@@ -82,6 +82,7 @@ struct HW_Cycle_Stats
 
     int compCommitThisCycle;
     int memCommitThisCycle;
+    int ctrlCommitThisCycle;
     int anyCommit;
 
     void reset() {
@@ -105,6 +106,7 @@ struct HW_Cycle_Stats
 
         compCommitThisCycle = 0;
         memCommitThisCycle  = 0;
+        ctrlCommitThisCycle  = 0;
         anyCommit = 0;
     }
 };

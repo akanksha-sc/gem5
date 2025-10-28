@@ -210,6 +210,8 @@ LLVMInterface::ActiveFunction::processQueues()
             caller->commit();
         }
         returned = true;
+        hw_cycle_stats.ctrlCommitThisCycle++;
+        hw_cycle_stats.anyCommit = 1;
         return;
     }
 
@@ -311,6 +313,8 @@ LLVMInterface::ActiveFunction::processQueues()
                             );
                         }
                         (inst)->commit();
+                        hw_cycle_stats.ctrlCommitThisCycle++;
+                        hw_cycle_stats.anyCommit = 1;
                         if (dbg) {
                             DPRINTFS(Runtime, owner,
                             "\t\t  |-Erase From Queue: %s - UID[%i]\n",

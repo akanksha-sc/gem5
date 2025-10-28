@@ -80,8 +80,10 @@ void HWStatistics::accumulateCycleEvents(const HW_Cycle_Stats& s)
 
     current_cycle_stats.compCommitThisCycle += s.compCommitThisCycle;
     current_cycle_stats.memCommitThisCycle  += s.memCommitThisCycle;
+    current_cycle_stats.ctrlCommitThisCycle  += s.ctrlCommitThisCycle;
 
-    if (s.compCommitThisCycle > 0 || s.memCommitThisCycle > 0)
+    if (s.compCommitThisCycle > 0 || s.memCommitThisCycle > 0
+        || s.ctrlCommitThisCycle > 0)
         current_cycle_stats.anyCommit = 1;
 }
 
