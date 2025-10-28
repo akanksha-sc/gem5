@@ -190,7 +190,6 @@ LLVMInterface::ActiveFunction::processQueues()
         }
         else {
             ++queue_iter;
-            hw_cycle_stats.compFUStall++;
         }
     }
 
@@ -337,6 +336,13 @@ LLVMInterface::ActiveFunction::processQueues()
                         if (callee->canLaunch()) {
                             owner->launchFunction(callee, callInst);
                             computeQueue.insert({(inst)->getUID(), inst});
+                            hw_cycle_stats.compLaunched++;
+                            hw_cycle_stats.compActive++;
+                            if (owner->hw->hw_statistics->
+                                use_cycle_tracking()) {
+                                compLaunchCycle[(inst)->getUID()] =
+                                        owner->cycle;
+                            }
                             if (dbg) {
                                 DPRINTFS(Runtime, owner,
                                 "\t\t  |-Erase From Queue: %s - UID[%i]\n",
@@ -354,6 +360,17 @@ LLVMInterface::ActiveFunction::processQueues()
                     else {
                         auto computeStart =
                                 std::chrono::high_resolution_clock::now();
+
+                        // Structural stall: ready but FU unavailable
+                        if ((inst)->hasFunctionalUnit() &&
+                            !owner->hw->canAllocateFunctionalUnit(
+                                    (inst)->getFunctionalUnit())
+                            ) {
+                            hw_cycle_stats.compStructStall++;
+                            ++queue_iter; // remain in reservation; retry
+                            continue;
+                        }
+
                         if (!(inst)->launch()) {
                             if (dbg) {
                                 DPRINTFS(Runtime, owner,
@@ -1153,7 +1170,7 @@ LLVMInterface::printResults() {
             << (cycle*(clock_period/1000.0)*(1e-3)) << " us" << std::endl;
     std::cout << "   Stalls:                          " << stalls
             << " cycles" << std::endl;
-    std::cout << "   Executed Nodes:                  " << (cycle-stalls-1)
+    std::cout << "   Executed Nodes:                  " << (cycle - stalls)
             << " cycles" << std::endl;
     std::cout << std::endl;
 

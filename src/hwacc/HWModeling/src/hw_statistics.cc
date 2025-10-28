@@ -75,7 +75,7 @@ void HWStatistics::accumulateCycleEvents(const HW_Cycle_Stats& s)
 
     current_cycle_stats.compLaunched += s.compLaunched;
     current_cycle_stats.compActive   += s.compActive;
-    current_cycle_stats.compFUStall  += s.compFUStall;
+    current_cycle_stats.compStructStall  += s.compStructStall;
     current_cycle_stats.compCommited += s.compCommited;
 
     current_cycle_stats.compCommitThisCycle += s.compCommitThisCycle;
@@ -162,9 +162,9 @@ void HWStatistics::print()
     uint64_t sumRes=0, sumLd=0, sumSt=0, sumComp=0;
     uint64_t sumLdInt=0, sumLdAct=0, sumLdRawStall=0, sumStAct=0;
     uint64_t sumCompLaunch=0, sumCompActive=0, sumCompCommit=0,
-             sumCompFUStall=0;
+             sumCompStructStall=0;
     uint64_t anyMemInFlightCycles=0, anyCompInFlightCycles=0,
-             fuStallCycles=0;
+             fuStructStallCycles=0;
 
     for (const auto& buf : hw_buffer_list) {
         for (const auto& c : buf) {
@@ -185,14 +185,14 @@ void HWStatistics::print()
             sumCompLaunch += c.compLaunched;
             sumCompActive += c.compActive;
             sumCompCommit += c.compCommited;
-            sumCompFUStall+= c.compFUStall;
+            sumCompStructStall+= c.compStructStall;
 
             if ((c.loadInFlight + c.storeInFlight) > 0)
                 anyMemInFlightCycles++;
             if (c.compInFlight > 0)
                 anyCompInFlightCycles++;
-            if (c.compFUStall > 0)
-                fuStallCycles++;
+            if (c.compStructStall > 0)
+                fuStructStallCycles++;
         }
     }
 
@@ -238,8 +238,8 @@ void HWStatistics::print()
         sumCompActive << std::endl;
     std::cout << "        Cycles w/ Compute In-Flight:" << std::fixed <<
         std::setprecision(3) << pct(anyCompInFlightCycles) << "%" << std::endl;
-    std::cout << "        Cycles w/ FU Stall:         " << std::fixed <<
-        std::setprecision(3) << pct(fuStallCycles) << "%" << std::endl;
+    std::cout << "        Cycles w/ FU Struct Stall:   " << std::fixed <<
+        std::setprecision(3) << pct(fuStructStallCycles) << "%" << std::endl;
 
 
     // Latency (modeled cycles)

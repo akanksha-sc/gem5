@@ -77,7 +77,7 @@ struct HW_Cycle_Stats
     int compInFlight;
     int compLaunched;
     int compActive;
-    int compFUStall;
+    int compStructStall;
     int compCommited;
 
     int compCommitThisCycle;
@@ -101,7 +101,7 @@ struct HW_Cycle_Stats
         compInFlight = 0;
         compLaunched = 0;
         compActive = 0;
-        compFUStall = 0;
+        compStructStall = 0;
         compCommited = 0;
 
         compCommitThisCycle = 0;

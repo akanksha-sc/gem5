@@ -126,6 +126,41 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit) {
     return false;
 }
 
+bool
+HWInterface::canAllocateFunctionalUnit(uint64_t functional_unit) {
+    switch(functional_unit) {
+        case INTADDER :
+                return functional_units->_integer_adder->is_available();
+        case INTMULTI :
+                return functional_units->_integer_multiplier->is_available();
+        case INTSHIFTER :
+                return functional_units->_bit_shifter->is_available();
+        case INTBITWISE :
+                return functional_units->_bitwise_operations->is_available();
+        case FPSPADDER :
+                return functional_units->_float_adder->is_available();
+        case FPDPADDER :
+                return functional_units->_double_adder->is_available();
+        case FPSPMULTI :
+                return functional_units->_float_multiplier->is_available();
+        case FPSPDIVID :
+                return functional_units->_float_divider->is_available();
+        case FPDPMULTI :
+                return functional_units->_double_multiplier->is_available();
+        case FPDPDIVID :
+                return functional_units->_double_divider->is_available();
+        case REGISTER :
+                return functional_units->_bit_register->is_available();
+        case COMPARE:
+        case GETELEMENTPTR:
+        case CONVERSION:
+        case OTHERINST:
+        case COUNTER:
+        default: // non-FU or unmodeled => never blocks
+                return true;
+    }
+}
+
 void
 HWInterface::clearFunctionalUnit(uint64_t unit) {
     switch(unit) {

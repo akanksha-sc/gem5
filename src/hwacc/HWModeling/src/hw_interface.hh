@@ -71,7 +71,7 @@ class HWInterface : public SimObject
         HWInterface(const HWInterfaceParams &params);
         bool availableFunctionalUnit(uint64_t functional_unit);
         void clearFunctionalUnit(uint64_t functional_unit);
-
+        bool canAllocateFunctionalUnit(uint64_t functional_unit);
 
 };
 
