@@ -162,11 +162,33 @@ LLVMInterface::ActiveFunction::processQueues()
         if ((queue_iter->second)->commit()) {
             (queue_iter->second)->reset();
 
-            // auto *inst = queue_iter->second.get();
-            // auto opcode = inst->getOpode(); // LLVM opcode
+            auto *inst = queue_iter->second.get();
+            auto opcode = inst->getOpode(); // LLVM opcode
             // Default 1 per committed compute instruction
             // TODO: FMA / other multi-op instructions, bump weight here
             uint32_t op_weight = 1;
+            switch (opcode) {
+                // FP arithmetic
+                case llvm::Instruction::FAdd:
+                case llvm::Instruction::FSub:
+                case llvm::Instruction::FMul:
+                case llvm::Instruction::FDiv:
+                case llvm::Instruction::FRem:
+                    op_weight = 1; break;
+
+               // Integer arithmetic
+               case llvm::Instruction::Add:
+               case llvm::Instruction::Sub:
+               case llvm::Instruction::Mul:
+               case llvm::Instruction::UDiv:
+               case llvm::Instruction::SDiv:
+               case llvm::Instruction::URem:
+               case llvm::Instruction::SRem:
+                   op_weight = 1; break;
+
+              default:
+                   op_weight = 0; break;
+            }
             // Example (enable if you have fused ops exposed):
             // if (opcode == llvm::Instruction::FMA) op_weight = 2;
             owner->hw->hw_statistics->countCompute(op_weight);
@@ -276,7 +298,7 @@ LLVMInterface::ActiveFunction::processQueues()
                         }
                     }
                     else if ((inst)->isStore()) {
-                        // WAR Protection to insure reading
+                        // WAR Protection to ensure reading
                         // finishes before a write
                         launchWrite(inst);
                         if (dbg) {
@@ -476,6 +498,16 @@ LLVMInterface::tick()
         }
     }
 
+    // Global memory-side flags for this modeled cycle
+    if (hw->hw_statistics->use_cycle_tracking()) {
+        HW_Cycle_Stats ms; ms.reset();
+        // 1 -> occurred at least once this modeled cycle
+        if (comm->hadRetryThisCycle())   ms.memRetry = 1;
+        if (comm->hadNoPortThisCycle())  ms.memNoPort = 1;
+        if (comm->memInFlightThisCyc())  ms.memInFlightFlag = 1;
+        hw->hw_statistics->accumulateCycleEvents(ms);
+    }
+
     // Aggregate one record per cycle (across all ActiveFunctions)
     if (hw->hw_statistics->use_cycle_tracking()) {
         hw->hw_statistics->finalizeCycle(cycle);
@@ -484,7 +516,15 @@ LLVMInterface::tick()
     if (activeFunctions.empty()) {
         // We are finished executing all functions.
         // Signal completion to the CommInterface
-        running = false;
+        // We are finished executing all functions.
+        // Before finalizing, inject a single quiescent (idle) cycle so that
+        // the "Idle" stall bucket is visible in stats and totals remain consistent.
+        // This does not change behavior—it's a post-run accounting record.
+        if (hw->hw_statistics->use_cycle_tracking()) {                       // [IDLE]
+            hw->hw_statistics->pushIdleBubble(cycle + 1);                    // [IDLE]
+            cycle += 1;  // keep printed "Runtime: <cycles>" aligned with stats // [IDLE]
+        }
+  	running = false;
         finalize();
         return;
     }
@@ -1340,7 +1380,7 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
             functional_unit = hw_inst->get_functional_unit();
             for (auto hw_fu : hw->functional_units->functional_unit_list) {
                 if (hw_fu->get_enum_value() == functional_unit) {
-                    hw_fu->inc_functional_unit_limit();
+                    // hw_fu->inc_functional_unit_limit();
                     break;
                 }
             }

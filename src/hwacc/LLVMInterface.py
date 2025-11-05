@@ -42,7 +42,7 @@ class LLVMInterface(AccComputeUnit):
 
     in_file = Param.String("LLVM Trace File")
     lockstep_mode = Param.Bool(
-        True,
+        False,
         "TRUE: Stall datapath if any operation stalls."
         "FALSE: Only stall datapath regions with stalls",
     )

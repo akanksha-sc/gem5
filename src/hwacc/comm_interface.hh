@@ -71,6 +71,11 @@ class CommInterface : public BasicPioDevice
   public:
     bool debug() { return debugEnabled; }
 
+  private:
+    bool memHadRetryThisCycle = false;
+    bool memNoPortThisCycle   = false;
+    bool memInFlightThisCycle = false;
+
   protected:
     class MemSidePort : public StreamRequestPort
     {
@@ -323,6 +328,14 @@ class CommInterface : public BasicPioDevice
     std::string getName() const { return name(); }
 
     virtual bool isBaseCommInterface() { return true; }
+
+    // read-only accessors for mem metrics
+    bool hadRetryThisCycle()   const { return memHadRetryThisCycle; }
+    bool hadNoPortThisCycle()  const { return memNoPortThisCycle; }
+    bool memInFlightThisCyc()  const { return memInFlightThisCycle; }
+    size_t rdInflight()  const { return accRdQ.size(); }
+    size_t wrInflight()  const { return accWrQ.size(); }
+
   protected:
 };
 

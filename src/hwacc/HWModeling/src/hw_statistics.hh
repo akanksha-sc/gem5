@@ -85,6 +85,18 @@ struct HW_Cycle_Stats
     int ctrlCommitThisCycle;
     int anyCommit;
 
+    // memory-side cycle flags
+    int memRetry;
+    int memNoPort;
+    int memInFlightFlag;
+
+    // stall breakdown by cause (disjoint)
+    int stallMemWait;   // mem in-flight>0, comp in-flight==0
+    int stallCompWait;  // comp in-flight>0, mem in-flight==0
+    int stallBothWait;  // both mem and comp in-flight>0
+    int stallDepSched;  // no in-flight; reservation>0
+    int stallIdle;      // no in-flight; reservation==0
+
     void reset() {
         cycle = 0;
 
@@ -108,6 +120,16 @@ struct HW_Cycle_Stats
         memCommitThisCycle  = 0;
         ctrlCommitThisCycle  = 0;
         anyCommit = 0;
+
+        memRetry = 0;
+        memNoPort = 0;
+        memInFlightFlag = 0;
+
+        stallMemWait = 0;
+        stallCompWait = 0;
+        stallBothWait = 0;
+        stallDepSched = 0;
+        stallIdle = 0;
     }
 };
 
@@ -214,6 +236,8 @@ class HWStatistics : public SimObject
 
         uint64_t getOpsPerCyclePeak()   const { return opsPerCyclePeak; }
         uint64_t getBytesPerCyclePeak() const { return bytesPerCyclePeak; }
+	// Inject a single quiescent (idle) cycle, typically at run end.
+	void pushIdleBubble(int next_cycle);
 
 };
 

@@ -124,6 +124,7 @@ CommInterface::MemSidePort::sendPacket(PacketPtr pkt) {
             (unsigned int)pkt->req->getPaddr());
         }
         setStalled(pkt);
+	owner->memHadRetryThisCycle = true;
     }
 }
 
@@ -161,6 +162,7 @@ CommInterface::SPMPort::sendPacket(PacketPtr pkt) {
             (unsigned int)pkt->req->getPaddr());
         }
         setStalled(pkt);
+	owner->memHadRetryThisCycle = true;
     }
 }
 
@@ -513,7 +515,8 @@ CommInterface::processMemoryRequests() {
                         "Found no ports able to read %d bytes from %lx\n",
                         (*it)->length, address);
                 }
-                ++it;
+                memNoPortThisCycle = true;
+		++it;
             }
         }
         if (debug()) {
@@ -583,6 +586,7 @@ CommInterface::processMemoryRequests() {
                         "Found no ports able to write %d bytes to %lx\n",
                         (*it)->length, address);
                 }
+		memNoPortThisCycle = true;
                 ++it;
             }
         }
@@ -604,9 +608,14 @@ CommInterface::tick() {
         DPRINTF(CommInterface, "Tick!\n");
     }
     checkMMR();
+    memInFlightThisCycle = (accRdQ.size() + accWrQ.size()) > 0;
     requestsInQueues = readQueue.size() + writeQueue.size();
     if (requestsInQueues > 0)
         processMemoryRequests();
+    // clear flags
+    memHadRetryThisCycle = false;
+    memNoPortThisCycle   = false;
+    memInFlightThisCycle = false;
 }
 
 void

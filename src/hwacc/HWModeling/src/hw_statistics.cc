@@ -85,10 +85,35 @@ void HWStatistics::accumulateCycleEvents(const HW_Cycle_Stats& s)
     if (s.compCommitThisCycle > 0 || s.memCommitThisCycle > 0
         || s.ctrlCommitThisCycle > 0)
         current_cycle_stats.anyCommit = 1;
+
+    if (s.memRetry)        current_cycle_stats.memRetry = 1;
+    if (s.memNoPort)       current_cycle_stats.memNoPort = 1;
+    if (s.memInFlightFlag) current_cycle_stats.memInFlightFlag = 1;
 }
 
 void HWStatistics::finalizeCycle(int curr_cycle)
 {
+    // Stall categorization, if no commit this cycle
+    const bool anyCommit = current_cycle_stats.anyCommit > 0;
+    if (!anyCommit) {
+        const int memInfl = current_cycle_stats.loadInFlight
+                          + current_cycle_stats.storeInFlight;
+        const int compInfl = current_cycle_stats.compInFlight;
+        const int resInfl  = current_cycle_stats.resInFlight;
+
+        if (memInfl > 0 && compInfl == 0) {
+            current_cycle_stats.stallMemWait = 1;
+        } else if (compInfl > 0 && memInfl == 0) {
+            current_cycle_stats.stallCompWait = 1;
+        } else if (compInfl > 0 && memInfl > 0) {
+            current_cycle_stats.stallBothWait = 1;
+        } else if (resInfl > 0) {
+            current_cycle_stats.stallDepSched = 1;
+        } else {
+            current_cycle_stats.stallIdle = 1;
+        }
+    }
+
     // stamp the cycle number
     // push one aggregated record for the cycle
     current_cycle_stats.cycle = curr_cycle;
@@ -156,6 +181,22 @@ void HWStatistics::updateBuffer() {
     }
 }
 
+void HWStatistics::pushIdleBubble(int next_cycle)
+{
+    HW_Cycle_Stats z;
+    z.reset();
+    z.cycle = next_cycle;
+
+    // This is a quiescent cycle: no in-flight work and no commits.
+    // Mark it as an "idle" stall explicitly.
+    z.stallIdle = 1;
+
+    auto& cur = hw_buffer_list.at(current_buffer_index);
+    cur.push_back(z);
+    updateBuffer();
+}
+
+
 void HWStatistics::print()
 {
     uint64_t ncycles = 0;
@@ -165,6 +206,11 @@ void HWStatistics::print()
              sumCompStructStall=0;
     uint64_t anyMemInFlightCycles=0, anyCompInFlightCycles=0,
              fuStructStallCycles=0;
+    uint64_t memRetryCycles=0, memNoPortCycles=0;
+    // Stall-category and partition counters
+    uint64_t stallMemWait=0, stallCompWait=0, stallBothWait=0,
+             stallDepSched=0, stallIdle=0;
+    uint64_t progressCycles=0, stallCycles=0, totalCycles=0;
 
     for (const auto& buf : hw_buffer_list) {
         for (const auto& c : buf) {
@@ -193,6 +239,19 @@ void HWStatistics::print()
                 anyCompInFlightCycles++;
             if (c.compStructStall > 0)
                 fuStructStallCycles++;
+            if (c.memRetry)        memRetryCycles++;
+            if (c.memNoPort)       memNoPortCycles++;
+
+            // partition counts
+            totalCycles++;
+            if (c.anyCommit) progressCycles++; else stallCycles++;
+
+            // disjoint stall categories
+            stallMemWait  += (c.stallMemWait  ? 1 : 0);
+            stallCompWait += (c.stallCompWait ? 1 : 0);
+            stallBothWait += (c.stallBothWait ? 1 : 0);
+            stallDepSched += (c.stallDepSched ? 1 : 0);
+            stallIdle     += (c.stallIdle     ? 1 : 0);
         }
     }
 
@@ -201,6 +260,11 @@ void HWStatistics::print()
     };
     auto pct = [&](uint64_t s) {
             return ncycles ? 100.0 * double(s)/double(ncycles) : 0.0;
+    };
+
+    // Stall breakdown (percent of stall cycles)
+    auto pct_stall = [&](uint64_t s) {
+        return stallCycles ? 100.0 * double(s) / double(stallCycles) : 0.0;
     };
 
     std::cout << "   ======= Accelerator Cycle Analysis =======" << std::endl;
@@ -227,6 +291,12 @@ void HWStatistics::print()
         << std::endl;
     std::cout << "        Cycles w/ Mem In-Flight:    " << std::fixed <<
         std::setprecision(3) << pct(anyMemInFlightCycles) << "%" << std::endl;
+
+    // Memory-side stall views
+    std::cout << "        Cycles w/ Mem Backpressure:" << std::fixed
+              << std::setprecision(3) << pct(memRetryCycles) << "%\n";
+    std::cout << "        Cycles w/ No-Eligible-Port:" << std::fixed
+              << std::setprecision(3) << pct(memNoPortCycles) << "%\n";
 
     // Compute activity
     std::cout << "   Compute Activity:" << std::endl;
@@ -262,4 +332,29 @@ void HWStatistics::print()
                   << (double)compLatSum / (double)compDone
                   << " max=" << compLatMax << " n=" << compDone << std::endl;
     }
+
+    // Stall breakdown
+    std::cout << "   Stall Breakdown (disjoint):" << std::endl;
+    std::cout << "        Mem-wait:                 "
+              << std::fixed << std::setprecision(3)
+              << pct_stall(stallMemWait)  << "% of stalls" << std::endl;
+    std::cout << "        Comp-wait:                "
+              << std::fixed << std::setprecision(3)
+              << pct_stall(stallCompWait) << "% of stalls" << std::endl;
+    std::cout << "        Both-wait:                "
+              << std::fixed << std::setprecision(3)
+              << pct_stall(stallBothWait) << "% of stalls" << std::endl;
+    std::cout << "        Dep/Sched:                "
+              << std::fixed << std::setprecision(3)
+              << pct_stall(stallDepSched) << "% of stalls" << std::endl;
+    std::cout << "        Idle:                     "
+              << std::fixed << std::setprecision(3)
+              << pct_stall(stallIdle)     << "% of stalls" << std::endl;
+
+    // quick consistency check
+    if (stallCycles != (stallMemWait + stallCompWait + stallBothWait
+                        + stallDepSched + stallIdle)) {
+        std::cout << "        [WARN] Stall categories != total stall cycles\n";
+    }
+
 }
