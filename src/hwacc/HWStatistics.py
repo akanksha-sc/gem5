@@ -52,7 +52,5 @@ class HWStatistics(SimObject):
         "interface (read+write). 0=disabled.",
     )
 
-    cycle_tracking = Param.Bool(
-        False, "Enable cycle-by-cycle stats collection"
-    )
+    cycle_tracking = Param.Bool(True, "Enable cycle-by-cycle stats collection")
     dbg = Param.Bool(False, "Enable HWStatistics debug prints")

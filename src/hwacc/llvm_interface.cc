@@ -517,13 +517,6 @@ LLVMInterface::tick()
         // We are finished executing all functions.
         // Signal completion to the CommInterface
         // We are finished executing all functions.
-        // Before finalizing, inject a single quiescent (idle) cycle so that
-        // the "Idle" stall bucket is visible in stats and totals remain consistent.
-        // This does not change behavior—it's a post-run accounting record.
-        if (hw->hw_statistics->use_cycle_tracking()) {                       // [IDLE]
-            hw->hw_statistics->pushIdleBubble(cycle + 1);                    // [IDLE]
-            cycle += 1;  // keep printed "Runtime: <cycles>" aligned with stats // [IDLE]
-        }
   	running = false;
         finalize();
         return;

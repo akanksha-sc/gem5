@@ -33,6 +33,8 @@
  */
 
 #include "hw_statistics.hh"
+#include <sstream>
+#include <iomanip>
 
 HWStatistics::HWStatistics(const HWStatisticsParams &params) :
     SimObject(params) {
@@ -100,14 +102,22 @@ void HWStatistics::finalizeCycle(int curr_cycle)
                           + current_cycle_stats.storeInFlight;
         const int compInfl = current_cycle_stats.compInFlight;
         const int resInfl  = current_cycle_stats.resInFlight;
+        // Structural-FU stall re-attribution policy:
+        // If at least one ready instruction could not allocate a FU in this cycle,
+        // attribute the stall to "compute" (even if there is memory activity)
+        const bool structFuBlocked = (current_cycle_stats.compStructStall > 0);
 
-        if (memInfl > 0 && compInfl == 0) {
+        if (structFuBlocked) {
+            // Re-attribute to compute stall
+            current_cycle_stats.stallCompWait = 1;
+        } else if (memInfl > 0 && compInfl == 0) {
             current_cycle_stats.stallMemWait = 1;
         } else if (compInfl > 0 && memInfl == 0) {
             current_cycle_stats.stallCompWait = 1;
         } else if (compInfl > 0 && memInfl > 0) {
             current_cycle_stats.stallBothWait = 1;
         } else if (resInfl > 0) {
+            // Reservation has work; blocked by deps/scheduler (control)
             current_cycle_stats.stallDepSched = 1;
         } else {
             current_cycle_stats.stallIdle = 1;
@@ -263,9 +273,9 @@ void HWStatistics::print()
     };
 
     // Stall breakdown (percent of stall cycles)
-    auto pct_stall = [&](uint64_t s) {
-        return stallCycles ? 100.0 * double(s) / double(stallCycles) : 0.0;
-    };
+    //auto pct_stall = [&](uint64_t s) {
+    //    return stallCycles ? 100.0 * double(s) / double(stallCycles) : 0.0;
+    //};
 
     std::cout << "   ======= Accelerator Cycle Analysis =======" << std::endl;
     std::cout << "   Cycles Recorded:                " << ncycles << std::endl;
@@ -333,28 +343,49 @@ void HWStatistics::print()
                   << " max=" << compLatMax << " n=" << compDone << std::endl;
     }
 
-    // Stall breakdown
-    std::cout << "   Stall Breakdown (disjoint):" << std::endl;
-    std::cout << "        Mem-wait:                 "
-              << std::fixed << std::setprecision(3)
-              << pct_stall(stallMemWait)  << "% of stalls" << std::endl;
-    std::cout << "        Comp-wait:                "
-              << std::fixed << std::setprecision(3)
-              << pct_stall(stallCompWait) << "% of stalls" << std::endl;
-    std::cout << "        Both-wait:                "
-              << std::fixed << std::setprecision(3)
-              << pct_stall(stallBothWait) << "% of stalls" << std::endl;
-    std::cout << "        Dep/Sched:                "
-              << std::fixed << std::setprecision(3)
-              << pct_stall(stallDepSched) << "% of stalls" << std::endl;
-    std::cout << "        Idle:                     "
-              << std::fixed << std::setprecision(3)
-              << pct_stall(stallIdle)     << "% of stalls" << std::endl;
+    // Stall breakdown (disjoint)
+    std::cout << "   Stall Breakdown (disjoint):\n";
+    auto fmt3 = [](double v){
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(3) << v;
+        return oss.str();
+    };
+    auto of_total  = [&](uint64_t s){ return fmt3( (totalCycles ? 100.0 * double(s)/double(totalCycles) : 0.0) ) + "% of total"; };
+    auto of_stalls = [&](uint64_t s){ return fmt3( (stallCycles ? 100.0 * double(s)/double(stallCycles)   : 0.0) ) + "% of stalls"; };
 
-    // quick consistency check
-    if (stallCycles != (stallMemWait + stallCompWait + stallBothWait
-                        + stallDepSched + stallIdle)) {
-        std::cout << "        [WARN] Stall categories != total stall cycles\n";
-    }
+    std::cout << "        Mem-wait:   "
+          << stallMemWait  << " cycles  (" << of_stalls(stallMemWait)  << ", "
+          << of_total(stallMemWait)  << ")\n";
+    std::cout << "        Comp-wait:  "
+          << stallCompWait << " cycles  (" << of_stalls(stallCompWait) << ", "
+          << of_total(stallCompWait) << ")\n";
+    std::cout << "        Both-wait:  "
+          << stallBothWait << " cycles  (" << of_stalls(stallBothWait) << ", "
+          << of_total(stallBothWait) << ")\n";
+    std::cout << "        Dep/Sched:  "
+          << stallDepSched << " cycles  (" << of_stalls(stallDepSched) << ", "
+          << of_total(stallDepSched) << ")\n";
+    std::cout << "        Idle:       "
+          << stallIdle     << " cycles  (" << of_stalls(stallIdle)     << ", "
+          << of_total(stallIdle)     << ")\n";
 
+    // Structural-FU stall visibility (not disjoint, informational)
+    std::cout << "   Cycles with FU structural pressure: "
+          << fuStructStallCycles << "  (" << std::fixed << std::setprecision(3)
+          << pct(fuStructStallCycles) << "% of total)\n";
+
+    // ===== Sanity checks =====
+    const uint64_t stallCatSum = stallMemWait + stallCompWait
+                           + stallBothWait + stallDepSched + stallIdle;
+
+    std::cout << "   ===== Sanity Checks =====\n";
+    std::cout << "        Total cycles:    " << totalCycles << "\n";
+    std::cout << "        Progress cycles: " << progressCycles << "\n";
+    std::cout << "        Stall cycles:    " << stallCycles << "\n";
+    std::cout << "        Progress+Stall = " << (progressCycles + stallCycles)
+          << ( (progressCycles + stallCycles) == totalCycles ? "  [OK]" : "  [MISMATCH]" )
+          << "\n";
+    std::cout << "        Sum(disjoint stall cats) = " << stallCatSum
+          << ( stallCatSum == stallCycles ? "  [OK]" : "  [MISMATCH]" )
+          << "\n";
 }
