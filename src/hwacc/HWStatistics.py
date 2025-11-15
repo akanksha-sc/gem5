@@ -42,12 +42,12 @@ class HWStatistics(SimObject):
     cxx_header = "hwacc/HWModeling/src/hw_statistics.hh"
 
     ops_per_cycle_peak = Param.Unsigned(
-        0,
+        4,
         "Optional: peak ops that this accelerator can launch/commit per"
         " cycle (for roofline ceiling). 0=disabled.",
     )
     bytes_per_cycle_peak = Param.Unsigned(
-        0,
+        32,
         "Optional: peak bytes per cycle on accelerator-side memory "
         "interface (read+write). 0=disabled.",
     )

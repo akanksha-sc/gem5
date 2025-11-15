@@ -164,11 +164,8 @@ LLVMInterface::ActiveFunction::processQueues()
 
             auto *inst = queue_iter->second.get();
             auto opcode = inst->getOpode(); // LLVM opcode
-            // Default 1 per committed compute instruction
-            // TODO: FMA / other multi-op instructions, bump weight here
             uint32_t op_weight = 1;
             switch (opcode) {
-                // FP arithmetic
                 case llvm::Instruction::FAdd:
                 case llvm::Instruction::FSub:
                 case llvm::Instruction::FMul:
@@ -176,22 +173,23 @@ LLVMInterface::ActiveFunction::processQueues()
                 case llvm::Instruction::FRem:
                     op_weight = 1; break;
 
-               // Integer arithmetic
-               case llvm::Instruction::Add:
-               case llvm::Instruction::Sub:
-               case llvm::Instruction::Mul:
-               case llvm::Instruction::UDiv:
-               case llvm::Instruction::SDiv:
-               case llvm::Instruction::URem:
-               case llvm::Instruction::SRem:
-                   op_weight = 1; break;
+                case llvm::Instruction::Add:
+                case llvm::Instruction::Sub:
+                case llvm::Instruction::Mul:
+                case llvm::Instruction::UDiv:
+                case llvm::Instruction::SDiv:
+                case llvm::Instruction::URem:
+                case llvm::Instruction::SRem:
+                    op_weight = 1; break;
 
-              default:
-                   op_weight = 0; break;
-            }
-            // Example (enable if you have fused ops exposed):
-            // if (opcode == llvm::Instruction::FMA) op_weight = 2;
-            owner->hw->hw_statistics->countCompute(op_weight);
+                default:
+                    op_weight = 0; break;
+           }
+           // Example for FMA (if exposed by your IR):
+           // if (opcode == llvm::Instruction::FMA)
+           //     op_weight = 2;
+           owner->hw->hw_statistics->countCompute(op_weight);
+
             // note latency = commit_cycle - launch_cycle
             if (owner->hw->hw_statistics->use_cycle_tracking()) {
                 auto cit = compLaunchCycle.find(uid);
@@ -1211,59 +1209,79 @@ LLVMInterface::printResults() {
             hw->hw_statistics->print();
     }
     auto *S = hw->hw_statistics;
-    const uint64_t cycles = cycle;
-    const uint64_t ops    = S->getTotalCompOps();
-    const uint64_t bytes  = S->getTotalLoadBytes() + S->getTotalStoreBytes();
     const double   fGHz   = S->getClockGHz();
 
-    // Per-cycle rates
-    const double perf_ops_per_cycle = (cycles ?
-        (double)ops / (double)cycles : 0.0);
-    const double bw_bytes_per_cycle = (cycles ?
-        (double)bytes / (double)cycles : 0.0);
-    const double intensity_ops_per_byte = (bytes ?
-        (double)ops / (double)bytes : 0.0);
-
-    // Absolute rates (if clock is set)
-    const double perf_ops_per_sec = (fGHz > 0.0) ?
-        perf_ops_per_cycle * fGHz * 1e9 : 0.0;
-    const double bw_bytes_per_sec = (fGHz > 0.0) ?
-        bw_bytes_per_cycle * fGHz * 1e9 : 0.0;
-
-    std::cout << "\n   ========= Roofline Summary (Measured) =========\n";
-    std::cout << "   Ops (weighted):                 " << ops << "\n";
-    std::cout << "   Bytes (R+W):                    " << bytes << "\n";
-    std::cout << "   Intensity (ops/byte):           " << std::fixed
-        << std::setprecision(4) << intensity_ops_per_byte << "\n";
-    std::cout << "   Perf_eff:                       " << std::setprecision(6)
-              << perf_ops_per_cycle << " ops/cycle";
-    if (fGHz > 0.0) std::cout << "  (" << perf_ops_per_sec/1e9 << " GOps/s)";
-    std::cout << "\n";
-    std::cout << "   BW_eff:                         " << std::setprecision(6)
-              << bw_bytes_per_cycle << " B/cycle";
-    if (fGHz > 0.0) std::cout << "  (" << bw_bytes_per_sec/1e9 << " GB/s)";
-    std::cout << "\n";
-
-    // Optional ceilings if provided
-    if (S->getOpsPerCyclePeak() > 0 && S->getBytesPerCyclePeak() > 0
-        && fGHz > 0.0) {
-        const double P_peak = (double)S->getOpsPerCyclePeak()
-            * fGHz * 1e9; // ops/s
-        const double B_peak = (double)S->getBytesPerCyclePeak()
-            * fGHz * 1e9; // B/s
-        const double bound_perf = std::min(P_peak, B_peak
-            * intensity_ops_per_byte);
-        const char *bound = (P_peak <= B_peak * intensity_ops_per_byte) ?
-            "Compute-bound" : "Memory-bound";
-
-        std::cout << "   P_peak:                         " <<
-            (P_peak/1e9) << " GOps/s\n";
-        std::cout << "   B_peak:                         " <<
-            (B_peak/1e9) << " GB/s\n";
-        std::cout << "   Roofline bound(min):            " <<
-            (bound_perf/1e9) << " Gop/s  [" << bound << "]\n";
+    // Try to discover B_peak (bytes/cycle) from comm interface if not given
+    uint64_t Bpc_peak = S->getBytesPerCyclePeak();
+    if (Bpc_peak == 0 && comm) {
+        // If your CommInterface subclass overrides these, we can use them
+        size_t rdBW_B = comm->getReadBusWidth();   // bytes/cycle on acc clock
+        size_t wrBW_B = comm->getWriteBusWidth();  // bytes/cycle on acc clock
+        if (rdBW_B > 0 || wrBW_B > 0) {
+            Bpc_peak = static_cast<uint64_t>(rdBW_B + wrBW_B);
+        }
     }
-    std::cout << "   ==============================================\n";
+
+    // Ops/cycle peak
+    uint64_t Opc_peak = S->getOpsPerCyclePeak();
+    // [ROOFLINE] --- end peak discovery ---
+
+    // [ROOFLINE] --- begin CSV/JSON friendly block ---
+    const uint64_t cycles = cycle; // includes 1 idle bubble injected
+    const uint64_t ops = S->getTotalCompOps();
+    const uint64_t bytes = S->getTotalLoadBytes() + S->getTotalStoreBytes();
+
+    const double perf_ops_per_cycle = (cycles ?
+                    double(ops)/double(cycles) : 0.0);
+    const double bw_bytes_per_cycle = (cycles ?
+                    double(bytes)/double(cycles) : 0.0);
+    const double intensity_ops_per_byte = (bytes  ?
+                    double(ops)/double(bytes) : 0.0);
+
+    const double P_meas_ops_s = perf_ops_per_cycle * fGHz * 1e9;
+    const double B_meas_B_s = bw_bytes_per_cycle * fGHz * 1e9;
+    const double P_peak_ops_s = (Opc_peak > 0 ?
+                    (double)Opc_peak * fGHz * 1e9 : 0.0);
+    const double B_peak_B_s = (Bpc_peak > 0 ?
+                    (double)Bpc_peak * fGHz * 1e9 : 0.0);
+
+    double P_roof_ops_s = 0.0;
+    const bool havePeaks = (P_peak_ops_s > 0.0 && B_peak_B_s > 0.0);
+    if (havePeaks) {
+        const double mem_bound_ops_s = B_peak_B_s * intensity_ops_per_byte;
+        P_roof_ops_s = std::min(P_peak_ops_s, mem_bound_ops_s);
+    }
+    const char *bound =
+        (!havePeaks) ? "N/A" :
+        (P_peak_ops_s <= B_peak_B_s * intensity_ops_per_byte ?
+            "Compute-bound" : "Memory-bound");
+
+    const double runtime_us = (cycles * (clock_period/1000.0) * 1e-3);
+
+    std::cout << "ROOFLINE_BEGIN\n";
+    std::cout << "Benchmark," << name() << "\n";
+    std::cout << std::fixed << std::setprecision(6)
+          << "AccelFreq_GHz," << fGHz << "\n";
+    std::cout << "Cycles,"       << cycles << "\n";
+    std::cout << std::setprecision(3)
+          << "Runtime_us,"   << runtime_us << "\n";
+    std::cout << std::setprecision(0)
+          << "Ops,"          << ops    << "\n"
+          << "Bytes,"        << bytes  << "\n";
+    std::cout << std::setprecision(6)
+          << "Intensity_ops_per_byte," << intensity_ops_per_byte << "\n"
+          << "Perf_ops_per_cycle,"     << perf_ops_per_cycle << "\n"
+          << "BW_bytes_per_cycle,"     << bw_bytes_per_cycle << "\n";
+    std::cout << std::setprecision(3)
+          << "P_meas_GOps,"  << (P_meas_ops_s / 1e9) << "\n"
+          << "B_meas_GBps,"  << (B_meas_B_s   / 1e9) << "\n";
+    std::cout << std::setprecision(3)
+          << "P_peak_GOps,"  << (P_peak_ops_s / 1e9) << "\n"
+          << "B_peak_GBps,"  << (B_peak_B_s   / 1e9) << "\n"
+          << "P_roof_GOps,"  << (P_roof_ops_s / 1e9) << "\n"
+          << "BoundType,"    << bound << "\n";
+    std::cout << "ROOFLINE_END\n";
+
 }
 
 void
