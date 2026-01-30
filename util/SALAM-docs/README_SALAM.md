@@ -63,7 +63,7 @@ Below are some resources in the gem5-SALAM directory that can be used when getti
 
 ## System Validation Examples
 
-The system validation examples under **benchmarks/sys_validation** are good examples for how you interface with the gem5-SALAM simulation objects.
+The system validation examples under **configs/example/gem5-library/salam-benchmarks** are good examples for how you interface with the gem5-SALAM simulation objects.
 
 In order to use the system validation benchmarks, it is required to have the ARM GCC cross-compiler installed. If you didn't already install it when you setup the dependencies, you can install it in Ubuntu by running the below command:
 
@@ -99,7 +99,7 @@ $M5_PATH/util/SALAM-tools/run_system.sh --bench [benchmark name] --bench-path [b
 For instance, for bfs you would run:
 
 ```bash
-$M5_PATH/util/SALAM-tools/run_system.sh --bench bfs --bench-path sys_validation/bfs
+$M5_PATH/util/SALAM-tools/run_system.sh --bench bfs --bench-path bfs
 ```
 
 If you would like to see the gem5-SALAM command created by the shell file you would just need to inspect the **RUN_SCRIPT** variable in the shell file.

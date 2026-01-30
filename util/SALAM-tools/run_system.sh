@@ -35,8 +35,8 @@ BENCH=""
 BENCH_PATH=""
 CONFIG_NAME=""
 FLAGS=""
-FLAGS="SALAM_Debug,CommInterface,LLVMInterface,NoncoherentDma"
-BUILD=True
+FLAGS="CommInterface,LLVMInterface"
+BUILD=False
 DEBUG=False
 PRINT_TO_FILE=False
 VALGRIND=False
@@ -153,7 +153,7 @@ if (! "$M5_PATH"/util/SALAM-tools/SALAM-Configurator/systembuilder.py --sys-name
 	exit 1
 fi
 
-if [ $BUILD ]; then
+if [ $BUILD == True ]; then
   echo "Building Bench"
   make all -C "$ACC_BENCH_PATH/$BENCH_PATH"
 fi
