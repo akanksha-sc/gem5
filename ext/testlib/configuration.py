@@ -77,6 +77,7 @@ found an AttributeError will be raised.
     :code:`_defaults.build_dir = None` Once this module has been imported
     constants should not be modified and their base attributes are frozen.
 """
+
 import abc
 import argparse
 import copy
@@ -226,7 +227,7 @@ def define_defaults(defaults):
         os.path.join(absdirpath(__file__), os.pardir, os.pardir)
     )
     defaults.result_path = os.path.join(os.getcwd(), "testing-results")
-    defaults.resource_url = "http://dist.gem5.org/dist/develop"
+    defaults.resource_url = "https://dist.gem5.org/dist/develop"
     defaults.resource_path = os.path.abspath(
         os.path.join(defaults.base_dir, "tests", "gem5", "resources")
     )
@@ -286,6 +287,8 @@ def define_constants(constants):
             constants.power_tag,
             constants.null_tag,
             constants.all_compiled_tag,
+            constants.null_all_ruby,
+            constants.arm_x86_tag,
         ),
         constants.variant_tag_type: (
             constants.opt_tag,

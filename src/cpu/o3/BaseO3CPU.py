@@ -1,4 +1,4 @@
-# Copyright (c) 2016, 2019 ARM Limited
+# Copyright (c) 2016, 2019, 2025 Arm Limited
 # Copyright (c) 2022-2023 The University of Edinburgh
 # All rights reserved.
 #
@@ -45,28 +45,18 @@ from m5.objects.BaseCPU import BaseCPU
 from m5.objects.BranchPredictor import *
 from m5.objects.FUPool import *
 from m5.objects.IndexingPolicies import *
+from m5.objects.IQUnit import *
 from m5.objects.ReplacementPolicies import *
+from m5.objects.SMT import *
 from m5.params import *
 from m5.proxy import *
 from m5.SimObject import *
 
 
-class SMTFetchPolicy(ScopedEnum):
-    vals = ["RoundRobin", "Branch", "IQCount", "LSQCount"]
-
-
-class SMTQueuePolicy(ScopedEnum):
-    vals = ["Dynamic", "Partitioned", "Threshold"]
-
-
-class CommitPolicy(ScopedEnum):
-    vals = ["RoundRobin", "OldestReady"]
-
-
 class BaseO3CPU(BaseCPU):
     type = "BaseO3CPU"
     cxx_class = "gem5::o3::CPU"
-    cxx_header = "cpu/o3/dyn_inst.hh"
+    cxx_header = "cpu/o3/cpu.hh"
 
     @classmethod
     def memory_mode(cls):
@@ -129,14 +119,16 @@ class BaseO3CPU(BaseCPU):
     dispatchWidth = Param.Unsigned(8, "Dispatch width")
     issueWidth = Param.Unsigned(8, "Issue width")
     wbWidth = Param.Unsigned(8, "Writeback width")
-    fuPool = Param.FUPool(DefaultFUPool(), "Functional Unit pool")
 
     iewToCommitDelay = Param.Cycles(
         1, "Issue/Execute/Writeback to commit delay"
     )
     renameToROBDelay = Param.Cycles(1, "Rename to reorder buffer delay")
     commitWidth = Param.Unsigned(8, "Commit width")
-    squashWidth = Param.Unsigned(8, "Squash width")
+    squashWidth = OptionalParam.Unsigned(
+        "Squash width. If unspecified all instructions are "
+        "squashed instantly within one cycle.",
+    )
     trapLatency = Param.Cycles(13, "Trap latency")
     fetchTrapLatency = Param.Cycles(1, "Fetch trap latency")
 
@@ -192,7 +184,7 @@ class BaseO3CPU(BaseCPU):
     numPhysMatRegs = Param.Unsigned(2, "Number of physical matrix registers")
     # most ISAs don't use condition-code regs, so default is 0
     numPhysCCRegs = Param.Unsigned(0, "Number of physical cc registers")
-    numIQEntries = Param.Unsigned(64, "Number of instruction queue entries")
+    instQueues = VectorParam.IQUnit(IQUnit(), "Vector of IQs")
     numROBEntries = Param.Unsigned(192, "Number of reorder buffer entries")
 
     smtNumFetchingThreads = Param.Unsigned(1, "SMT Number of Fetching Threads")
@@ -201,8 +193,6 @@ class BaseO3CPU(BaseCPU):
         "Partitioned", "SMT LSQ Sharing Policy"
     )
     smtLSQThreshold = Param.Int(100, "SMT LSQ Threshold Sharing Parameter")
-    smtIQPolicy = Param.SMTQueuePolicy("Partitioned", "SMT IQ Sharing Policy")
-    smtIQThreshold = Param.Int(100, "SMT IQ Threshold Sharing Parameter")
     smtROBPolicy = Param.SMTQueuePolicy(
         "Partitioned", "SMT ROB Sharing Policy"
     )

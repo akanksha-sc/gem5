@@ -27,6 +27,7 @@
 """
 This runs simple tests to ensure that running binaries via readfile works.
 """
+
 import os
 import re
 
@@ -63,10 +64,3 @@ def test_readfile(isa: str, length: str):
         valid_hosts=constants.supported_hosts,
         length=length,
     )
-
-
-test_readfile(isa="x86", length=constants.long_tag)
-
-test_readfile(isa="riscv", length=constants.long_tag)
-
-test_readfile(isa="arm", length=constants.long_tag)

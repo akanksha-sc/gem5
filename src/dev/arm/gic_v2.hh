@@ -63,6 +63,7 @@ struct GicV2Params;
 class GicV2Registers
 {
   public:
+    virtual ~GicV2Registers() = default;
     virtual uint32_t readDistributor(ContextID ctx, Addr daddr) = 0;
     virtual uint32_t readCpu(ContextID ctx, Addr daddr) = 0;
 

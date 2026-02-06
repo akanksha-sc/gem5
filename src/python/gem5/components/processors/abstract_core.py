@@ -127,6 +127,17 @@ class AbstractCore(SubSystem):
         """
         raise NotImplementedError
 
+    def has_mmu(self) -> bool:
+        """Return True if this core has an MMU.
+
+        This is needed to check a core has a MMU before trying to get it.
+        There are cores without MMUs. E.g, some generator cores.
+        """
+        try:
+            return isinstance(self.get_mmu(), BaseMMU)
+        except NotImplementedError:
+            return False
+
     @abstractmethod
     def get_mmu(self) -> BaseMMU:
         """Return the MMU for this core.

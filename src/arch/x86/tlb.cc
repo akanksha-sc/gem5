@@ -69,6 +69,9 @@ TLB::TLB(const Params &p)
     if (!size)
         fatal("TLBs must have a non-zero size.\n");
 
+    fatal_if(nextLevel(), "The x86 backend does not support multi-level "
+                          "TLBs.\n");
+
     for (int x = 0; x < size; x++) {
         tlb[x].trieHandle = NULL;
         freeList.push_back(&tlb[x]);
@@ -578,12 +581,13 @@ TLB::translateTiming(const RequestPtr &req, ThreadContext *tc,
     bool delayedResponse;
     assert(translation);
     // CLFLUSHOPT/WB/FLUSH should be treated as read for protection checks
+    BaseMMU::Mode orig_mode = mode;
     if (req->isCacheClean())
         mode = BaseMMU::Read;
     Fault fault =
         TLB::translate(req, tc, translation, mode, delayedResponse, true);
     if (!delayedResponse)
-        translation->finish(fault, req, tc, mode);
+        translation->finish(fault, req, tc, orig_mode);
     else
         translation->markDelayed();
 }

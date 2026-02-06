@@ -46,6 +46,7 @@ from m5.objects import (
     RubySystem,
 )
 from m5.objects.SubSystem import SubSystem
+from m5.params import AllMemory
 
 from gem5.coherence_protocol import CoherenceProtocol
 from gem5.utils.requires import requires
@@ -139,6 +140,7 @@ class PrivateL1PrivateL2CacheHierarchy(
             self.ruby_system.network,
             cache_line_size=board.get_cache_line_size(),
             clk_domain=board.get_clock_domain(),
+            addr_ranges=[AllMemory],
         )
         self.directory.ruby_system = self.ruby_system
 
@@ -195,7 +197,7 @@ class PrivateL1PrivateL2CacheHierarchy(
             size=self._l1d_size,
             assoc=self._l1d_assoc,
             network=self.ruby_system.network,
-            core=core,
+            requires_send_evicts=core.requires_send_evicts(),
             cache_line_size=board.get_cache_line_size(),
             target_isa=board.get_processor().get_isa(),
             clk_domain=board.get_clock_domain(),
@@ -204,7 +206,7 @@ class PrivateL1PrivateL2CacheHierarchy(
             size=self._l1i_size,
             assoc=self._l1i_assoc,
             network=self.ruby_system.network,
-            core=core,
+            requires_send_evicts=core.requires_send_evicts(),
             cache_line_size=board.get_cache_line_size(),
             target_isa=board.get_processor().get_isa(),
             clk_domain=board.get_clock_domain(),

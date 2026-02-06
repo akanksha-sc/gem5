@@ -4402,7 +4402,7 @@ decode QUADRANT default Unknown::unknown() {
                         uint64_t result = 0;
                         uint64_t src1 = Vs1_vu[i];
                         uint64_t src2 = Vs2_vu[i];
-                        for (int j = 0; j < 64; j++) {
+                        for (int j = 1; j < 64; j++) {
                             if ((src2 >> j) & 1) {
                                 result ^= src1 >> (64-j);
                             }
@@ -4745,13 +4745,13 @@ decode QUADRANT default Unknown::unknown() {
                         int frontLen = microVlmax - backLen;
                         int vdOffset = 0;
                         for (int i = 0; vdOffset < frontLen
-                            && vdOffset < microVl; vdOffset++) {
+                            && vdOffset < microVl; vdOffset++, i++) {
                             if (this->vm || elem_mask(v0,
                                 vdOffset + vdWindowLeft)) {
                                 Vd_vu[vdOffset] = Vs2_vu[i + backLen];
                             }
                         }
-                        for (int i = 0; vdOffset < microVl; vdOffset++) {
+                        for (int i = 0; vdOffset < microVl; vdOffset++, i++) {
                             if (this->vm || elem_mask(v0,
                                 vdOffset + vdWindowLeft)) {
                                 Vd_vu[vdOffset] = Vs3_vu[i];
@@ -5053,13 +5053,13 @@ decode QUADRANT default Unknown::unknown() {
                         int frontLen = microVlmax - backLen;
                         int vdOffset = 0;
                         for (int i = 0; vdOffset < frontLen
-                            && vdOffset < microVl; vdOffset++) {
+                            && vdOffset < microVl; vdOffset++, i++) {
                             if (this->vm || elem_mask(v0,
                                 vdOffset + vdWindowLeft)) {
                                 Vd_vu[vdOffset] = Vs2_vu[i + backLen];
                             }
                         }
-                        for (int i = 0; vdOffset < microVl; vdOffset++) {
+                        for (int i = 0; vdOffset < microVl; vdOffset++, i++) {
                             if (this->vm || elem_mask(v0,
                                 vdOffset + vdWindowLeft)) {
                                 Vd_vu[vdOffset] = Vs3_vu[i];
@@ -5439,8 +5439,10 @@ decode QUADRANT default Unknown::unknown() {
                         }
                     }
                     if (vdIdx == 0) {
-                        auto fd = ftype_freg<et>(freg(Fs1_bits));
-                        Vd_vu[0] = fd.v;
+                        if (this->vm || elem_mask(v0, 0)) {
+                            auto fd = ftype_freg<et>(freg(Fs1_bits));
+                            Vd_vu[0] = fd.v;
+                        }
                     }
                 }}, OPFVF, SimdMiscOp);
                 0x0f: VectorFloatSlideDownFormat::vfslide1down_vf({{
@@ -5500,8 +5502,11 @@ decode QUADRANT default Unknown::unknown() {
                         }
                     }
                     if (lastUop) {
-                        auto fd = ftype_freg<et>(freg(Fs1_bits));
-                        Vd_vu[microVl - 1] = fd.v;
+                        if (this->vm || elem_mask(v0,
+                            vdWindowLeft + microVl - 1)) {
+                            auto fd = ftype_freg<et>(freg(Fs1_bits));
+                            Vd_vu[microVl - 1] = fd.v;
+                        }
                     }
                 }}, OPFVF, SimdMiscOp);
                 // VRFUNARY0
@@ -5725,7 +5730,7 @@ decode QUADRANT default Unknown::unknown() {
                         uint64_t result = 0;
                         uint64_t src1 = Rs1_vu;
                         uint64_t src2 = Vs2_vu[i];
-                        for (int j = 0; j < 64; j++) {
+                        for (int j = 1; j < 64; j++) {
                             if ((src2 >> j) & 1) {
                                 result ^= src1 >> (64-j);
                             }
@@ -5749,13 +5754,13 @@ decode QUADRANT default Unknown::unknown() {
                         int frontLen = microVlmax - backLen;
                         int vdOffset = 0;
                         for (int i = 0; vdOffset < frontLen
-                            && vdOffset < microVl; vdOffset++) {
+                            && vdOffset < microVl; vdOffset++, i++) {
                             if (this->vm || elem_mask(v0,
                                 vdOffset + vdWindowLeft)) {
                                 Vd_vu[vdOffset] = Vs2_vu[i + backLen];
                             }
                         }
-                        for (int i = 0; vdOffset < microVl; vdOffset++) {
+                        for (int i = 0; vdOffset < microVl; vdOffset++, i++) {
                             if (this->vm || elem_mask(v0,
                                 vdOffset + vdWindowLeft)) {
                                 Vd_vu[vdOffset] = Vs3_vu[i];
@@ -5778,7 +5783,9 @@ decode QUADRANT default Unknown::unknown() {
                         }
                     }
                     if (vdIdx == 0) {
-                        Vd_vu[0] = Rs1_vu;
+                        if (this->vm || elem_mask(v0, 0)) {
+                            Vd_vu[0] = Rs1_vu;
+                        }
                     }
                 }}, OPIVX, SimdMiscOp);
                 0x0f: VectorSlide1DownFormat::vslide1down_vx({{
@@ -5838,7 +5845,10 @@ decode QUADRANT default Unknown::unknown() {
                         }
                     }
                     if (lastUop) {
-                        Vd_vu[microVl - 1] = Rs1_vu;
+                        if (this->vm || elem_mask(v0,
+                            vdWindowLeft + microVl - 1)) {
+                            Vd_vu[microVl - 1] = Rs1_vu;
+                        }
                     }
                 }}, OPIVX, SimdMiscOp);
                 // VRXUNARY0
