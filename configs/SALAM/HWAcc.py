@@ -82,8 +82,8 @@ def makeHWAcc(options, system):
 
     # Connect HWAcc to cluster buses
     system.acctest._connect_hwacc(system.acctest.acc)
-    system.acctest.acc.local = system.acctest.local_bus.slave
-    system.acctest.acc.acp = system.acctest.coherency_bus.slave
+    system.acctest.acc.local = system.acctest.local_bus.cpu_side_ports
+    system.acctest.acc.acp = system.acctest.coherency_bus.cpu_side_ports
 
     # Enable display of debug messages for the accelerator
     system.acctest.acc.enable_debug_msgs = False

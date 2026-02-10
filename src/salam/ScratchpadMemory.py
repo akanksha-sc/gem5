@@ -39,9 +39,9 @@ class ScratchpadMemory(AbstractMemory):
     type = "ScratchpadMemory"
     cxx_header = "salam/scratchpad_memory.hh"
 
-    port = ResponsePort("Generic slave port")
+    port = ResponsePort("Generic response port")
     spm_ports = VectorResponsePort(
-        "Slave ports for private acclerator SPM accesses"
+        "Response ports for private acclerator SPM accesses"
     )
     latency = Param.Latency("2ns", "Request to response latency")
     latency_var = Param.Latency("0ns", "Request to response latency variance")

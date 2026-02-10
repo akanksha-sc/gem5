@@ -44,15 +44,15 @@ StreamRequestPort::~StreamRequestPort() {}
 
 void
 StreamRequestPort::bind(Port &peer) {
-    auto *stream_slave = dynamic_cast<StreamResponsePort *>(&peer);
-    if (stream_slave) {
-        _stream_slave = stream_slave;
+    auto *stream_resp = dynamic_cast<StreamResponsePort *>(&peer);
+    if (stream_resp) {
+        _stream_resp = stream_resp;
     }
     RequestPort::bind(peer);
 }
 
 void
 StreamRequestPort::unbind() {
-    _stream_slave = nullptr;
+    _stream_resp = nullptr;
     RequestPort::unbind();
 }

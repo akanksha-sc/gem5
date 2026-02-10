@@ -45,7 +45,7 @@ class StreamRequestPort;
 
 /**
  * StreamResponsePort is a specialization of a SimpleTimingPort meant to enable
- * functionality similar to the master port in the AXI-Stream specification.
+ * functionality similar to the request port in the AXI-Stream specification.
  * This serves only as a base class.
  */
 class StreamResponsePort : public SimpleTimingPort
@@ -173,7 +173,7 @@ class StreamResponsePortT : public StreamResponsePort
 
 /**
  * A StreamRequestPort is a specialization of a RequestPort, meant to enable
- * functionality similar to the master port in the AXI-Stream specification.
+ * functionality similar to the request port in the AXI-Stream specification.
  * A StreamRequestPort is able to check the valid signal on a corresponding
  * StreamResponsePort before initiating a transfer. Otherwise it functions like
  * a standard RequestPort.
@@ -181,7 +181,7 @@ class StreamResponsePortT : public StreamResponsePort
 class StreamRequestPort : public RequestPort
 {
   private:
-    StreamResponsePort *_stream_slave;
+    StreamResponsePort *_stream_resp;
 
   protected:
     //
@@ -191,30 +191,32 @@ class StreamRequestPort : public RequestPort
     virtual ~StreamRequestPort();
 
     /**
-     * Bind this master port to a slave port. This also does the
-     * mirror action and binds the slave port to the master port.
-     * If the slave port is a stream slave, also binds the tvalid
+     * Bind this request port to a response port. This also does the
+     * mirror action and binds the response port to the request port.
+     * If the response port is a stream response, also binds the tvalid
      * signal.
      */
     void bind(Port &peer) override;
 
     /**
-     * Unbind this master port and the associated slave port.
+     * Unbind this request port and the associated response port.
      */
     void unbind() override;
 
     /**
-   * If the slave port is a stream slave port, then check if it can
-   * service a request of size 'len'
+     * If the response port is a stream response port, then check if it can
+     * service a request of size 'len'
      */
     bool streamValid(PacketPtr pkt) {
-      if (_stream_slave)
-        return _stream_slave->tvalid(pkt);
+        if (_stream_resp) {
+            return _stream_resp->tvalid(pkt);
+        }
       return true;
     }
     bool streamValid(size_t len, bool isRead) {
-      if (_stream_slave)
-        return _stream_slave->tvalid(len, isRead);
+        if (_stream_resp) {
+            return _stream_resp->tvalid(len, isRead);
+        }
       return true;
     }
 };

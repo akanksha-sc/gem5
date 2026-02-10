@@ -101,22 +101,22 @@ class AccCluster(Platform):
         self.spm = SimpleMemory(
             range=spm_range, conf_table_reported=False, latency=spm_latency
         )
-        self.spm.port = self.local_bus.master
+        self.spm.port = self.local_bus.mem_side_ports
 
     def _connect_spm(self, spm):
-        spm.port = self.local_bus.master
+        spm.port = self.local_bus.mem_side_ports
 
     def _attach_bridges(self, system, mem_range, ext_ranges):
         self.mem2cls = Bridge(delay="1ns", ranges=mem_range)
-        self.mem2cls.master = self.local_bus.slave
-        self.mem2cls.slave = system.membus.master
+        self.mem2cls.mem_side_ports = self.local_bus.cpu_side_ports
+        self.mem2cls.cpu_side_ports = system.membus.mem_side_ports
 
         # self.cls2mem = Bridge(delay='1ns', ranges = ext_ranges)
-        # self.cls2mem.master = system.membus.slave
-        # self.cls2mem.slave = self.local_bus.master
+        # self.cls2mem.mem_side_ports = system.membus.cpu_side_ports
+        # self.cls2mem.cpu_side_ports = self.local_bus.mem_side_ports
 
     def _connect_hwacc(self, hwacc):
-        hwacc.pio = self.local_bus.master
+        hwacc.pio = self.local_bus.mem_side_ports
 
     def _connect_caches(self, system, options, l2coherent, cache_size=0):
         if options.acc_cache and (cache_size != 0):
@@ -124,20 +124,24 @@ class AccCluster(Platform):
             self.cluster_cache.size = cache_size
 
             if options.l2cache and l2coherent:
-                self.cluster_cache.mem_side = system.tol2bus.slave
+                self.cluster_cache.mem_side = system.tol2bus.cpu_side_ports
             else:
-                self.cluster_cache.mem_side = system.membus.slave
-            self.coherency_bus.master = self.cluster_cache.cpu_side
+                self.cluster_cache.mem_side = system.membus.cpu_side_ports
+            self.coherency_bus.mem_side_ports = self.cluster_cache.cpu_side
         else:
             if options.l2cache and l2coherent:
-                self.coherency_bus.master = system.tol2bus.slave
+                self.coherency_bus.mem_side_ports = (
+                    system.tol2bus.cpu_side_ports
+                )
             else:
-                self.coherency_bus.master = system.membus.slave
+                self.coherency_bus.mem_side_ports = (
+                    system.membus.cpu_side_ports
+                )
 
     def _connect_dma(self, system, dma):
-        dma.pio = self.local_bus.master
-        dma.dma = self.coherency_bus.slave
+        dma.pio = self.local_bus.mem_side_ports
+        dma.dma = self.coherency_bus.cpu_side_ports
 
     def _connect_cluster_dma(self, system, dma):
         self._connect_dma(system, dma)
-        dma.cluster_dma = self.local_bus.slave
+        dma.cluster_dma = self.local_bus.cpu_side_ports

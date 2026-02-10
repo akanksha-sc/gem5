@@ -70,25 +70,30 @@ class ScratchpadResponsePort : public ResponsePort
 class ScratchpadRequestPort : public RequestPort
 {
   private:
-    ScratchpadResponsePort *_spmslave;
+    ScratchpadResponsePort *_spmresp;
+
   protected:
     //
   public:
     ScratchpadRequestPort(const std::string& _name, SimObject* _owner,
         PortID id=InvalidPortID) : RequestPort(_name, id) {}
-    void setReadyStatus(bool r) { _spmslave->setReadyStatus(r); }
+    void
+    setReadyStatus(bool r)
+    {
+        _spmresp->setReadyStatus(r);
+    }
     bool canAccess(Addr add, size_t len, bool read) {
-            return _spmslave->canAccess(add, len, read);
+        return _spmresp->canAccess(add, len, read);
     }
     void bind(Port &peer) override {
-        auto *spmslave = dynamic_cast<ScratchpadResponsePort *>(&peer);
-        if (spmslave) {
-            _spmslave = spmslave;
+        auto *spmresp = dynamic_cast<ScratchpadResponsePort *>(&peer);
+        if (spmresp) {
+            _spmresp = spmresp;
         }
         RequestPort::bind(peer);
     }
     void unbind() override {
-        _spmslave = nullptr;
+        _spmresp = nullptr;
         RequestPort::unbind();
     }
 };
