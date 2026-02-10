@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "../../../common/m5ops.h"
+#include "../../common/m5ops.h"
 #include "../bfs_clstr_hw_defines.h"
 #include "bench.h"
 
