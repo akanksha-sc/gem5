@@ -149,7 +149,6 @@ if env["CONF"]["USE_ARM_ISA"]:
     Source("LLVMRead/operand.cc")
 
     Source("HWModeling/cycle_counts.cc")
-    # Source('HWModeling/cacti_wrapper.cc')
     Source("HWModeling/functional_units.cc")
     Source("HWModeling/hw_interface.cc")
     Source("HWModeling/hw_statistics.cc")
