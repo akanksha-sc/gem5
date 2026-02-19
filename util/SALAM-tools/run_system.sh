@@ -40,6 +40,7 @@ BUILD=True
 DEBUG=False
 PRINT_TO_FILE=False
 VALGRIND=False
+ACC_CLOCK=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -55,6 +56,21 @@ while [[ $# -gt 0 ]]; do
       ;;
     --config-name)
       CONFIG_NAME="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --acc-clock)
+      ACC_CLOCK="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --sys-clock)
+      SYS_CLOCK="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --outdir)
+      OUTDIR="$2"
       shift # past argument
       shift # past value
       ;;
@@ -114,6 +130,10 @@ if [ "$BENCH_PATH" == "" ]; then
 	BENCH_PATH=$BENCH
 fi
 
+if [ "$OUTDIR" == "" ]; then
+        OUTDIR=BM_ARM_OUT/$BENCH_PATH/
+fi
+
 if [ ${DEBUG} == True ]; then
 	BINARY="gdb --args ${M5_PATH}/build/ARM/gem5.debug"
 elif [ ${VALGRIND} == True ]; then
@@ -132,9 +152,15 @@ SYS_OPTS="--mem-size=16GB \
           --dtb-file=none --bare-metal \
           --cpu-type=DerivO3CPU"
 
-CACHE_OPTS="--caches --l2cache"
+if [ ! -z "$SYS_CLOCK" ]; then
+	SYS_OPTS += " --sys-clock=$SYS_CLOCK"
+fi
 
-OUTDIR=BM_ARM_OUT/$BENCH_PATH/
+if [ "$ACC_CLOCK" != "" ]; then
+	SYS_OPTS+=" --acc-clock=$ACC_CLOCK"
+fi
+
+CACHE_OPTS="--caches --l2cache"
 
 DEBUG_FLAGS=""
 

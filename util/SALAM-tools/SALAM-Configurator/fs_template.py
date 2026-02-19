@@ -90,6 +90,18 @@ def addHWAccOptions(parser):
         default="",
     )
 
+    # Accelerator clock domain (separate from system/cpu clocks).
+    # If not provided, we default to the system clock.
+    # YAML default also supported
+    parser.add_argument(
+        "--acc-clock",
+        action="store",
+        type=str,
+        default=None,
+        help="Accelerator clock (e.g., 1GHz, 2GHz). "
+        "Defaults to --sys-clock if unset.",
+    )
+
 
 def cmd_line_template():
     if args.command_line and args.command_line_file:
@@ -148,6 +160,16 @@ def build_test_system(np):
     # Create a source clock for the system and set the clock period
     test_sys.clk_domain = SrcClockDomain(
         clock=args.sys_clock, voltage_domain=test_sys.voltage_domain
+    )
+
+    # Create an accelerator clock and voltage domain (defaults to sys_voltage)
+    test_sys.acc_voltage_domain = VoltageDomain(voltage=args.sys_voltage)
+
+    acc_clock = (
+        args.acc_clock if getattr(args, "acc_clock", None) else args.sys_clock
+    )
+    test_sys.acc_clk_domain = SrcClockDomain(
+        clock=acc_clock, voltage_domain=test_sys.acc_voltage_domain
     )
 
     # Create a CPU voltage domain
@@ -317,6 +339,15 @@ def build_drive_system(np):
     # Create a source clock for the system and set the clock period
     drive_sys.clk_domain = SrcClockDomain(
         clock=args.sys_clock, voltage_domain=drive_sys.voltage_domain
+    )
+
+    # Create an accelerator clock domain
+    drive_sys.acc_voltage_domain = VoltageDomain(voltage=args.sys_voltage)
+    acc_clock = (
+        args.acc_clock if getattr(args, "acc_clock", None) else args.sys_clock
+    )
+    drive_sys.acc_clk_domain = SrcClockDomain(
+        clock=acc_clock, voltage_domain=drive_sys.acc_voltage_domain
     )
 
     # Create a CPU voltage domain

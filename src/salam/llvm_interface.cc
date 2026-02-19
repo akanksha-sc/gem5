@@ -35,14 +35,13 @@
 // LLVMInterface Includes
 #include "salam/llvm_interface.hh"
 
-LLVMInterface::LLVMInterface(const LLVMInterfaceParams &p):
-    AccComputeUnit(p),
-    filename(p.in_file),
-    topName(p.top_name),
-    scheduling_threshold(p.sched_threshold),
-    clock_period(p.clock_period),
-    lockstep(p.lockstep_mode) {
-    clock_period = clock_period * 1000;
+LLVMInterface::LLVMInterface(const LLVMInterfaceParams &p)
+    : AccComputeUnit(p),
+      filename(p.in_file),
+      topName(p.top_name),
+      scheduling_threshold(p.sched_threshold),
+      lockstep(p.lockstep_mode)
+{
     dbg = comm->debug();
 }
 
@@ -416,7 +415,7 @@ LLVMInterface::tick()
     }
     //////////////// Schedule Next Cycle ////////////////////////
     if (running && !tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + clock_period);// * process_delay);
+        schedule(tickEvent, nextCycle());
     }
     auto tickStop = std::chrono::high_resolution_clock::now();
     simTime = simTime + (tickStop - tickStart);
@@ -932,7 +931,9 @@ LLVMInterface::printResults() {
     std::cout << "\nTotal Power Static: " << total_power_static << "\n";
     std::cout << "\nTotal Power Dynamic: " << total_power_dynamic << "\n";
 
-    Tick cycle_time = clock_period/1000;
+    // Clock-domain-derived period.
+    // Tick to cycle_time_ns
+    const double cycle_time_ns = static_cast<double>(clockPeriod()) / 1000.0;
 
     auto hwTimingMS = std::chrono::duration_cast<std::chrono::milliseconds>(
                     hwTime);
@@ -1030,12 +1031,12 @@ LLVMInterface::printResults() {
     std::cout << "             Computation Time:      " << computeHours.count()
             << "h " << computeMins.count() << "m " << computeSecs.count()
             << "s " << computeMS.count() << "ms" << std::endl;
-    std::cout << "   System Clock:                    " << 1.0/(cycle_time)
-            << "GHz" << std::endl;
+    std::cout << "   System Clock:                    "
+              << 1.0 / (cycle_time_ns) << "GHz" << std::endl;
     std::cout << "   Runtime:                         " << cycle
             << " cycles" << std::endl;
     std::cout << "   Runtime:                         "
-            << (cycle*cycle_time*(1e-3)) << " us" << std::endl;
+              << (cycle * cycle_time_ns * (1e-3)) << " us" << std::endl;
     std::cout << "   Stalls:                          " << stalls
             << " cycles" << std::endl;
     std::cout << "   Executed Nodes:                  " << (cycle-stalls-1)

@@ -50,24 +50,23 @@ using namespace std;
  * accelerators. It provides a set of memory-mapped registers, as well as
  * master ports for accessing both local busses/SPMs and system memory.
  ****************************************************************************/
-CommInterface::CommInterface(const CommInterfaceParams &p) :
-    BasicPioDevice(p, p.pio_size),
-    io_addr(p.pio_addr),
-    io_size(p.pio_size),
-    flag_size(p.flags_size),
-    config_size(p.config_size),
-    devname(p.devicename),
-    gic(p.gic),
-    int_num(p.int_num),
-    use_premap_data(p.premap_data),
-    endian(p.system->getGuestByteOrder()),
-    debugEnabled(p.enable_debug_msgs),
-    masterId(p.system->getRequestorId(this,name())),
-    tickEvent(this),
-    cacheLineSize(p.cache_line_size),
-    clock_period(p.clock_period),
-    reset_spm(p.reset_spm) {
-    processDelay = 1000 * clock_period;
+CommInterface::CommInterface(const CommInterfaceParams &p)
+    : BasicPioDevice(p, p.pio_size),
+      io_addr(p.pio_addr),
+      io_size(p.pio_size),
+      flag_size(p.flags_size),
+      config_size(p.config_size),
+      devname(p.devicename),
+      gic(p.gic),
+      int_num(p.int_num),
+      use_premap_data(p.premap_data),
+      endian(p.system->getGuestByteOrder()),
+      debugEnabled(p.enable_debug_msgs),
+      masterId(p.system->getRequestorId(this, name())),
+      tickEvent(this),
+      cacheLineSize(p.cache_line_size),
+      reset_spm(p.reset_spm)
+{
     FLAG_OFFSET = 0;
     CONFIG_OFFSET = flag_size;
     VAR_OFFSET = CONFIG_OFFSET + config_size;
@@ -109,8 +108,7 @@ CommInterface::MemSidePort::recvReqRetry() {
         // TODO: This should just signal the engine that the packet completed
         // engine should schedule tick as necessary. Need a test case
         if (!owner->tickEvent.scheduled()) {
-            owner->schedule(owner->tickEvent, curTick() + owner->processDelay);
-            //owner->schedule(owner->tickEvent, owner->nextCycle());
+            owner->schedule(owner->tickEvent, owner->nextCycle());
         }
     }
 }
@@ -146,8 +144,7 @@ CommInterface::SPMPort::recvReqRetry() {
         // TODO: This should just signal the engine that the packet completed
         // engine should schedule tick as necessary. Need a test case
         if (!owner->tickEvent.scheduled()) {
-            owner->schedule(owner->tickEvent, curTick() + owner->processDelay);
-            //owner->schedule(owner->tickEvent, owner->nextCycle());
+            owner->schedule(owner->tickEvent, owner->nextCycle());
         }
     }
 }
@@ -260,7 +257,7 @@ CommInterface::recvPacket(PacketPtr pkt) {
         panic("Something went very wrong!");
     }
     if (!tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
     }
     delete pkt;
 }
@@ -280,7 +277,7 @@ CommInterface::checkMMR() {
 
         if (processingDone && !tickEvent.scheduled()) {
             processingDone = false;
-            schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
         }
     }
 }
@@ -580,7 +577,7 @@ CommInterface::processMemoryRequests() {
     }
     requestsInQueues = readQueue.size() + writeQueue.size();
     if (!tickEvent.scheduled() && requestsInQueues>0) {
-        schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
     }
 }
 
@@ -637,12 +634,12 @@ CommInterface::tryRead(MemSidePort * port) {
     if (!(readReq->readLeft > 0)) {
         readReq->needToRead = false;
         if (!tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
         }
     }
     else {
         if (!port->isStalled() && !tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
         }
     }
 }
@@ -703,11 +700,11 @@ CommInterface::tryWrite(MemSidePort * port) {
     if (!(writeReq->writeLeft > 0)) {
         writeReq->needToWrite = false;
         if (!tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
         }
     }
     else if (!port->isStalled() && !tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
     }
 }
 
@@ -753,12 +750,12 @@ CommInterface::tryRead(SPMPort * port) {
     if (!(readReq->readLeft > 0)) {
         readReq->needToRead = false;
         if (!tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
         }
     }
     else {
         if (!port->isStalled() && !tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
         }
     }
 }
@@ -819,11 +816,11 @@ CommInterface::tryWrite(SPMPort * port) {
     if (!(writeReq->writeLeft > 0)) {
         writeReq->needToWrite = false;
         if (!tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
         }
     }
     else if (!port->isStalled() && !tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
     }
 }
 
@@ -857,7 +854,7 @@ CommInterface::tryRead(RegPort * port) {
 
     if (!(readReq->readLeft > 0)) {
         if (!tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
         }
     }
 }
@@ -907,7 +904,7 @@ CommInterface::tryWrite(RegPort * port) {
 
     if (!(writeReq->writeLeft > 0)) {
         if (!tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
         }
     }
 }
@@ -938,7 +935,7 @@ CommInterface::enqueueRead(MemoryRequest * req) {
         }
     }
     if (!tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
     }
 }
 
@@ -968,7 +965,7 @@ CommInterface::enqueueWrite(MemoryRequest * req) {
         }
     }
     if (!tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
     }
 }
 

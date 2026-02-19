@@ -1,4 +1,8 @@
 ---
+# Global SALAM options (optional)
+# These are defaults; command-line flags may override them.
+salam:
+    AccClock: 1GHz   # e.g., 500MHz, 1GHz, 2GHz
 acc_cluster:
     - Name: # Cluster name here (Required)
   # NonCoherent DMA Example

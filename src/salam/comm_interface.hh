@@ -276,8 +276,6 @@ class CommInterface : public BasicPioDevice
     uint8_t *mmreg;
 
     bool processingDone;
-    int processDelay;
-    float clock_period;
 
     bool reset_spm;
 
@@ -308,7 +306,11 @@ class CommInterface : public BasicPioDevice
     bool isCompNeeded() { return computationNeeded; }
 
     uint64_t getGlobalVar(unsigned offset, unsigned size);
-    int getProcessDelay() { return processDelay; }
+    int
+    getProcessDelay() const
+    {
+        return clockPeriod();
+    }
     virtual int getReadPorts()  { return 0; }
     virtual int getWritePorts()  { return 0; }
     virtual int getReadBusWidth()  { return 0; }

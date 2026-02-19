@@ -51,7 +51,7 @@ class LLVMInterface(AccComputeUnit):
         "Scheduling window threshold. Prevents scheduling windows size"
         " from exploding during regions of high loop parallelism",
     )
-    clock_period = Param.Int32(10, "System clock speed")
+    clock_period = Param.Latency("10ns", "System clock speed")
     top_name = Param.String(
         "top", "Name of the top-level function for the accelerator"
     )

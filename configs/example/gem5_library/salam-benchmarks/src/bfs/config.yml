@@ -1,4 +1,6 @@
 ---
+salam:
+    AccClock: 2GHz
 acc_cluster:
     - Name: bfs_clstr
     - DMA:

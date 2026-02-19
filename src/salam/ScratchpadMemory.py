@@ -59,3 +59,17 @@ class ScratchpadMemory(AbstractMemory):
     bandwidth = Param.MemoryBandwidth(
         "12GiB/s", "Combined read and write bandwidth per port"
     )
+    # ScratchpadMemory is not a ClockedObject,
+    # so it cannot infer a clock period.
+    # Provide the cycle time explicitly
+    # (typically set to acc_period by the generator)
+    cycle_time = Param.Latency(
+        "0ns",
+        "Cycle time used to convert bytes_per_cycle into ticks"
+        " (0ns => disabled unless bytes_per_cycle==0)",
+    )
+    bytes_per_cycle = Param.Unsigned(
+        0,
+        "If non-zero: per-port combined read+write bytes per cycle"
+        " (overrides absolute bandwidth)",
+    )

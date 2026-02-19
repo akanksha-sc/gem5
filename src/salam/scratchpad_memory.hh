@@ -206,11 +206,20 @@ class ScratchpadMemory : public AbstractMemory
     std::list<DeferredPacket> packetQueue;
 
     /**
-     * Bandwidth in ticks per byte. The regulation affects the
-     * acceptance rate of requests and the queueing takes place after
-     * the regulation.
+     * Legacy bandwidth model:
+     *   - p.bandwidth is "ticks per byte" (via Param.MemoryBandwidth)
+     *   - total time scales in ticks and is independent of DVFS.
      */
     const double bandwidth;
+
+    /**
+     * Cycle-based bandwidth model (optional):
+     *   - bytesPerCycle: bytes per cycle per port (combined R+W)
+     *   - cycleTime: Tick duration of a cycle (typically acc_period)
+     * When bytesPerCycle != 0, it overrides legacy bandwidth.
+     */
+    const Tick cycleTime;
+    const uint64_t bytesPerCycle;
 
     /**
      * Track the state of the memory as either idle or busy, no need

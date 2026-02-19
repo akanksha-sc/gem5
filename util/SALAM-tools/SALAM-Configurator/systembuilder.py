@@ -36,6 +36,7 @@ import argparse
 import os
 import shutil
 from http.client import FOUND
+from typing import Iterable
 from unittest import expectedFailure
 
 import config_parser
@@ -45,18 +46,53 @@ import yaml
 imports = """import m5\nfrom m5.objects import *\nfrom m5.util import *\n
 from configparser import ConfigParser\nfrom HWAccConfig import *\n\n"""
 
+IND = "    "
+
 # L1 Cache defined here for now, need to add some more configurability to this
 l1Cache = """class L1Cache(Cache):
-\tassoc = 2
-\ttag_latency = 2
-\tdata_latency = 2
-\tresponse_latency = 2
-\tmshrs = 4
-\ttgts_per_mshr = 20\n\t
-def __init__(self, size, options=None):
-\t\tself.size = size
-\t\tsuper(L1Cache, self).__init__()
-\t\tpass\n\n"""
+    assoc = 2
+    tag_latency = 2
+    data_latency = 2
+    response_latency = 2
+    mshrs = 4
+    tgts_per_mshr = 20
+
+    def __init__(self, size, options=None):
+        self.size = size
+        super(L1Cache, self).__init__()
+        pass
+
+"""
+
+
+# Helper: convert a frequency string
+# (e.g., "2GHz", "500MHz") to a period string
+# suitable for Param.Latency / Param.ClockPeriod-like params
+# (e.g., "500ps", "1ns").
+accClockHelper = """import re
+
+def _salam_period_str(clk):
+    if isinstance(clk, (list, tuple)):
+        if not clk:
+            raise ValueError("Bad acc_clock: empty list/tuple")
+        clk = clk[0]
+    s = str(clk)
+    m = re.match(r'^\\s*([0-9]*\\.?[0-9]+)
+            \\s*([kKmMgGtT]?)\\s*[Hh][Zz]\\s*$', s)
+    if not m:
+        raise ValueError(f"Bad acc_clock: {clk!r} "
+            "(expected e.g. 500MHz, 2GHz)")
+    val = float(m.group(1))
+    p = m.group(2).lower()
+    mul = {'':1.0,'k':1e3,'m':1e6,'g':1e9,'t':1e12}[p]
+    hz = val * mul
+    ps = 1e12 / hz
+    # Prefer ps for sub-ns periods to keep strings short/precise
+    if ps < 1000.0:
+        return f"{ps:.6g}ps"
+    return f"{(ps/1000.0):.6g}ns"
+
+"""
 
 
 def parse_cur_args():
@@ -173,15 +209,24 @@ def parse_yaml(
 
 def open_yaml(yml_path: str):
     stream = open(yml_path)
-    config = yaml.safe_load_all(stream)
-    return config
+    # Return a materialized list so we can scan
+    # global options and still iterate
+    # multiple times safely.
+    return list(yaml.safe_load_all(stream))
 
 
-def gen_config(clusters, config_path: str, file_name: str):
+def gen_config(
+    clusters, config_path: str, file_name: str, acc_clock_default=None
+):
     # Write out config file
     with open(config_path + file_name + ".py", "w") as writer:
         writer.write(imports)
         writer.write(l1Cache)
+        writer.write(accClockHelper)
+        writer.write(
+            f"# Default accelerator clock extracted from YAML (may be None)\n"
+        )
+        writer.write(f"SALAM_ACC_CLOCK_DEFAULT = {acc_clock_default!r}\n\n")
         for cluster in clusters:
             for line in cluster.genConfig():
                 writer.write(line + "\n")
@@ -402,9 +447,9 @@ def gen_header(header_list, clusters, working_dir: str):
                 current_header = []
 
 
-def writeLines(writer, lines):
+def writeLines(writer, lines: Iterable[str]):
     for line in lines:
-        writer.write("	" + line + "\n")
+        writer.write(IND + line + "\n")
 
 
 def main():
@@ -441,20 +486,45 @@ def main():
     working_dir = acc_bench_path + "/" + args.bench_path + "/"
     main_yml_path = working_dir + args.config_name
 
+    # Extract global SALAM options from YAML (acc clock)
+    #   salam:
+    #     AccClock: "2GHz"
+    config_docs = open_yaml(yml_path=main_yml_path)
+    acc_clock_default = None
+    for doc in config_docs:
+        if not isinstance(doc, dict):
+            continue
+        salam_opts = None
+        for k in ("salam", "SALAM"):
+            if k in doc:
+                salam_opts = doc.get(k)
+                break
+        if isinstance(salam_opts, dict):
+            acc_clock_default = (
+                salam_opts.get("AccClock")
+                or salam_opts.get("acc_clock")
+                or salam_opts.get("accClock")
+            )
+            if acc_clock_default is not None:
+                break
+
     # Set base addresses
     base_address = 0x2F000000  # 0x10020000
     max_address = 0x2FFFFFFF  # 0x13FFFFFF
-    # Load in the YAML file
-    config = open_yaml(yml_path=main_yml_path)
     # Parse YAML File
     base_address, clusters = parse_yaml(
-        parent_config=config,
+        parent_config=config_docs,
         base_address=base_address,
         working_dir=working_dir,
         parent_path=main_yml_path,
     )
     # Generate SALAM Config
-    gen_config(clusters=clusters, config_path=config_path, file_name=file_name)
+    gen_config(
+        clusters=clusters,
+        config_path=config_path,
+        file_name=file_name,
+        acc_clock_default=acc_clock_default,
+    )
     # Parse original header for custom code
     header_list = load_og_header(clusters=clusters, working_dir=working_dir)
     # Make the header files with custom code
@@ -474,6 +544,18 @@ def main():
             fullSystem[i] = f"import {file_name}\n"
         elif "TEMPLATE.makeHWAcc(" in ln:
             fullSystem[i] = ln.replace("TEMPLATE.", f"{file_name}.")
+        # Inject default accelerator clock from YAML (if provided).
+        elif ln.strip() == "args = parser.parse_args()":
+            inject = [ln]
+            if acc_clock_default is not None:
+                inject.extend(
+                    [
+                        "\n",
+                        f"if getattr(args, 'acc_clock', None) is None:\n",
+                        f"    args.acc_clock = '{acc_clock_default}'\n",
+                    ]
+                )
+            fullSystem[i] = "".join(inject)
 
     f = open(config_path + "fs_" + file_name + ".py", "w")
     f.writelines(fullSystem)

@@ -30,6 +30,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+# 4-space indentation for generated Python
+IND = "    "
+IND2 = IND * 2
+
 
 class AccCluster:
     def __init__(
@@ -294,29 +298,70 @@ class AccCluster:
 
     def genConfig(self):
         lines = []
-        # Need to add some customization here. Consider this a placeholder
-        # Also need to edit AccCluster.py's addresses to match the gem5
-        # supported ones
+        lines.append("def build" + self.name + "(options, system, clstr):\n")
+        lines.append(IND + "local_low = " + hex(self.base_address))
+        lines.append(IND + "local_high = " + hex(self.top_address))
+        lines.append(IND + "local_range = AddrRange(local_low, local_high)")
         lines.append(
-            "def build" + self.name + "(options, system, clstr):" + "\n"
-        )
-        lines.append("	local_low = " + hex(self.base_address))
-        lines.append("	local_high = " + hex(self.top_address))
-        lines.append("	local_range = AddrRange(local_low, local_high)")
-        lines.append(
-            "	external_range = [AddrRange(0x00000000, local_low-1),"
-            " AddrRange(local_high+1, 0xFFFFFFFF)]"
+            IND + "external_range = [AddrRange(0x00000000, local_low-1), "
+            "AddrRange(local_high+1, 0xFFFFFFFF)]"
         )
         lines.append(
-            "	system.iobus.mem_side_ports = clstr.local_bus.cpu_side_ports"
+            IND
+            + "system.iobus.mem_side_ports = clstr.local_bus.cpu_side_ports"
         )
-        # Need to define l2coherency in the YAML file?
         lines.append(
-            "	clstr._connect_caches(system, options, l2coherent=False)"
+            IND + "clstr._connect_caches(system, options, l2coherent=False)"
         )
-        lines.append("	gic = system.realview.gic")
+        lines.append(IND + "gic = system.realview.gic")
         lines.append("")
 
+        # Accelerator clock handling (spaces only + robust default)
+        lines.append(IND + "# Accelerator clock/period used by SALAM devices")
+        lines.append(
+            IND + "_salam_default_clk = "
+            "globals().get('SALAM_ACC_CLOCK_DEFAULT', None)"
+        )
+        lines.append(
+            IND + "acc_clk = getattr(options, 'acc_clock', None) "
+            "or _salam_default_clk"
+        )
+        lines.append(IND + "if acc_clk is None:")
+        lines.append(
+            IND2 + "clk_obj = getattr(getattr(system, 'acc_clk_domain', "
+            "system.clk_domain), 'clock')"
+        )
+        lines.append(IND2 + "if isinstance(clk_obj, (list, tuple)):")
+        lines.append(IND2 + IND + "clk_obj = clk_obj[0] if clk_obj else None")
+        lines.append(IND2 + "acc_clk = str(clk_obj)")
+        lines.append("")
+        lines.append(
+            IND + "# Ensure an explicit accelerator clock domain exists"
+        )
+        lines.append(
+            IND + "vd = getattr(system, 'voltage_domain', "
+            "getattr(system.clk_domain, 'voltage_domain', None))"
+        )
+        lines.append(IND + "if not hasattr(system, 'acc_clk_domain'):")
+        lines.append(IND2 + "if vd is None:")
+        lines.append(IND2 + IND + "vd = VoltageDomain()")
+        lines.append(
+            IND2 + "system.acc_clk_domain = "
+            "SrcClockDomain(clock=acc_clk, voltage_domain=vd)"
+        )
+        lines.append(IND + "else:")
+        lines.append(IND2 + "system.acc_clk_domain.clock = acc_clk")
+        lines.append("")
+        lines.append(IND + "acc_cd = system.acc_clk_domain")
+        # IMPORTANT: compute period from the string,
+        # not from acc_cd.clock Param container
+        lines.append(IND + "acc_period = _salam_period_str(acc_clk)")
+        lines.append("")
+        lines.append(IND + "def _bind_clk(o):")
+        lines.append(IND2 + "if hasattr(o, 'clk_domain'):")
+        lines.append(IND2 + IND + "o.clk_domain = acc_cd")
+        lines.append("")
+        lines.append("")
         return lines
 
 
@@ -363,8 +408,7 @@ class Accelerator:
         lines.append(
             "ir = " + '"' + self.working_dir + "/" + self.ir_path + '"'
         )
-        lines.append("hw_config = " '"' + self.hw_config_path + '"')
-
+        lines.append('hw_config = "' + self.hw_config_path + '"')
         # Add interrupt number if it exists
         if self.int_num is not None:
             lines.append(
@@ -389,7 +433,18 @@ class Accelerator:
                 + ")"
             )
 
+        # Bind CommInterface itself immediately;
+        # llvm_interface is created inside AccConfig().
+        lines.append("_bind_clk(clstr." + self.name + ")")
         lines.append("AccConfig(clstr." + self.name + ", ir, hw_config)")
+        # Now that AccConfig created llvm_interface,
+        # bind it + set its cycle period.
+        lines.append(
+            "li = getattr(clstr." + self.name + ", 'llvm_interface', None)"
+        )
+        lines.append("if li is not None:")
+        lines.append(IND + "_bind_clk(li)")
+        lines.append(IND + "li.clock_period = acc_period")
         lines.append("")
 
         return lines
@@ -483,11 +538,10 @@ class StreamDMA:
         self.rd_int = rd_int
         self.wr_int = wr_int
 
-        for master in self.pio_masters:
-            count = 0
+        # Normalize master names in-place
+        for idx, master in enumerate(self.pio_masters):
             if "localbus" in master.lower():
-                pio_masters[count] = "local_bus"
-                count += 1
+                self.pio_masters[idx] = "local_bus"
 
     # Probably could apply the style used here in other genConfigs
 
@@ -509,6 +563,7 @@ class StreamDMA:
             + str(self.pio)
             + ")"
         )
+        lines.append("_bind_clk(clstr." + self.name + ")")
         lines.append(
             dmaPath
             + "stream_addr = "
@@ -560,11 +615,10 @@ class DMA:
         self.int_num = int_num
         self.maxReq = maxReq
 
-        for master in self.pio_masters:
-            count = 0
+        # Normalize master names in-place
+        for idx, master in enumerate(self.pio_masters):
             if "localbus" in master.lower():
-                pio_masters[count] = "local_bus"
-                count += 1
+                self.pio_masters[idx] = "local_bus"
 
     # Probably could apply the style used here in other genConfigs
 
@@ -582,8 +636,10 @@ class DMA:
             + str(self.pio)
             + ", gic=gic, int_num="
             + str(self.int_num)
+            + ", clock_period=acc_period"
             + ")"
         )
+        lines.append("_bind_clk(clstr." + self.name + ")")
         lines.append(
             dmaPath
             + "cluster_dma = "
@@ -631,6 +687,9 @@ class Variable:
             self.resetOnRead = kwargs.get("ResetOnRead", True)
             self.readOnInvalid = kwargs.get("ReadOnInvalid", False)
             self.writeOnValid = kwargs.get("WriteOnValid", True)
+            # Optional: per-port bytes/cycle for DVFS-scaled SPM throughput.
+            # If omitted/None, ScratchpadMemory uses legacy bandwidth param.
+            self.bytesPerCycle = kwargs.get("BytesPerCycle", None)
             # Append the default connection here...
             # probably need to be more elegant
             self.connections.append(PortedConnection(self.accName, self.ports))
@@ -698,6 +757,7 @@ class Variable:
                 + str(self.bufferSize)
                 + ")"
             )
+            lines.append("_bind_clk(clstr." + self.name.lower() + ")")
             lines.append(
                 "clstr."
                 + self.inCon
@@ -729,6 +789,24 @@ class Variable:
                 + self.name.lower()
                 + " = ScratchpadMemory(range = spmRange)"
             )
+            # Optional: model SPM as 1-cycle (acc clock) latency
+            lines.append(
+                "clstr." + self.name.lower() + ".latency = acc_period"
+            )
+            # Provide the SPM cycle time explicitly for
+            # cycle-based bandwidth modeling.
+            # (ScratchpadMemory is not a ClockedObject;
+            # it cannot infer clockPeriod().)
+            lines.append(
+                "clstr." + self.name.lower() + ".cycle_time = acc_period"
+            )
+            if self.bytesPerCycle is not None:
+                lines.append(
+                    "clstr."
+                    + self.name.lower()
+                    + ".bytes_per_cycle = "
+                    + str(int(self.bytesPerCycle))
+                )
             # Probably need to add table and read mode to the YAML File
             lines.append(
                 "clstr."
@@ -779,7 +857,8 @@ class Variable:
                 )
                 lines.append("for i in range(" + str(con.numPorts) + "):")
                 lines.append(
-                    "	clstr."
+                    IND
+                    + "clstr."
                     + con.conName.lower()
                     + ".spm = "
                     + "clstr."
@@ -799,6 +878,10 @@ class Variable:
                 "clstr."
                 + self.name.lower()
                 + " = RegisterBank(range = regRange)"
+            )
+            # Optional: model reg bank access time as 1-cycle (acc clock)
+            lines.append(
+                "clstr." + self.name.lower() + ".delta_time = acc_period"
             )
             lines.append(
                 "clstr."

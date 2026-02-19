@@ -40,9 +40,9 @@
 #include "salam/LLVMRead/debug_flags.hh"
 #include "salam/LLVMRead/mem_request.hh"
 #include "salam/comm_interface.hh"
-#include "sim/sim_object.hh"
+#include "sim/clocked_object.hh"
 
-class AccComputeUnit : public SimObject
+class AccComputeUnit : public ClockedObject
 {
   private:
 
@@ -63,9 +63,7 @@ class AccComputeUnit : public SimObject
         { return "AccComputeUnit tick"; }
     };
 
-
     TickEvent tickEvent;
-    int clock_period;
 
   public:
     virtual void tick() {}

@@ -34,6 +34,7 @@
 
 #include "salam/scratchpad_memory.hh"
 
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <iomanip>
@@ -46,6 +47,7 @@
 #include "sim/system.hh"
 
 using namespace std;
+using namespace gem5;
 
 /*****************************************************************************
  * Scratchpad Scratchpad Device for Accelerators using CommMemInterface
@@ -54,18 +56,27 @@ using namespace std;
  ****************************************************************************/
 #include "debug/MemoryAccess.hh"
 
-ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams &p) :
-    AbstractMemory(p),
-    readyMode(p.ready_mode),
-    readOnInvalid(p.read_on_invalid),
-    writeOnValid(p.write_on_valid),
-    resetOnScratchpadRead(p.reset_on_scratchpad_read),
-    initial(true),
-    port(name() + ".port", *this),
-    latency(p.latency),
-    latency_var(p.latency_var),
-    bandwidth(p.bandwidth),
-    dequeueEvent([this]{ dequeue(); }, name()) {
+static inline uint64_t
+divCeilU64(uint64_t a, uint64_t b)
+{
+    return (a + b - 1) / b;
+}
+
+ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams &p)
+    : AbstractMemory(p),
+      readyMode(p.ready_mode),
+      readOnInvalid(p.read_on_invalid),
+      writeOnValid(p.write_on_valid),
+      resetOnScratchpadRead(p.reset_on_scratchpad_read),
+      initial(true),
+      port(name() + ".port", *this),
+      latency(p.latency),
+      latency_var(p.latency_var),
+      bandwidth(p.bandwidth),
+      cycleTime(p.cycle_time),
+      bytesPerCycle(p.bytes_per_cycle),
+      dequeueEvent([this] { dequeue(); }, name())
+{
     ready = new bool[range.size()];
     if (readyMode) {
         for (auto i=0;i<range.size();i++) {
@@ -362,7 +373,24 @@ bool validateAccess)
 
     // calculate an appropriate tick to release to not exceed
     // the bandwidth limit
-    Tick duration = pkt->getSize() * bandwidth;
+    Tick duration = 0;
+    if (bytesPerCycle != 0) {
+        // Cycle-based throttling:
+        // duration = ceil(bytes / bytesPerCycle) * cycleTime
+        // This makes effective bytes/sec scale with
+        // the configured cycleTime (DVFS).
+        fatal_if(cycleTime == 0,
+                 "ScratchpadMemory %s: bytes_per_cycle set but "
+                 "cycle_time is 0\n",
+                 name());
+        const uint64_t bytes = pkt->getSize();
+        const uint64_t cycles = divCeilU64(bytes, bytesPerCycle);
+        duration = cycles * cycleTime;
+    } else {
+        // Legacy absolute throttling: duration in ticks (independent of DVFS)
+        // p.bandwidth is "ticks per byte" (double).
+        duration = (Tick)std::ceil((double)pkt->getSize() * bandwidth);
+    }
 
     // only consider ourselves busy if there is any need to wait
     // to avoid extra events being scheduled for (infinitely) fast
