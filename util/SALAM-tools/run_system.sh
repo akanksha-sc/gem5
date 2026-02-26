@@ -35,11 +35,13 @@ BENCH=""
 BENCH_PATH=""
 CONFIG_NAME=""
 FLAGS=""
-#FLAGS="CommInterface,LLVMInterface"
 BUILD=True
 DEBUG=False
 PRINT_TO_FILE=False
 VALGRIND=False
+# Optional acc clock/voltage
+ACC_CLOCK=""
+ACC_VOLTAGE=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -81,6 +83,26 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
+    --sys-clock)
+      SYS_CLOCK="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --acc-clock)
+      ACC_CLOCK="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --acc-voltage)
+      ACC_VOLTAGE="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --outdir)
+      OUTDIR="$2"
+      shift # past argument
+      shift # past value
+      ;;
     -*)
       echo "Unknown option $1"
       exit 1
@@ -114,6 +136,10 @@ if [ "$BENCH_PATH" == "" ]; then
 	BENCH_PATH=$BENCH
 fi
 
+if [ "$OUTDIR" == "" ]; then
+	OUTDIR=BM_ARM_OUT/$BENCH_PATH/
+fi
+
 if [ ${DEBUG} == True ]; then
 	BINARY="gdb --args ${M5_PATH}/build/ARM/gem5.debug"
 elif [ ${VALGRIND} == True ]; then
@@ -132,9 +158,11 @@ SYS_OPTS="--mem-size=16GB \
           --dtb-file=none --bare-metal \
           --cpu-type=DerivO3CPU"
 
-CACHE_OPTS="--caches --l2cache"
+if [ -n "$SYS_CLOCK" ]; then
+        SYS_OPTS+=" --sys-clock=$SYS_CLOCK"
+fi
 
-OUTDIR=BM_ARM_OUT/$BENCH_PATH/
+CACHE_OPTS="--caches --l2cache"
 
 DEBUG_FLAGS=""
 
@@ -143,8 +171,16 @@ if [ "${FLAGS}"  != "" ]; then
 	DEBUG_FLAGS+=$FLAGS
 fi
 
+ACC_OPTS=""
+if [ "$ACC_CLOCK" != "" ]; then
+  ACC_OPTS+=" --acc-clock=$ACC_CLOCK"
+fi
+if [ "$ACC_VOLTAGE" != "" ]; then
+  ACC_OPTS+=" --acc-voltage=$ACC_VOLTAGE"
+fi
+
 RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
-			$M5_PATH/configs/SALAM/fs_$BENCH.py $SYS_OPTS \
+			$M5_PATH/configs/SALAM/fs_$BENCH.py $SYS_OPTS $ACC_OPTS\
 			--accpath=$ACC_BENCH_PATH/$BENCH_PATH \
 			--accbench=$BENCH $CACHE_OPTS"
 

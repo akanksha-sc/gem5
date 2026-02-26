@@ -54,8 +54,8 @@ StreamBuffer::StreamBuffer(const StreamBufferParams &p)
       streamSize(p.stream_size),
       statusAddr(p.status_address),
       statusSize(p.status_size),
-      streamDelay(p.stream_latency),
-      bandwidth(p.bandwidth)
+      streamLatencyCycles(p.stream_latency_cycles),
+      bytesPerCycle(p.bytes_per_cycle)
 {}
 
 bool
@@ -127,6 +127,17 @@ StreamBuffer::tvalid(size_t len, bool isRead)
 }
 
 Tick
+StreamBuffer::streamBusyTicks(size_t len, bool isRead) const
+{
+    const unsigned bpc = std::max(1u, bytesPerCycle);
+    const Cycles xfer_cycles((len + bpc - 1) / bpc);
+    const Cycles lat_cycles =
+        (streamLatencyCycles == Cycles(0)) ? Cycles(0) : streamLatencyCycles;
+
+    return clockPeriod() * (xfer_cycles + lat_cycles);
+}
+
+Tick
 StreamBuffer::streamRead(PacketPtr pkt)
 {
     DPRINTF(StreamBuffer,
@@ -155,7 +166,7 @@ StreamBuffer::streamRead(PacketPtr pkt)
             panic("Read size too big?\n");
             break;
     }
-    Tick duration = pkt->getSize() * bandwidth;
+    const Tick duration = streamBusyTicks(pkt->getSize(), true);
     pkt->makeAtomicResponse();
     return duration;
 }
@@ -171,8 +182,9 @@ StreamBuffer::streamWrite(PacketPtr pkt)
     pkt->writeData(data);
     writeStream(data, pkt->getSize());
     delete[] data;
+    const Tick duration = streamBusyTicks(pkt->getSize(), false);
     pkt->makeAtomicResponse();
-    return streamDelay;
+    return duration;
 }
 
 Tick
@@ -204,7 +216,7 @@ StreamBuffer::status(PacketPtr pkt, bool readStatus)
                 break;
         }
     }
-    Tick duration = pkt->getSize() * bandwidth;
+    const Tick duration = streamBusyTicks(pkt->getSize(), readStatus);
     pkt->makeAtomicResponse();
     return duration;
 }

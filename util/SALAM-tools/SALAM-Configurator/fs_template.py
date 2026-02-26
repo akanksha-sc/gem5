@@ -89,6 +89,22 @@ def addHWAccOptions(parser):
         help="""Name of benchmark to accelerate""",
         default="",
     )
+    # Dedicated accelerator clock/voltage domains
+    # (defaults to system domains)
+    parser.add_argument(
+        "--acc-clock",
+        action="store",
+        type=str,
+        default=None,
+        help="Accelerator clock (e.g., 1GHz). Defaults to --sys-clock.",
+    )
+    parser.add_argument(
+        "--acc-voltage",
+        action="store",
+        type=str,
+        default=None,
+        help="Accelerator voltage (e.g., 1.0V). Defaults to --sys-voltage.",
+    )
 
 
 def cmd_line_template():
@@ -157,6 +173,17 @@ def build_test_system(np):
     test_sys.cpu_clk_domain = SrcClockDomain(
         clock=args.cpu_clock, voltage_domain=test_sys.cpu_voltage_domain
     )
+
+    # Create a dedicated accelerator voltage domain
+    test_sys.acc_voltage_domain = VoltageDomain(
+        voltage=(args.acc_voltage if args.acc_voltage else args.sys_voltage)
+    )
+    # Create a source clock for the accelerators and set the clock period
+    test_sys.acc_clk_domain = SrcClockDomain(
+        clock=(args.acc_clock if args.acc_clock else args.sys_clock),
+        voltage_domain=test_sys.acc_voltage_domain,
+    )
+    # (Acc clock/voltage domains default to system domains if not set)
 
     if buildEnv["USE_RISCV_ISA"]:
         test_sys.workload.bootloader = args.kernel

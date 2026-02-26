@@ -65,10 +65,9 @@ CommInterface::CommInterface(const CommInterfaceParams &p)
       masterId(p.system->getRequestorId(this, name())),
       tickEvent(this),
       cacheLineSize(p.cache_line_size),
-      clock_period(p.clock_period),
+      processCycles(p.process_cycles),
       reset_spm(p.reset_spm)
 {
-    processDelay = 1000 * clock_period;
     FLAG_OFFSET = 0;
     CONFIG_OFFSET = flag_size;
     VAR_OFFSET = CONFIG_OFFSET + config_size;
@@ -86,6 +85,16 @@ CommInterface::CommInterface(const CommInterfaceParams &p)
         for (auto i = 0; i < p.data_bases.size(); i++) {
             data_base_ptrs.push_back(p.data_bases[i]);
         }
+    }
+}
+
+void
+CommInterface::kick()
+{
+    if (!tickEvent.scheduled()) {
+        const Cycles delta =
+            (processCycles == Cycles(0)) ? Cycles(1) : processCycles;
+        schedule(tickEvent, clockEdge(delta));
     }
 }
 
@@ -111,10 +120,7 @@ CommInterface::MemSidePort::recvReqRetry()
         outstandingPkts.pop();
         // TODO: This should just signal the engine that the packet completed
         // engine should schedule tick as necessary. Need a test case
-        if (!owner->tickEvent.scheduled()) {
-            owner->schedule(owner->tickEvent, curTick() + owner->processDelay);
-            // owner->schedule(owner->tickEvent, owner->nextCycle());
-        }
+        owner->kick();
     }
 }
 
@@ -154,10 +160,7 @@ CommInterface::SPMPort::recvReqRetry()
         outstandingPkts.pop();
         // TODO: This should just signal the engine that the packet completed
         // engine should schedule tick as necessary. Need a test case
-        if (!owner->tickEvent.scheduled()) {
-            owner->schedule(owner->tickEvent, curTick() + owner->processDelay);
-            // owner->schedule(owner->tickEvent, owner->nextCycle());
-        }
+        owner->kick();
     }
 }
 
@@ -271,9 +274,7 @@ CommInterface::recvPacket(PacketPtr pkt)
     } else {
         panic("Something went very wrong!");
     }
-    if (!tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + processDelay);
-    }
+    kick();
     delete pkt;
 }
 
@@ -291,9 +292,9 @@ CommInterface::checkMMR()
             cu->initialize();
         }
 
-        if (processingDone && !tickEvent.scheduled()) {
+        if (processingDone) {
             processingDone = false;
-            schedule(tickEvent, curTick() + processDelay);
+            kick();
         }
     }
 }
@@ -593,8 +594,8 @@ CommInterface::processMemoryRequests()
         }
     }
     requestsInQueues = readQueue.size() + writeQueue.size();
-    if (!tickEvent.scheduled() && requestsInQueues > 0) {
-        schedule(tickEvent, curTick() + processDelay);
+    if (requestsInQueues > 0) {
+        kick();
     }
 }
 
@@ -653,12 +654,10 @@ CommInterface::tryRead(MemSidePort *port)
 
     if (!(readReq->readLeft > 0)) {
         readReq->needToRead = false;
-        if (!tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
-        }
+        kick();
     } else {
-        if (!port->isStalled() && !tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
+        if (!port->isStalled()) {
+            kick();
         }
     }
 }
@@ -721,11 +720,9 @@ CommInterface::tryWrite(MemSidePort *port)
 
     if (!(writeReq->writeLeft > 0)) {
         writeReq->needToWrite = false;
-        if (!tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
-        }
-    } else if (!port->isStalled() && !tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + processDelay);
+        kick();
+    } else if (!port->isStalled()) {
+        kick();
     }
 }
 
@@ -771,12 +768,10 @@ CommInterface::tryRead(SPMPort *port)
 
     if (!(readReq->readLeft > 0)) {
         readReq->needToRead = false;
-        if (!tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
-        }
+        kick();
     } else {
-        if (!port->isStalled() && !tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
+        if (!port->isStalled()) {
+            kick();
         }
     }
 }
@@ -839,11 +834,9 @@ CommInterface::tryWrite(SPMPort *port)
 
     if (!(writeReq->writeLeft > 0)) {
         writeReq->needToWrite = false;
-        if (!tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
-        }
-    } else if (!port->isStalled() && !tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + processDelay);
+        kick();
+    } else if (!port->isStalled()) {
+        kick();
     }
 }
 
@@ -880,9 +873,7 @@ CommInterface::tryRead(RegPort *port)
     port->sendPacket(pkt);
 
     if (!(readReq->readLeft > 0)) {
-        if (!tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
-        }
+        kick();
     }
 }
 
@@ -936,9 +927,7 @@ CommInterface::tryWrite(RegPort *port)
     port->sendPacket(pkt);
 
     if (!(writeReq->writeLeft > 0)) {
-        if (!tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
-        }
+        kick();
     }
 }
 
@@ -968,9 +957,7 @@ CommInterface::enqueueRead(MemoryRequest *req)
             }
         }
     }
-    if (!tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + processDelay);
-    }
+    kick();
 }
 
 void
@@ -1000,9 +987,7 @@ CommInterface::enqueueWrite(MemoryRequest *req)
             }
         }
     }
-    if (!tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + processDelay);
-    }
+    kick();
 }
 
 void
@@ -1118,10 +1103,7 @@ CommInterface::write(PacketPtr pkt)
         }
         int_flag = false;
     }
-    if (!tickEvent.scheduled()) {
-        schedule(tickEvent, nextCycle());
-    }
-
+    kick();
     return pioDelay;
 }
 

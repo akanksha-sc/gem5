@@ -34,6 +34,8 @@ Import("*")
 
 if env["CONF"]["USE_ARM_ISA"]:
 
+    # Cycle-based tick engine (composition for accel-local components)
+    SimObject("TickEngine.py", sim_objects=["SALAMTickEngine"])
     SimObject("CommInterface.py", sim_objects=["CommInterface"])
     SimObject("ScratchpadMemory.py", sim_objects=["ScratchpadMemory"])
     SimObject("NoncoherentDma.py", sim_objects=["NoncoherentDma"])
@@ -41,7 +43,6 @@ if env["CONF"]["USE_ARM_ISA"]:
     SimObject("AccCluster.py", sim_objects=["AccCluster"])
     SimObject("StreamBuffer.py", sim_objects=["StreamBuffer"])
     SimObject("RegisterBank.py", sim_objects=["RegisterBank"])
-
     SimObject("AccComputeUnit.py", sim_objects=["AccComputeUnit"])
     SimObject("LLVMInterface.py", sim_objects=["LLVMInterface"])
 
@@ -136,6 +137,7 @@ if env["CONF"]["USE_ARM_ISA"]:
     Source("acc_cluster.cc")
     Source("stream_buffer.cc")
     Source("stream_port.cc")
+    Source("tick_engine.cc")
     Source("scratchpad_memory.cc")
     Source("register_bank.cc")
 
@@ -171,6 +173,7 @@ if env["CONF"]["USE_ARM_ISA"]:
     DebugFlag("StreamDma")
     DebugFlag("Trace")
     DebugFlag("Step")
+    DebugFlag("SALAMTickEngine")
 
     CompoundFlag(
         "JDEV",

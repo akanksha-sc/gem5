@@ -35,6 +35,9 @@
 #ifndef __SALAM_STREAM_PORT_HH__
 #define __SALAM_STREAM_PORT_HH__
 
+#include <type_traits>
+#include <utility>
+
 #include "mem/port.hh"
 #include "mem/tport.hh"
 
@@ -42,6 +45,20 @@ using namespace gem5;
 
 /** Forward declaration **/
 class StreamRequestPort;
+
+template <typename T> class HasStreamBusyTicks
+{
+  private:
+    template <typename U>
+    static auto test(int)
+        -> decltype(std::declval<const U>().streamBusyTicks(size_t{}, bool{}),
+                    std::true_type{});
+
+    template <typename> static std::false_type test(...);
+
+  public:
+    static constexpr bool value = decltype(test<T>(0))::value;
+};
 
 /**
  * StreamResponsePort is a specialization of a SimpleTimingPort meant to enable
@@ -88,6 +105,26 @@ template <class Device> class StreamResponsePortT : public StreamResponsePort
     bool retryReq;
 
     EventFunctionWrapper releaseEvent;
+
+    Tick
+    busyDuration(size_t len, bool isRead)
+    {
+        return busyDurationImpl(
+            len, isRead,
+            std::integral_constant<bool, HasStreamBusyTicks<Device>::value>{});
+    }
+
+    Tick
+    busyDurationImpl(size_t len, bool isRead, std::true_type)
+    {
+        return device->streamBusyTicks(len, isRead);
+    }
+
+    Tick
+    busyDurationImpl(size_t len, bool isRead, std::false_type)
+    {
+        return static_cast<Tick>(len * device->getBandwidth());
+    }
 
     void
     release()
@@ -141,7 +178,7 @@ template <class Device> class StreamResponsePortT : public StreamResponsePort
                   "cacheResponding flag set\n");
         }
 
-        Tick duration = pkt->getSize() * device->getBandwidth();
+        Tick duration = busyDuration(pkt->getSize(), pkt->isRead());
 
         if (duration != 0) {
             device->schedule(releaseEvent, curTick() + duration);

@@ -57,6 +57,12 @@ def makeHWAcc(options, system):
     ################### Creating the Accelerator Cluster #####################
     # Create a new Accelerator Cluster
     system.acctest = AccCluster()
+    # Bind cluster interconnect clock domains (manual script default):
+    # local_bus: acc, coherency_bus: sys
+    system.acctest.local_bus.clk_domain = getattr(
+        system, "acc_clk_domain", system.clk_domain
+    )
+    system.acctest.coherency_bus.clk_domain = system.clk_domain
     local_low = 0x2F000000
     local_high = 0x2FFFFFFF
     local_range = AddrRange(local_low, local_high)
@@ -66,14 +72,29 @@ def makeHWAcc(options, system):
     ]
     system.acctest._attach_bridges(system, local_range, external_range)
     system.acctest._connect_caches(system, options, l2coherent=True)
+    if hasattr(system.acctest, "cluster_cache"):
+        system.acctest.cluster_cache.clk_domain = (
+            system.acctest.coherency_bus.clk_domain
+        )
 
     ################### Adding Accelerators to Cluster #######################
     # Add an accelerator to the cluster
     system.acctest.acc = CommInterface(devicename=options.accbench)
+    # Bind accelerator control/compute plane to accelerator clock domain.
+    system.acctest.acc.clk_domain = system.acc_clk_domain
     AccConfig(system.acctest.acc, acc_config, acc_bench)
+    # Bind post-AccConfig children to accelerator clock domain.
+    system.acctest.acc.llvm_interface.clk_domain = system.acc_clk_domain
 
     # Add an SPM for the accelerator
     system.acctest.acc_spm = ScratchpadMemory()
+    # NOTE: ScratchpadMemory is AbstractMemory (not ClockedObject), so it has
+    # no clk_domain. Drive it via a per-memory SALAMTickEngine instead.
+    system.acctest.acc_spm.engine = SALAMTickEngine(
+        clk_domain=system.acc_clk_domain
+    )
+    system.acctest.acc_spm.tick_engine = system.acctest.acc_spm.engine
+
     system.acctest._connect_spm(system.acctest.acc_spm)
     system.acctest.acc_spm.reset_on_scratchpad_read = False
 
@@ -97,6 +118,8 @@ def makeHWAcc(options, system):
         max_pending=32,
         int_num=95,
     )
+    # Bind DMA controller logic to accelerator clock domain.
+    system.acctest.dma.clk_domain = system.acc_clk_domain
     system.acctest._connect_cluster_dma(system, system.acctest.dma)
 
     system.acctest.stream_dma_0 = StreamDma(
@@ -112,6 +135,8 @@ def makeHWAcc(options, system):
     system.acctest.stream_dma_0.pio_delay = "1ns"
     system.acctest.stream_dma_0.rd_int = 210
     system.acctest.stream_dma_0.wr_int = 211
+    # Bind DMA controller logic to accelerator clock domain.
+    system.acctest.stream_dma_0.clk_domain = system.acc_clk_domain
     system.acctest._connect_dma(system, system.acctest.stream_dma_0)
 
     system.acctest.stream_dma_1 = StreamDma(
@@ -127,4 +152,5 @@ def makeHWAcc(options, system):
     system.acctest.stream_dma_1.pio_delay = "1ns"
     system.acctest.stream_dma_1.rd_int = 212
     system.acctest.stream_dma_1.wr_int = 213
+    system.acctest.stream_dma_1.clk_domain = system.acc_clk_domain
     system.acctest._connect_dma(system, system.acctest.stream_dma_1)

@@ -43,8 +43,19 @@ class ScratchpadMemory(AbstractMemory):
     spm_ports = VectorResponsePort(
         "Response ports for private acclerator SPM accesses"
     )
-    latency = Param.Latency("2ns", "Request to response latency")
-    latency_var = Param.Latency("0ns", "Request to response latency variance")
+
+    # Cycle-based internal timing (clock-domain driven via SALAMTickEngine)
+    tick_engine = Param.SALAMTickEngine(
+        Parent.any, "Cycle tick engine driving this scratchpad memory"
+    )
+    access_latency_cycles = Param.Cycles(1, "Access latency in cycles")
+    bytes_per_cycle = Param.Unsigned(
+        16, "Sustained service bandwidth per port (bytes/cycle)"
+    )
+    max_reqs_per_cycle = Param.Unsigned(
+        1, "Maximum number of requests serviced per port per cycle"
+    )
+
     ready_mode = Param.Bool(False, "Use ready mode for scratchpad memory")
     read_on_invalid = Param.Bool(
         False,
@@ -55,7 +66,4 @@ class ScratchpadMemory(AbstractMemory):
     )
     reset_on_scratchpad_read = Param.Bool(
         True, "Reset ready bit on private scratchpad memory read"
-    )
-    bandwidth = Param.MemoryBandwidth(
-        "12GiB/s", "Combined read and write bandwidth per port"
     )

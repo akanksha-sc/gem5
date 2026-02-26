@@ -33,6 +33,7 @@
  */
 
 #include "salam/noncoherent_dma.hh"
+#include "sim/core.hh"
 
 NoncoherentDma::NoncoherentDma(const NoncoherentDmaParams &p)
     : DmaDevice(p),
@@ -45,7 +46,6 @@ NoncoherentDma::NoncoherentDma(const NoncoherentDmaParams &p)
       maxReqSize(p.max_req_size),
       gic(p.gic),
       intNum(p.int_num),
-      clock_period(p.clock_period),
       tickEvent([this] { tick(); }, name()),
       accPort(this, sys, p.sid, p.ssid)
 {
@@ -149,15 +149,17 @@ NoncoherentDma::tick()
                 *FLAGS |= 0x04;
                 // raise interrupts
                 gic->sendInt(intNum);
-                double xfer_time = (double)(curTick() - start_time) * (1e-6);
+                const double xfer_us =
+                    static_cast<double>(curTick() - start_time) /
+                    gem5::sim_clock::as_float::us;
                 DPRINTF(NoncoherentDma, "Transfer completed in %f us\n",
-                        xfer_time);
+                        xfer_us);
             }
         }
     }
     last_flag = *FLAGS;
     if (!tickEvent.scheduled() && running) {
-        schedule(tickEvent, curTick() + clock_period * 1000);
+        schedule(tickEvent, nextCycle());
     }
 }
 
@@ -208,7 +210,7 @@ NoncoherentDma::write(PacketPtr pkt)
     pkt->writeData(mmreg + (pkt->req->getPaddr() - pioAddr));
 
     if (!tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + clock_period * 1000);
+        schedule(tickEvent, nextCycle());
     }
     pkt->makeAtomicResponse();
     return pioDelay;

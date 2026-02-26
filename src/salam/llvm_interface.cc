@@ -34,16 +34,15 @@
 
 // LLVMInterface Includes
 #include "salam/llvm_interface.hh"
+#include "sim/core.hh"
 
 LLVMInterface::LLVMInterface(const LLVMInterfaceParams &p)
     : AccComputeUnit(p),
       filename(p.in_file),
       topName(p.top_name),
       scheduling_threshold(p.sched_threshold),
-      clock_period(p.clock_period),
       lockstep(p.lockstep_mode)
 {
-    clock_period = clock_period * 1000;
     dbg = comm->debug();
 }
 
@@ -415,7 +414,7 @@ LLVMInterface::tick()
     }
     //////////////// Schedule Next Cycle ////////////////////////
     if (running && !tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + clock_period); // * process_delay);
+        schedule(tickEvent, nextCycle());
     }
     auto tickStop = std::chrono::high_resolution_clock::now();
     simTime = simTime + (tickStop - tickStart);
@@ -946,7 +945,17 @@ LLVMInterface::printResults()
     std::cout << "\nTotal Power Static: " << total_power_static << "\n";
     std::cout << "\nTotal Power Dynamic: " << total_power_dynamic << "\n";
 
-    Tick cycle_time = clock_period / 1000;
+    // Derive accelerator cycle time from this object's clock domain
+    // ticks per ns/us (from gem5) => divide to get time
+    const double cycle_time_ns =
+        static_cast<double>(clockPeriod()) / gem5::sim_clock::as_float::ns;
+
+    const double freq_ghz =
+        (cycle_time_ns > 0.0) ? (1.0 / cycle_time_ns) : 0.0;
+
+    const double runtime_us =
+        (static_cast<double>(clockPeriod()) * static_cast<double>(cycle)) /
+        gem5::sim_clock::as_float::us;
 
     auto hwTimingMS =
         std::chrono::duration_cast<std::chrono::milliseconds>(hwTime);
@@ -1044,12 +1053,12 @@ LLVMInterface::printResults()
     std::cout << "             Computation Time:      " << computeHours.count()
               << "h " << computeMins.count() << "m " << computeSecs.count()
               << "s " << computeMS.count() << "ms" << std::endl;
-    std::cout << "   System Clock:                    " << 1.0 / (cycle_time)
-              << "GHz" << std::endl;
+    std::cout << "   System Clock:                    " << freq_ghz << "GHz"
+              << std::endl;
     std::cout << "   Runtime:                         " << cycle << " cycles"
               << std::endl;
-    std::cout << "   Runtime:                         "
-              << (cycle * cycle_time * (1e-3)) << " us" << std::endl;
+    std::cout << "   Runtime:                         " << runtime_us << " us"
+              << std::endl;
     std::cout << "   Stalls:                          " << stalls << " cycles"
               << std::endl;
     std::cout << "   Executed Nodes:                  " << (cycle - stalls - 1)

@@ -43,6 +43,7 @@
 #include <cstring>
 #include <iomanip>
 
+#include "base/logging.hh"
 #include "base/trace.hh"
 #include "debug/Drain.hh"
 #include "mem/packet.hh"
@@ -57,11 +58,18 @@ RegisterBank::RegisterBank(const RegisterBankParams &p)
     : AbstractMemory(p),
       port(name() + ".reg_port", this),
       load(name() + ".load_port", this),
-      deltaTime(p.delta_time),
-      retryResp(false),
-      dequeueEvent([this] { dequeue(); }, name()),
-      deltaEvent([this] { delta(); }, name())
+      tickEngine(p.tick_engine),
+      readLatencyCycles(p.read_latency_cycles),
+      writeVisibilityCycles(p.write_visibility_cycles),
+      deltaPending(false),
+      deltaRemaining(0),
+      retryResp(false)
 {
+    fatal_if(!tickEngine, "RegisterBank %s requires tick_engine\n", name());
+
+    // Bind this register bank as the cycle-ticked owner of the engine.
+    tickEngine->setOwner(this);
+
     // Setup of the delta memory container
     int shm_fd = -1;
     int map_flags = MAP_ANON | MAP_PRIVATE;
@@ -73,6 +81,86 @@ RegisterBank::RegisterBank(const RegisterBankParams &p)
         fatal("Could not mmap %d bytes for range %s!\n", range.size(),
               range.to_string());
     }
+}
+
+Tick
+RegisterBank::getAccessLatency(PacketPtr pkt) const
+{
+    const Cycles c =
+        pkt->isWrite() ? writeVisibilityCycles : readLatencyCycles;
+    const Cycles adj = (c == Cycles(0)) ? Cycles(1) : c;
+    return tickEngine->clockPeriod() * adj;
+}
+
+void
+RegisterBank::serviceResponses()
+{
+    if (retryResp) {
+        return;
+    }
+
+    while (!respQueue.empty() && respQueue.front().remaining == Cycles(0)) {
+        retryResp = !port.sendTimingResp(respQueue.front().pkt);
+        if (retryResp) {
+            return;
+        }
+        respQueue.pop_front();
+    }
+}
+
+static inline bool
+hasCountdown(const std::deque<RegisterBank::DeferredResp> &q)
+{
+    for (const auto &e : q) {
+        if (e.remaining > Cycles(0)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool
+RegisterBank::tickCycle()
+{
+    // Handle pending delta visibility update
+    if (deltaPending) {
+        if (deltaRemaining > Cycles(0)) {
+            deltaRemaining = deltaRemaining - Cycles(1);
+        }
+        if (deltaRemaining == Cycles(0)) {
+            std::memcpy(pmemAddr, deltaAddr, range.size());
+            deltaPending = false;
+        }
+    }
+
+    // Decrement countdown for queued responses.
+    for (auto &e : respQueue) {
+        if (e.remaining > Cycles(0)) {
+            e.remaining = e.remaining - Cycles(1);
+        }
+    }
+
+    serviceResponses();
+    // Decide if ticking can make progress without an external retry
+    // - If retryResp set, can't send the head response until recvRespRetry
+    // - If we still have countdowns, keep ticking to decrement them
+    const bool countdowns = hasCountdown(respQueue);
+    const bool canAttemptSend = (!respQueue.empty() && !retryResp);
+    const bool keepTicking = deltaPending || countdowns || canAttemptSend;
+
+    if (!keepTicking) {
+        // Fully idle (or only waiting on retry);
+        // if fully idle and draining, signal done.
+        const bool fullyIdle =
+            !deltaPending && respQueue.empty() && !retryResp;
+        if (fullyIdle && drainState() == DrainState::Draining) {
+            DPRINTF(Drain, "Draining of RegisterBank complete\n");
+            signalDrainDone();
+        }
+        return false;
+    }
+
+    return true;
 }
 
 static inline void
@@ -126,8 +214,15 @@ RegisterBank::registerAccess(PacketPtr pkt)
             TRACE_PACKET("Write");
             stats.numWrites[pkt->req->requestorId()]++;
             stats.bytesWritten[pkt->req->requestorId()] += pkt->getSize();
-            if (!deltaEvent.scheduled()) {
-                schedule(deltaEvent, curTick() + deltaTime);
+
+            // Schedule write visibility via cycle engine
+            // (do not reschedule if pending)
+            if (!deltaPending) {
+                deltaPending = true;
+                deltaRemaining = (writeVisibilityCycles == Cycles(0))
+                                     ? Cycles(1)
+                                     : writeVisibilityCycles;
+                tickEngine->start();
             }
         }
     } else {
@@ -158,7 +253,7 @@ RegisterBank::recvAtomic(PacketPtr pkt)
     panic_if(pkt->cacheResponding(), "Should not see packets where cache "
                                      "is responding");
     registerAccess(pkt);
-    return deltaTime;
+    return getAccessLatency(pkt);
 }
 
 Tick
@@ -180,9 +275,9 @@ RegisterBank::recvFunctional(PacketPtr pkt)
     functionalAccess(pkt);
 
     bool done = false;
-    auto p = packetQueue.begin();
-    // potentially update the packets in our packet queue as well
-    while (!done && p != packetQueue.end()) {
+    auto p = respQueue.begin();
+    // potentially update queued response packets as well
+    while (!done && p != respQueue.end()) {
         done = pkt->trySatisfyFunctional(p->pkt);
         ++p;
     }
@@ -197,82 +292,49 @@ RegisterBank::recvTimingReq(PacketPtr pkt)
                                      "is responding");
 
     panic_if(!(pkt->isRead() || pkt->isWrite()),
-             "Should only see read and writes at memory controller, "
+             "Should only see reads and writes at register bank, "
              "saw %s to %#llx\n",
              pkt->cmdString(), pkt->getAddr());
 
-    bool isRead = pkt->isRead();
+    const bool needsResponse = pkt->needsResponse();
 
-    bool needsResponse = pkt->needsResponse();
-    Tick responseTime = curTick() + recvAtomic(pkt);
+    // Snapshot data / stage writes now (response is produced later).
+    registerAccess(pkt);
+
     if (needsResponse) {
-        // recvAtomic() should already have turned packet into
-        // atomic response
-        assert(pkt->isResponse());
-        if (isRead) {
-            retryResp = !port.sendTimingResp(pkt);
-            if (!retryResp) {
-                return true;
-            }
-        }
-        // typically this should be added at the end, so start the
-        // insertion sort with the last element, also make sure not to
-        // re-order in front of some existing packet with the same
-        // address, the latter is important as this memory effectively
-        // hands out exclusive copies (shared is not asserted)
-        auto i = packetQueue.end();
-        --i;
-        while (i != packetQueue.begin() && responseTime < i->tick &&
-               !i->pkt->matchAddr(pkt)) {
-            --i;
-        }
+        const Cycles raw =
+            pkt->isWrite() ? writeVisibilityCycles : readLatencyCycles;
+        const Cycles lat = (raw == Cycles(0)) ? Cycles(1) : raw;
 
-        // emplace inserts the element before the position pointed to by
-        // the iterator, so advance it one step
-        packetQueue.emplace(++i, pkt, responseTime);
-
-        if (!retryResp && !dequeueEvent.scheduled()) {
-            schedule(dequeueEvent, packetQueue.back().tick);
-        }
+        respQueue.emplace_back(pkt, lat);
+        tickEngine->start();
     }
+
     return true;
-}
-
-void
-RegisterBank::dequeue()
-{
-    assert(!packetQueue.empty());
-    DeferredPacket deferred_pkt = packetQueue.front();
-
-    retryResp = !port.sendTimingResp(deferred_pkt.pkt);
-    if (!retryResp) {
-        packetQueue.pop_front();
-
-        // if the queue is not empty, schedule the next dequeue event,
-        // otherwise signal that we are drained if we were asked to do so
-        if (!packetQueue.empty()) {
-            // if there were packets that got in-between then we
-            // already have an event scheduled, so use re-schedule
-            reschedule(dequeueEvent,
-                       std::max(packetQueue.front().tick, curTick()), true);
-        } else if (drainState() == DrainState::Draining) {
-            DPRINTF(Drain, "Draining of ScratchpadMemory complete\n");
-            signalDrainDone();
-        }
-    }
-}
-
-void
-RegisterBank::delta()
-{
-    std::memcpy(pmemAddr, deltaAddr, range.size());
 }
 
 void
 RegisterBank::recvRespRetry()
 {
     assert(retryResp);
-    dequeue();
+    retryResp = false;
+
+    serviceResponses();
+
+    const bool workLeft = deltaPending || !respQueue.empty();
+    if (!workLeft && !retryResp) {
+        // Corner-case: retry cleared last response immediately;
+        // no more ticks may occur
+        if (drainState() == DrainState::Draining) {
+            DPRINTF(Drain, "Draining of RegisterBank complete\n");
+            signalDrainDone();
+        }
+        return;
+    }
+
+    if (workLeft && !retryResp) {
+        tickEngine->start();
+    }
 }
 
 Port &
@@ -289,11 +351,9 @@ RegisterBank::getPort(const std::string &if_name, PortID idx)
 DrainState
 RegisterBank::drain()
 {
-    if (!packetQueue.empty()) {
-        DPRINTF(Drain, "ScratchpadMemory Queue has requests, "
-                       "waiting to drain\n");
+    if (!respQueue.empty() || retryResp || deltaPending) {
+        DPRINTF(Drain, "RegisterBank has in-flight work, waiting to drain\n");
         return DrainState::Draining;
-    } else {
-        return DrainState::Drained;
     }
+    return DrainState::Drained;
 }

@@ -93,7 +93,11 @@ def parse_yaml(
     working_dir: str,
     parent_path: str = None,
     hw_path: str = None,
+    interconnect_clocks=None,
 ):
+    interconnect_clocks = _extract_interconnect_clocks(
+        parent_config, inherited=interconnect_clocks
+    )
     clusters = []
     # Load in each acc cluster and add it to the list
     for cluster_dict in parent_config:
@@ -131,6 +135,7 @@ def parse_yaml(
                     working_dir=working_dir,
                     parent_path=cur_path,
                     hw_path=hw_path,
+                    interconnect_clocks=interconnect_clocks,
                 )
                 clusters.extend(temp_cluster)
             elif FOUND_HW_PATH:
@@ -161,6 +166,7 @@ def parse_yaml(
                 working_dir=working_dir,
                 config_path=parent_path,
                 hw_config_path=hw_path,
+                interconnect_clocks=interconnect_clocks,
             )
         )
         base_address = clusters[-1].top_address + (
@@ -172,9 +178,43 @@ def parse_yaml(
 
 
 def open_yaml(yml_path: str):
-    stream = open(yml_path)
-    config = yaml.safe_load_all(stream)
-    return config
+    with open(yml_path) as stream:
+        return list(yaml.safe_load_all(stream))
+
+
+def _normalize_clock_choice(v, default):
+    if v is None:
+        return default
+    s = str(v).strip().lower()
+    return s if s in ("acc", "sys") else default
+
+
+def _extract_interconnect_clocks(config_docs, inherited=None):
+    result = {"local": "acc", "coh": "sys"}
+    if inherited:
+        result.update(inherited)
+
+    salam_cfg = {}
+    for doc in config_docs:
+        if isinstance(doc, dict) and isinstance(doc.get("salam"), dict):
+            salam_cfg.update(doc["salam"])
+
+    inter = _normalize_clock_choice(
+        salam_cfg.get("AccInterconnectClock"), None
+    )
+    local = _normalize_clock_choice(salam_cfg.get("AccLocalBusClock"), None)
+    coh = _normalize_clock_choice(salam_cfg.get("AccCoherencyBusClock"), None)
+
+    if inter:
+        result["local"] = inter
+        result["coh"] = inter
+
+    if local:
+        result["local"] = local
+    if coh:
+        result["coh"] = coh
+
+    return result
 
 
 def gen_config(clusters, config_path: str, file_name: str):
@@ -444,15 +484,32 @@ def main():
     # Set base addresses
     base_address = 0x2F000000  # 0x10020000
     max_address = 0x2FFFFFFF  # 0x13FFFFFF
+
     # Load in the YAML file
-    config = open_yaml(yml_path=main_yml_path)
+    config_docs = open_yaml(yml_path=main_yml_path)
+    interconnect_clocks = _extract_interconnect_clocks(config_docs)
+
+    # Optional YAML defaults for accelerator clock/voltage
+    salam_acc_clock = None
+    salam_acc_voltage = None
+    for doc in config_docs:
+        if isinstance(doc, dict) and "salam" in doc and doc["salam"]:
+            salam = doc["salam"]
+            if isinstance(salam, dict):
+                if "AccClock" in salam and salam["AccClock"] is not None:
+                    salam_acc_clock = str(salam["AccClock"])
+                if "AccVoltage" in salam and salam["AccVoltage"] is not None:
+                    salam_acc_voltage = str(salam["AccVoltage"])
+
     # Parse YAML File
     base_address, clusters = parse_yaml(
-        parent_config=config,
+        parent_config=config_docs,
         base_address=base_address,
         working_dir=working_dir,
         parent_path=main_yml_path,
+        interconnect_clocks=interconnect_clocks,
     )
+
     # Generate SALAM Config
     gen_config(clusters=clusters, config_path=config_path, file_name=file_name)
     # Parse original header for custom code
@@ -469,11 +526,31 @@ def main():
     f = open(config_path + "fs_" + file_name + ".py")
     fullSystem = f.readlines()
 
+    parse_args_idx = None
     for i, ln in enumerate(fullSystem):
         if ln.strip() == "import TEMPLATE":
             fullSystem[i] = f"import {file_name}\n"
         elif "TEMPLATE.makeHWAcc(" in ln:
             fullSystem[i] = ln.replace("TEMPLATE.", f"{file_name}.")
+        elif ln.strip() == "args = parser.parse_args()":
+            parse_args_idx = i
+
+    # Apply YAML defaults for acc clock/voltage when not provided on CLI
+    if parse_args_idx is not None and (
+        salam_acc_clock is not None or salam_acc_voltage is not None
+    ):
+        inject = []
+        inject.append("\n")
+        inject.append(
+            "# SALAM: YAML-derived accelerator clock/voltage defaults.\n"
+        )
+        if salam_acc_clock is not None:
+            inject.append("if getattr(args, 'acc_clock', None) is None:\n")
+            inject.append(f"    args.acc_clock = '{salam_acc_clock}'\n")
+        if salam_acc_voltage is not None:
+            inject.append("if getattr(args, 'acc_voltage', None) is None:\n")
+            inject.append(f"    args.acc_voltage = '{salam_acc_voltage}'\n")
+        fullSystem[parse_args_idx + 1 : parse_args_idx + 1] = inject
 
     f = open(config_path + "fs_" + file_name + ".py", "w")
     f.writelines(fullSystem)

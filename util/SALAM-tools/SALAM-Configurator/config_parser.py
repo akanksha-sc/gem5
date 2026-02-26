@@ -41,6 +41,7 @@ class AccCluster:
         working_dir: str,
         config_path: str,
         hw_config_path: str = None,
+        interconnect_clocks=None,
     ):
         self.name = name
         self.dmas = dmas
@@ -51,6 +52,10 @@ class AccCluster:
         # Do this to point the hardware configuration to the
         # sys config YAML file when HWPath isn't defined
         self.hw_config_path = hw_config_path
+        self.interconnect_clocks = interconnect_clocks or {
+            "local": "acc",
+            "coh": "sys",
+        }
         self.process_config(working_dir=working_dir)
 
     def process_config(self, working_dir):
@@ -307,16 +312,43 @@ class AccCluster:
             "	external_range = [AddrRange(0x00000000, local_low-1),"
             " AddrRange(local_high+1, 0xFFFFFFFF)]"
         )
+        lines.append("  # Bind cluster interconnect clock domains (YAML knob)")
+        if str(self.interconnect_clocks.get("local", "acc")).lower() == "acc":
+            lines.append(
+                "	clstr.local_bus.clk_domain = getattr("
+                "system, 'acc_clk_domain', system.clk_domain)"
+            )
+        else:
+            lines.append("	clstr.local_bus.clk_domain = " "system.clk_domain")
+
+        if str(self.interconnect_clocks.get("coh", "sys")).lower() == "acc":
+            lines.append(
+                "	clstr.coherency_bus.clk_domain = getattr("
+                "system, 'acc_clk_domain', system.clk_domain)"
+            )
+        else:
+            lines.append(
+                "	clstr.coherency_bus.clk_domain = " "system.clk_domain"
+            )
+
+        lines.append("")
         lines.append(
             "	system.iobus.mem_side_ports = clstr.local_bus.cpu_side_ports"
         )
+
         # Need to define l2coherency in the YAML file?
         lines.append(
             "	clstr._connect_caches(system, options, l2coherent=False)"
         )
+
+        # Bind optional cluster cache to coherency bus clock domain
+        lines.append("	if hasattr(clstr, 'cluster_cache'):")
+        lines.append(
+            "		clstr.cluster_cache.clk_domain = "
+            "clstr.coherency_bus.clk_domain"
+        )
         lines.append("	gic = system.realview.gic")
         lines.append("")
-
         return lines
 
 
@@ -389,7 +421,20 @@ class Accelerator:
                 + ")"
             )
 
+        # Bind accelerator control/compute plane to accelerator clock domain.
+        lines.append(
+            "clstr." + self.name + ".clk_domain = system.acc_clk_domain"
+        )
+
         lines.append("AccConfig(clstr." + self.name + ", ir, hw_config)")
+
+        # Bind post-AccConfig children to accelerator clock domain.
+        lines.append(
+            "clstr."
+            + self.name
+            + ".llvm_interface.clk_domain = system.acc_clk_domain"
+        )
+
         lines.append("")
 
         return lines
@@ -509,6 +554,11 @@ class StreamDMA:
             + str(self.pio)
             + ")"
         )
+
+        # Bind DMA controller logic to accelerator clock domain.
+        lines.append(
+            "clstr." + self.name + ".clk_domain = system.acc_clk_domain"
+        )
         lines.append(
             dmaPath
             + "stream_addr = "
@@ -583,6 +633,11 @@ class DMA:
             + ", gic=gic, int_num="
             + str(self.int_num)
             + ")"
+        )
+
+        # Bind DMA controller logic to accelerator clock domain
+        lines.append(
+            "clstr." + self.name + ".clk_domain = system.acc_clk_domain"
         )
         lines.append(
             dmaPath
@@ -698,6 +753,13 @@ class Variable:
                 + str(self.bufferSize)
                 + ")"
             )
+
+            # Bind stream buffer arbitration to accelerator clock domain.
+            lines.append(
+                "clstr."
+                + self.name.lower()
+                + ".clk_domain = system.acc_clk_domain"
+            )
             lines.append(
                 "clstr."
                 + self.inCon
@@ -728,6 +790,21 @@ class Variable:
                 "clstr."
                 + self.name.lower()
                 + " = ScratchpadMemory(range = spmRange)"
+            )
+            # NOTE: ScratchpadMemory is AbstractMemory (not ClockedObject).
+            # Drive its cycle semantics via a per-memory SALAMTickEngine.
+            # Make the engine a child of the memory so engine.owner defaults
+            # to Parent (the memory), satisfying CycleTicked.
+            lines.append(
+                "clstr." + self.name.lower() + ".engine = "
+                "SALAMTickEngine(clk_domain = system.acc_clk_domain)"
+            )
+            lines.append(
+                "clstr."
+                + self.name.lower()
+                + ".tick_engine = clstr."
+                + self.name.lower()
+                + ".engine"
             )
             # Probably need to add table and read mode to the YAML File
             lines.append(
@@ -800,6 +877,19 @@ class Variable:
                 + self.name.lower()
                 + " = RegisterBank(range = regRange)"
             )
+            # NOTE: RegisterBank is AbstractMemory (not ClockedObject).
+            # Drive its cycle semantics via a per-memory SALAMTickEngine.
+            lines.append(
+                "clstr." + self.name.lower() + ".engine = "
+                "SALAMTickEngine(clk_domain = system.acc_clk_domain)"
+            )
+            lines.append(
+                "clstr."
+                + self.name.lower()
+                + ".tick_engine = clstr."
+                + self.name.lower()
+                + ".engine"
+            )
             lines.append(
                 "clstr."
                 + self.name.lower()
@@ -830,6 +920,11 @@ class Variable:
                 + " = L1Cache(size = '"
                 + str(self.size)
                 + "B')"
+            )
+
+            # Bind accelerator-local cache to accelerator clock domain.
+            lines.append(
+                "clstr." + self.name + ".clk_domain = system.acc_clk_domain"
             )
             lines.append(
                 "clstr."

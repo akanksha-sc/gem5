@@ -79,7 +79,6 @@ class LLVMInterface : public AccComputeUnit
     std::string filename;
     std::string topName;
     uint32_t scheduling_threshold;
-    int32_t clock_period;
     int cycle;
     int stalls;
 

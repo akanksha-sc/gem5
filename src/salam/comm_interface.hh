@@ -47,6 +47,7 @@
 #include "salam/acc_compute_unit.hh"
 #include "salam/scratchpad_memory.hh"
 #include "salam/stream_port.hh"
+#include "sim/core.hh"
 
 class AccComputeUnit;
 
@@ -393,6 +394,8 @@ class CommInterface : public BasicPioDevice
     virtual void checkMMR();
     virtual void processMemoryRequests();
     virtual void tick();
+    // Cycle-based scheduling helper
+    void kick();
 
     bool running;
     bool computationNeeded;
@@ -412,8 +415,7 @@ class CommInterface : public BasicPioDevice
     uint8_t *mmreg;
 
     bool processingDone;
-    int processDelay;
-    float clock_period;
+    Cycles processCycles;
 
     bool reset_spm;
 
@@ -452,11 +454,6 @@ class CommInterface : public BasicPioDevice
     }
 
     uint64_t getGlobalVar(unsigned offset, unsigned size);
-    int
-    getProcessDelay()
-    {
-        return processDelay;
-    }
     virtual int
     getReadPorts()
     {

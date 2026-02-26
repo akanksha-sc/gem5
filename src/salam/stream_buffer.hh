@@ -35,10 +35,13 @@
 #ifndef __SALAM_STREAM_BUFFER_HH__
 #define __SALAM_STREAM_BUFFER_HH__
 
+#include <algorithm>
+
 #include "base/circlebuf.hh"
 #include "params/StreamBuffer.hh"
 #include "salam/stream_port.hh"
 #include "sim/clocked_object.hh"
+#include "sim/core.hh"
 
 class StreamBuffer : public ClockedObject
 {
@@ -54,8 +57,9 @@ class StreamBuffer : public ClockedObject
     Addr streamSize;
     Addr statusAddr;
     Addr statusSize;
-    Tick streamDelay;
-    const double bandwidth;
+    // Cycle-based stream service parameters
+    const Cycles streamLatencyCycles;
+    const unsigned bytesPerCycle;
 
   public:
     PARAMS(StreamBuffer);
@@ -81,6 +85,8 @@ class StreamBuffer : public ClockedObject
     bool tvalid(PacketPtr pkt);
     bool tvalid(size_t len, bool isRead);
 
+    Tick streamBusyTicks(size_t len, bool isRead) const;
+
     virtual Tick streamRead(PacketPtr pkt);
     virtual Tick streamWrite(PacketPtr pkt);
     Tick status(PacketPtr pkt, bool readStatus);
@@ -96,7 +102,9 @@ class StreamBuffer : public ClockedObject
     double
     getBandwidth()
     {
-        return bandwidth;
+        // Legacy fallback for generic stream ports (ticks/byte)
+        const unsigned bpc = std::max(1u, bytesPerCycle);
+        return static_cast<double>(clockPeriod()) / static_cast<double>(bpc);
     };
 };
 

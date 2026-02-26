@@ -35,10 +35,12 @@
 #ifndef __SALAM_SCRATCHPAD_MEMORY_HH__
 #define __SALAM_SCRATCHPAD_MEMORY_HH__
 
+#include <deque>
 #include <vector>
 
 #include "mem/abstract_mem.hh"
 #include "mem/port.hh"
+#include "salam/tick_engine.hh"
 
 using namespace gem5;
 using namespace memory;
@@ -135,7 +137,7 @@ class ScratchpadRequestPort : public RequestPort
 
 #include "params/ScratchpadMemory.hh"
 
-class ScratchpadMemory : public AbstractMemory
+class ScratchpadMemory : public AbstractMemory, public SALAM::CycleTicked
 {
   protected:
     bool readyMode;
@@ -153,23 +155,6 @@ class ScratchpadMemory : public AbstractMemory
     void setAllReady(bool r);
 
   private:
-    /**
-     * A deferred packet stores a packet along with its scheduled
-     * transmission time
-     */
-    class DeferredPacket
-    {
-
-      public:
-        const Tick tick;
-        const PacketPtr pkt;
-        const PortID origin;
-
-        DeferredPacket(PacketPtr _pkt, Tick _tick, PortID _origin)
-            : tick(_tick), pkt(_pkt), origin(_origin)
-        {}
-    };
-
     class MemoryPort : public ResponsePort
     {
       private:
@@ -249,79 +234,74 @@ class ScratchpadMemory : public AbstractMemory
     std::vector<SPMPort *> spm_ports;
 
     /**
-     * Latency from that a request is accepted until the response is
-     * ready to be sent.
+     * Cycle tick engine used to drive internal scratchpad timing.
      */
-    const Tick latency;
+    SALAMTickEngine *tickEngine;
 
     /**
-     * Fudge factor added to the latency.
+     * Cycle-based timing and throughput parameters.
      */
-    const Tick latency_var;
+    const Cycles accessLatencyCycles;
+    const unsigned bytesPerCycle;
+    const unsigned maxReqsPerCycle;
+
+    struct PendingReq
+    {
+        PacketPtr pkt;
+        bool validateAccess;
+
+        PendingReq(PacketPtr _pkt, bool _validate)
+            : pkt(_pkt), validateAccess(_validate)
+        {}
+    };
+
+    // multi-cycle service of a single request via per-port in-flight slot
+    struct InFlightReq
+    {
+        PacketPtr pkt = nullptr;
+        bool validateAccess = false;
+        bool needsResponse = false;
+        Cycles remainingXfer = Cycles(0);
+        bool active = false;
+    };
+
+    struct DeferredResp
+    {
+        PacketPtr pkt;
+        Cycles remaining;
+
+        DeferredResp(PacketPtr _pkt, Cycles _remaining)
+            : pkt(_pkt), remaining(_remaining)
+        {}
+    };
 
     /**
-     * Internal (unbounded) storage to mimic the delay caused by the
-     * actual memory access. Note that this is where the packet spends
-     * the memory latency.
+     * Per-port request and response queues
+     * (index 0 is .port, 1..N are spm_ports)
      */
-    std::list<DeferredPacket> packetQueue;
+    std::vector<std::deque<PendingReq>> reqQueues;
+    std::vector<InFlightReq> inFlight;
+    std::vector<std::deque<DeferredResp>> respQueues;
 
     /**
-     * Bandwidth in ticks per byte. The regulation affects the
-     * acceptance rate of requests and the queueing takes place after
-     * the regulation.
-     */
-    const double bandwidth;
-
-    /**
-     * Track the state of the memory as either idle or busy, no need
-     * for an enum with only two states.
-     */
-    std::vector<bool> isBusy;
-
-    /**
-     * Remember if we have to retry an outstanding request that
-     * arrived while we were busy.
-     */
-    std::vector<bool> retryReq;
-
-    /**
-     * Remember if we failed to send a response and are awaiting a
-     * retry. This is only used as a check.
+     * Per-port response retry tracking.
      */
     std::vector<bool> retryResp;
 
     /**
-     * Release the memory after being busy and send a retry if a
-     * request was rejected in the meanwhile.
+     * Packets with no response are deleted after service.
      */
-    void release();
+    std::deque<PacketPtr> pendingDelete;
 
-    std::vector<EventFunctionWrapper> releaseEvent;
-    std::vector<Tick> releaseTick;
-
-    /**
-     * Dequeue a packet from our internal packet queue and move it to
-     * the port where it will be sent as soon as possible.
-     */
-    void dequeue();
-
-    EventFunctionWrapper dequeueEvent;
-
-    /**
-     * Detemine the latency.
-     *
-     * @return the latency seen by the current packet
-     */
-    Tick getLatency() const;
-
-    /**
-     * Upstream caches need this packet until true is returned, so
-     * hold it for deletion until a subsequent call
-     */
-    std::unique_ptr<Packet> pendingDelete;
+    void ensurePortState(PortID idx);
+    void serviceResponses(PortID idx);
+    void startInFlight(PortID idx);
+    void completeInFlight(PortID idx);
 
   public:
+    // SALAM: Per-cycle callback driven by SALAMTickEngine.
+    bool tickCycle() override;
+
     DrainState drain() override;
 
     Port &getPort(const std::string &if_name,

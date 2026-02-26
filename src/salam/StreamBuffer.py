@@ -50,7 +50,11 @@ class StreamBuffer(ClockedObject):
     stream_size = Param.Addr("Stream buffer width in bytes")
     status_address = Param.Addr("Address for accessing buffer status")
     status_size = Param.Addr(4, "Size of the buffer status register")
-    stream_latency = Param.Latency("1ns", "Stream W/R latency")
-    bandwidth = Param.MemoryBandwidth(
-        "12.6GiB/s", "Combined read and write bandwidth"
+
+    # Cycle-based stream service model (clock-domain driven)
+    stream_latency_cycles = Param.Cycles(
+        1, "Stream operation latency in cycles"
+    )
+    bytes_per_cycle = Param.Unsigned(
+        16, "Sustained stream bandwidth (bytes/cycle)"
     )

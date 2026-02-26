@@ -1,4 +1,11 @@
 ---
+# Optional defaults for accelerator clock/voltage
+salam:
+    AccClock: # e.g. 1GHz (Optional)
+    AccVoltage: # e.g. 1.0V (Optional)
+    AccInterconnectClock: # acc|sys (Optional, sets both local+coh)
+    AccLocalBusClock: # acc|sys (Optional override for local_bus)
+    AccCoherencyBusClock: # acc|sys (Optional override for coherency_bus)
 acc_cluster:
     - Name: # Cluster name here (Required)
   # NonCoherent DMA Example

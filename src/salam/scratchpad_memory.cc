@@ -38,7 +38,6 @@
 #include <cstdlib>
 #include <iomanip>
 
-#include "base/random.hh"
 #include "base/trace.hh"
 #include "debug/Drain.hh"
 #include "mem/packet.hh"
@@ -62,26 +61,222 @@ ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams &p)
       resetOnScratchpadRead(p.reset_on_scratchpad_read),
       initial(true),
       port(name() + ".port", *this),
-      latency(p.latency),
-      latency_var(p.latency_var),
-      bandwidth(p.bandwidth),
-      dequeueEvent([this] { dequeue(); }, name())
+      tickEngine(p.tick_engine),
+      accessLatencyCycles(p.access_latency_cycles),
+      bytesPerCycle(p.bytes_per_cycle),
+      maxReqsPerCycle(p.max_reqs_per_cycle)
 {
+    fatal_if(!tickEngine, "ScratchpadMemory '%s' requires tick_engine\n",
+             name());
+
+    // Bind this memory as the cycle-ticked owner of the engine.
+    tickEngine->setOwner(this);
+
     ready = new bool[range.size()];
     if (readyMode) {
         for (auto i = 0; i < range.size(); i++) {
             ready[i] = false;
         }
     }
-    // Each port has its own release and dequeue events, as well as signals
-    // Adding these events and signals for ".port"
-    const std::string releaseEventName = name() + "_release[0]";
-    releaseEvent.push_back(
-        EventFunctionWrapper([this] { release(); }, releaseEventName));
-    releaseTick.push_back(0);
-    isBusy.push_back(false);
-    retryReq.push_back(false);
-    retryResp.push_back(false);
+    // Ensure base port state exists (idx 0).
+    ensurePortState(0);
+}
+
+void
+ScratchpadMemory::ensurePortState(PortID idx)
+{
+    if (idx >= reqQueues.size()) {
+        reqQueues.resize(idx + 1);
+        respQueues.resize(idx + 1);
+        inFlight.resize(idx + 1);
+        retryResp.resize(idx + 1, false);
+    }
+}
+
+void
+ScratchpadMemory::serviceResponses(PortID idx)
+{
+    if (retryResp[idx]) {
+        return;
+    }
+
+    while (!respQueues[idx].empty() &&
+           respQueues[idx].front().remaining == Cycles(0)) {
+        PacketPtr pkt = respQueues[idx].front().pkt;
+
+        bool ok = false;
+        if (idx == 0) {
+            ok = port.sendTimingResp(pkt);
+        } else {
+            ok = spm_ports[idx - 1]->sendTimingResp(pkt);
+        }
+
+        retryResp[idx] = !ok;
+        if (retryResp[idx]) {
+            return;
+        }
+
+        respQueues[idx].pop_front();
+    }
+}
+
+static inline Cycles
+ceilDivToCycles(size_t bytes, unsigned bytesPerCycle)
+{
+    const unsigned bpc = std::max(1u, bytesPerCycle);
+    const size_t cyc = (bytes + bpc - 1) / bpc;
+    // Always make forward progress
+    // (0-byte reqs are weird but avoid deadlock)
+    return Cycles(std::max<size_t>(1, cyc));
+}
+
+void
+ScratchpadMemory::startInFlight(PortID idx)
+{
+    // Caller ensures: !inFlight[idx].active && !reqQueues[idx].empty()
+    PendingReq pr = reqQueues[idx].front();
+    reqQueues[idx].pop_front();
+
+    InFlightReq &inf = inFlight[idx];
+    inf.pkt = pr.pkt;
+    inf.validateAccess = pr.validateAccess;
+    inf.needsResponse = pr.pkt->needsResponse();
+    // Clear any accumulated interconnect delay
+    // (we model service in cycles here)
+    pr.pkt->headerDelay = pr.pkt->payloadDelay = 0;
+    inf.remainingXfer = ceilDivToCycles(pr.pkt->getSize(), bytesPerCycle);
+    inf.active = true;
+}
+
+void
+ScratchpadMemory::completeInFlight(PortID idx)
+{
+    InFlightReq &inf = inFlight[idx];
+    assert(inf.active && inf.pkt);
+
+    PacketPtr pkt = inf.pkt;
+    const bool needs_resp = inf.needsResponse;
+
+    // Perform the actual memory access at completion time.
+    scratchpadAccess(pkt, inf.validateAccess);
+
+    if (needs_resp) {
+        // scratchpadAccess should have created the response already.
+        assert(pkt->isResponse() || pkt->isError());
+        // Queue response with a per-cycle countdown.
+        // Note: allow 0 cycles to
+        // mean "eligible to send immediately".
+        const Cycles lat = accessLatencyCycles;
+        respQueues[idx].emplace_back(pkt, lat);
+        // If latency is 0, attempt to send now
+        // (otherwise it would wait until
+        // the next tickCycle() due to phase ordering)
+        if (lat == Cycles(0)) {
+            serviceResponses(idx);
+        }
+    } else {
+        pendingDelete.push_back(pkt);
+    }
+
+    // Clear slot
+    inf = InFlightReq{};
+}
+
+bool
+ScratchpadMemory::tickCycle()
+{
+    const unsigned max_issue = std::max(1u, maxReqsPerCycle);
+
+    // Decrement response countdowns and attempt to send ready responses
+    for (PortID idx = 0; idx < respQueues.size(); ++idx) {
+        for (auto &e : respQueues[idx]) {
+            if (e.remaining > Cycles(0)) {
+                e.remaining = e.remaining - Cycles(1);
+            }
+        }
+        serviceResponses(idx);
+    }
+
+    // Advance/complete in-flight transfers and launch new ones
+    for (PortID idx = 0; idx < reqQueues.size(); ++idx) {
+        ensurePortState(idx);
+        unsigned issued = 0;
+
+        // If something is currently in flight, advance it by 1 cycle
+        if (inFlight[idx].active) {
+            if (inFlight[idx].remainingXfer > Cycles(0)) {
+                inFlight[idx].remainingXfer =
+                    inFlight[idx].remainingXfer - Cycles(1);
+            }
+            if (inFlight[idx].remainingXfer == Cycles(0)) {
+                completeInFlight(idx);
+                issued++;
+            }
+        }
+
+        // If idle, we may start (and possibly complete) new requests
+        while (!inFlight[idx].active && !reqQueues[idx].empty() &&
+               issued < max_issue) {
+            startInFlight(idx);
+
+            // Consume 1 cycle immediately for the newly-started request
+            if (inFlight[idx].remainingXfer > Cycles(0)) {
+                inFlight[idx].remainingXfer =
+                    inFlight[idx].remainingXfer - Cycles(1);
+            }
+            if (inFlight[idx].remainingXfer == Cycles(0)) {
+                completeInFlight(idx);
+                issued++;
+            } else {
+                // Now busy; no further starts until it completes
+                break;
+            }
+        }
+    }
+
+    // Delete no-response packets that completed service
+    while (!pendingDelete.empty()) {
+        delete pendingDelete.front();
+        pendingDelete.pop_front();
+    }
+
+    // Decide whether to keep ticking
+    bool keep = false;
+    for (PortID idx = 0; idx < reqQueues.size(); ++idx) {
+        if (!reqQueues[idx].empty()) {
+            keep = true;
+        }
+        if (inFlight[idx].active) {
+            keep = true;
+        }
+    }
+    for (PortID idx = 0; idx < respQueues.size(); ++idx) {
+        if (!respQueues[idx].empty() && !retryResp[idx]) {
+            keep = true;
+        }
+        for (const auto &e : respQueues[idx]) {
+            if (e.remaining > Cycles(0)) {
+                keep = true;
+            }
+        }
+    }
+
+    // If the only remaining condition is retryResp[*],
+    // stop and wait for recvRespRetry()
+    if (!keep) {
+        bool onlyRetryBlock = false;
+        for (bool r : retryResp) {
+            if (r) {
+                onlyRetryBlock = true;
+            }
+        }
+        if (!onlyRetryBlock && drainState() == DrainState::Draining) {
+            DPRINTF(Drain, "Draining of ScratchpadMemory complete\n");
+            signalDrainDone();
+        }
+        return false;
+    }
+    return true;
 }
 
 bool
@@ -294,10 +489,13 @@ ScratchpadMemory::scratchpadAccess(PacketPtr pkt, bool validateAccess)
 void
 ScratchpadMemory::init()
 {
-    // allow unconnected memories as this is used in several ruby
-    // systems at the moment
     if (port.isConnected()) {
         port.sendRangeChange();
+    }
+    for (auto p : spm_ports) {
+        if (p && p->isConnected()) {
+            p->sendRangeChange();
+        }
     }
     initial = true;
 }
@@ -309,7 +507,11 @@ ScratchpadMemory::recvAtomic(PacketPtr pkt, bool validateAccess)
                                      "is responding");
 
     scratchpadAccess(pkt, validateAccess);
-    return getLatency();
+    // Atomic latency: convert accessLatencyCycles
+    // to ticks using engine clock.
+    const Cycles lat =
+        (accessLatencyCycles == Cycles(0)) ? Cycles(0) : accessLatencyCycles;
+    return tickEngine->clockPeriod() * lat;
 }
 
 Tick
@@ -331,11 +533,40 @@ ScratchpadMemory::recvFunctional(PacketPtr pkt)
     functionalAccess(pkt);
 
     bool done = false;
-    auto p = packetQueue.begin();
-    // potentially update the packets in our packet queue as well
-    while (!done && p != packetQueue.end()) {
-        done = pkt->trySatisfyFunctional(p->pkt);
-        ++p;
+
+    for (auto &q : reqQueues) {
+        for (auto &e : q) {
+            if (done) {
+                break;
+            }
+            done = pkt->trySatisfyFunctional(e.pkt);
+        }
+        if (done) {
+            break;
+        }
+    }
+    if (!done) {
+        for (auto &inf : inFlight) {
+            if (done) {
+                break;
+            }
+            if (inf.active && inf.pkt) {
+                done = pkt->trySatisfyFunctional(inf.pkt);
+            }
+        }
+    }
+    if (!done) {
+        for (auto &q : respQueues) {
+            for (auto &e : q) {
+                if (done) {
+                    break;
+                }
+                done = pkt->trySatisfyFunctional(e.pkt);
+            }
+            if (done) {
+                break;
+            }
+        }
     }
 
     pkt->popLabel();
@@ -349,155 +580,35 @@ ScratchpadMemory::recvTimingReq(PacketPtr pkt, PortID recvPort,
                                      "is responding");
 
     panic_if(!(pkt->isRead() || pkt->isWrite()),
-             "Should only see read and writes at memory controller, "
+             "Should only see reads and writes at scratchpad memory, "
              "saw %s to %#llx\n",
              pkt->cmdString(), pkt->getAddr());
 
-    PortID idx = recvPort + 1;
+    const PortID idx = recvPort + 1;
+    ensurePortState(idx);
 
-    // we should not get a new request after committing to retry the
-    // current one, but unfortunately the CPU violates this rule, so
-    // simply ignore it for now
-    if (retryReq[idx]) {
-        return false;
-    }
-
-    // if we are busy with a read or write, remember that we have to
-    // retry
-    if (isBusy[idx]) {
-        retryReq[idx] = true;
-        return false;
-    }
-
-    // technically the packet only reaches us after the header delay,
-    // and since this is a memory controller we also need to
-    // deserialise the payload before performing any write operation
-    Tick receive_delay = pkt->headerDelay + pkt->payloadDelay;
+    // We queue and service later (cycle model)
     pkt->headerDelay = pkt->payloadDelay = 0;
-
-    // update the release time according to the bandwidth limit, and
-    // do so with respect to the time it takes to finish this request
-    // rather than long term as it is the short term data rate that is
-    // limited for any real memory
-
-    // calculate an appropriate tick to release to not exceed
-    // the bandwidth limit
-    Tick duration = pkt->getSize() * bandwidth;
-
-    // only consider ourselves busy if there is any need to wait
-    // to avoid extra events being scheduled for (infinitely) fast
-    // memories
-    if (duration != 0) {
-        schedule(releaseEvent[idx], curTick() + duration);
-        releaseTick[idx] = curTick() + duration;
-        isBusy[idx] = true;
-    }
-
-    // go ahead and deal with the packet and put the response in the
-    // queue if there is one
-    bool needsResponse = pkt->needsResponse();
-    recvAtomic(pkt, validateAccess);
-    // turn packet around to go back to requester if response expected
-    if (needsResponse) {
-        // recvAtomic() should already have turned packet into
-        // atomic response
-        assert(pkt->isResponse());
-
-        Tick when_to_send = curTick() + receive_delay + getLatency();
-
-        // typically this should be added at the end, so start the
-        // insertion sort with the last element, also make sure not to
-        // re-order in front of some existing packet with the same
-        // address, the latter is important as this memory effectively
-        // hands out exclusive copies (shared is not asserted)
-        auto i = packetQueue.end();
-        --i;
-        while (i != packetQueue.begin() && when_to_send < i->tick &&
-               !i->pkt->matchAddr(pkt)) {
-            --i;
-        }
-
-        // emplace inserts the element before the position pointed to by
-        // the iterator, so advance it one step
-        packetQueue.emplace(++i, pkt, when_to_send, idx);
-
-        if (!retryResp[idx] && !dequeueEvent.scheduled()) {
-            schedule(dequeueEvent, packetQueue.back().tick);
-            // dequeueTick[idx] = packetQueue.back().tick;
-        }
-    } else {
-        pendingDelete.reset(pkt);
-    }
+    reqQueues[idx].emplace_back(pkt, validateAccess);
+    tickEngine->start();
 
     return true;
 }
 
 void
-ScratchpadMemory::release()
-{
-    // Tick now = curTick();
-    unsigned idx;
-    for (idx = 0; idx < isBusy.size(); idx++) {
-        if ((!releaseEvent[idx].scheduled()) && (isBusy[idx])) {
-            assert(isBusy[idx]);
-            isBusy[idx] = false;
-            if (retryReq[idx]) {
-                retryReq[idx] = false;
-                if (idx == 0) {
-                    port.sendRetryReq();
-                } else {
-                    spm_ports[idx - 1]->sendRetryReq();
-                }
-            }
-        }
-    }
-}
-
-void
-ScratchpadMemory::dequeue()
-{
-    assert(!packetQueue.empty());
-    DeferredPacket deferred_pkt = packetQueue.front();
-    PortID idx = deferred_pkt.origin;
-    if (idx == 0) {
-        retryResp[idx] = !port.sendTimingResp(deferred_pkt.pkt);
-    } else {
-        retryResp[idx] = !spm_ports[idx - 1]->sendTimingResp(deferred_pkt.pkt);
-    }
-
-    if (!retryResp[idx]) {
-        packetQueue.pop_front();
-
-        // if the queue is not empty, schedule the next dequeue event,
-        // otherwise signal that we are drained if we were asked to do so
-        if (!packetQueue.empty()) {
-            // if there were packets that got in-between then we
-            // already have an event scheduled, so use re-schedule
-            reschedule(dequeueEvent,
-                       std::max(packetQueue.front().tick, curTick()), true);
-        } else if (drainState() == DrainState::Draining) {
-            DPRINTF(Drain, "Draining of ScratchpadMemory complete\n");
-            signalDrainDone();
-        }
-    }
-}
-
-Tick
-ScratchpadMemory::getLatency() const
-{
-    return latency +
-           (latency_var
-                ? gem5::Random::genRandom()->random<Tick>(0, latency_var)
-                : 0);
-}
-
-void
 ScratchpadMemory::recvRespRetry(PortID id)
 {
-    PortID idx = id + 1;
-    assert(retryResp[idx]);
+    const PortID idx = id + 1;
+    ensurePortState(idx);
 
-    dequeue();
+    assert(retryResp[idx]);
+    retryResp[idx] = false;
+
+    // Attempt to send anything ready immediately;
+    // if still blocked, we'll wait
+    serviceResponses(idx);
+
+    tickEngine->start();
 }
 
 Port &
@@ -508,16 +619,8 @@ ScratchpadMemory::getPort(const std::string &if_name, PortID idx)
     } else if (if_name == "spm_ports") {
         if (idx >= spm_ports.size()) {
             spm_ports.resize((idx + 1), nullptr);
-            const std::string releaseEventName =
-                name() + "_release[" + std::to_string(idx + 1) + "]";
-            releaseEvent.resize(
-                (idx + 2),
-                EventFunctionWrapper([this] { release(); }, releaseEventName));
-            releaseTick.resize((idx + 2), 0);
-            isBusy.resize((idx + 2), false);
-            retryReq.resize((idx + 2), false);
-            retryResp.resize((idx + 2), false);
         }
+        ensurePortState(idx + 1);
         if (spm_ports[idx] == nullptr) {
             const std::string portName =
                 name() + ".spm_ports[" + std::to_string(idx) + "]";
@@ -531,13 +634,37 @@ ScratchpadMemory::getPort(const std::string &if_name, PortID idx)
 DrainState
 ScratchpadMemory::drain()
 {
-    if (!packetQueue.empty()) {
-        DPRINTF(Drain, "ScratchpadMemory Queue has requests, "
-                       "waiting to drain\n");
-        return DrainState::Draining;
-    } else {
-        return DrainState::Drained;
+    for (const auto &q : reqQueues) {
+        if (!q.empty()) {
+            DPRINTF(
+                Drain,
+                "ScratchpadMemory has pending requests, waiting to drain\n");
+            return DrainState::Draining;
+        }
     }
+    for (const auto &inf : inFlight) {
+        if (inf.active) {
+            DPRINTF(Drain, "ScratchpadMemory has an in-flight request, "
+                           "waiting to drain\n");
+            return DrainState::Draining;
+        }
+    }
+    for (const auto &q : respQueues) {
+        if (!q.empty()) {
+            DPRINTF(
+                Drain,
+                "ScratchpadMemory has pending responses, waiting to drain\n");
+            return DrainState::Draining;
+        }
+    }
+    for (auto r : retryResp) {
+        if (r) {
+            DPRINTF(Drain, "ScratchpadMemory awaiting response retry, "
+                           "waiting to drain\n");
+            return DrainState::Draining;
+        }
+    }
+    return DrainState::Drained;
 }
 
 ScratchpadMemory::MemoryPort::MemoryPort(const std::string &_name,

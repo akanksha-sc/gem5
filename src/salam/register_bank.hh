@@ -35,33 +35,26 @@
 #ifndef __SALAM_REGISTER_BANK_HH__
 #define __SALAM_REGISTER_BANK_HH__
 
+#include <deque>
+#include <list>
 #include <vector>
 
 #include "mem/abstract_mem.hh"
 #include "mem/port.hh"
 #include "mem/tport.hh"
+#include "salam/tick_engine.hh"
 
 using namespace gem5;
 using namespace memory;
 
 #include "params/RegisterBank.hh"
 
-class RegisterBank : public AbstractMemory
+class RegisterBank : public AbstractMemory, public SALAM::CycleTicked
 {
   public:
     PARAMS(RegisterBank);
     RegisterBank(const RegisterBankParams &p);
     void registerAccess(PacketPtr pkt);
-
-  private:
-    class DeferredPacket
-    {
-      public:
-        const Tick tick;
-        const PacketPtr pkt;
-
-        DeferredPacket(PacketPtr _pkt, Tick _tick) : tick(_tick), pkt(_pkt) {}
-    };
 
     class RegPort : public ResponsePort
     {
@@ -118,10 +111,10 @@ class RegisterBank : public AbstractMemory
 
       protected:
         Tick
-        recvAtomic(PacketPtr pkt)
+        recvAtomic(PacketPtr pkt) override
         {
             memory->registerAccess(pkt);
-            return memory->getDeltaTime();
+            return memory->getAccessLatency(pkt);
         }
         AddrRangeList
         getAddrRanges() const override
@@ -141,40 +134,49 @@ class RegisterBank : public AbstractMemory
     LoadPort load;
 
     /**
-     * Container for register deltas. Copied to pmem on delta events.
+     * Container for register deltas. Copied to pmem on visibility events.
      */
     uint8_t *deltaAddr;
-    /**
-     * Latency of a delta cycle in the register bank
-     */
-    const Tick deltaTime;
-    /**
-     * Internal (unbounded) storage to mimic the delay caused by the
-     * delta timing of writes. Note that this is where the packet spends
-     * the memory latency.
-     */
-    std::list<DeferredPacket> packetQueue;
 
     /**
-     * Remember if we failed to send a response and are awaiting a
-     * retry. This is only used as a check.
+     * Cycle tick engine used to drive internal register bank timing.
+     */
+    SALAMTickEngine *tickEngine;
+
+    /**
+     * Cycle-based timing parameters.
+     */
+    const Cycles readLatencyCycles;
+    const Cycles writeVisibilityCycles;
+
+    struct DeferredResp
+    {
+        PacketPtr pkt;
+        Cycles remaining;
+
+        DeferredResp(PacketPtr _pkt, Cycles _remaining)
+            : pkt(_pkt), remaining(_remaining)
+        {}
+    };
+
+    /**
+     * Response queue with per-packet countdown (in cycles).
+     */
+    std::deque<DeferredResp> respQueue;
+
+    /**
+     * Pending delta commit countdown (in cycles).
+     */
+    bool deltaPending;
+    Cycles deltaRemaining;
+
+    /**
+     * Remember if we failed to send a response and are awaiting a retry.
      */
     bool retryResp;
 
-    /**
-     * Dequeue a packet from our internal packet queue and move it to
-     * the port where it will be sent as soon as possible.
-     */
-    void dequeue();
-    EventFunctionWrapper dequeueEvent;
-
-    /**
-     * Handle the delta cycle of the registers in the bank.
-     * Copies updated data at deltaAddr to the storage buffer in pmemAddr.
-     * Calls dequeue() to send packet responses.
-     */
-    void delta();
-    EventFunctionWrapper deltaEvent;
+    Tick getAccessLatency(PacketPtr pkt) const;
+    void serviceResponses();
 
   public:
     DrainState drain() override;
@@ -182,11 +184,7 @@ class RegisterBank : public AbstractMemory
     Port &getPort(const std::string &if_name,
                   PortID idx = InvalidPortID) override;
     void init() override;
-    Tick
-    getDeltaTime()
-    {
-        return deltaTime;
-    }
+    bool tickCycle() override;
 
   protected:
     Tick recvAtomic(PacketPtr pkt);

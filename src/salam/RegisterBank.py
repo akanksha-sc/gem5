@@ -41,4 +41,11 @@ class RegisterBank(AbstractMemory):
 
     reg_port = ResponsePort("Responder port for private acclerator accesses")
     load_port = ResponsePort("Responder port for preloading the registers")
-    delta_time = Param.Latency("10ns", "Request to response latency")
+    # Cycle-based internal timing (clock-domain driven via SALAMTickEngine)
+    tick_engine = Param.SALAMTickEngine(
+        Parent.any, "Cycle tick engine driving this register bank"
+    )
+    read_latency_cycles = Param.Cycles(1, "Read response latency in cycles")
+    write_visibility_cycles = Param.Cycles(
+        1, "Write visibility/response latency in cycles"
+    )
