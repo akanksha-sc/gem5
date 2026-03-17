@@ -185,12 +185,27 @@ def open_yaml(yml_path: str):
 def _normalize_clock_choice(v, default):
     if v is None:
         return default
+
     s = str(v).strip().lower()
-    return s if s in ("acc", "sys") else default
+
+    valid = (
+        "sys",
+        "acc",
+        "acc_compute",
+        "acc_mem",
+        "acc_dma",
+        "acc_localbus",
+    )
+
+    return s if s in valid else default
 
 
 def _extract_interconnect_clocks(config_docs, inherited=None):
-    result = {"local": "acc", "coh": "sys"}
+    # Default SALAM interconnect split for the explicit-domain model.
+    # local bus defaults to the accelerator-local interconnect domain.
+    # coherency bus defaults to the system / uncore domain.
+    result = {"local": "acc_localbus", "coh": "sys"}
+
     if inherited:
         result.update(inherited)
 

@@ -45,8 +45,14 @@ def AccConfig(acc, bench_file, config_file):
     # Initialize LLVMInterface Objects
     acc.llvm_interface = LLVMInterface()
 
+    # Bind the LLVM execution engine to the parent accelerator's clock
+    # domain so callers do not need to patch the child separately after
+    # AccConfig() runs. This assumes acc.clk_domain has already been assigned.
+    acc.llvm_interface.clk_domain = acc.clk_domain
+
     # Benchmark path
     acc.llvm_interface.in_file = bench_file
+
     M5_Path = os.getenv("ACC_BENCH_PATH")
     benchname = os.path.splitext(os.path.basename(bench_file))[0]
 

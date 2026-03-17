@@ -34,14 +34,24 @@
 BENCH=""
 BENCH_PATH=""
 CONFIG_NAME=""
-FLAGS=""
+FLAGS="NoncoherentDma"
 BUILD=True
 DEBUG=False
 PRINT_TO_FILE=False
 VALGRIND=False
-# Optional acc clock/voltage
+# Legacy ACC_CLOCK / ACC_VOLTAGE are compatibility aliases for compute
 ACC_CLOCK=""
 ACC_VOLTAGE=""
+
+# Explicit accelerator subdomain clocks/voltages
+ACC_COMPUTE_CLOCK=""
+ACC_COMPUTE_VOLTAGE=""
+ACC_MEM_CLOCK=""
+ACC_MEM_VOLTAGE=""
+ACC_DMA_CLOCK=""
+ACC_DMA_VOLTAGE=""
+ACC_LOCALBUS_CLOCK=""
+ACC_LOCALBUS_VOLTAGE=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -95,6 +105,46 @@ while [[ $# -gt 0 ]]; do
       ;;
     --acc-voltage)
       ACC_VOLTAGE="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --acc-compute-clock)
+      ACC_COMPUTE_CLOCK="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --acc-compute-voltage)
+      ACC_COMPUTE_VOLTAGE="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --acc-mem-clock)
+      ACC_MEM_CLOCK="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --acc-mem-voltage)
+      ACC_MEM_VOLTAGE="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --acc-dma-clock)
+      ACC_DMA_CLOCK="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --acc-dma-voltage)
+      ACC_DMA_VOLTAGE="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --acc-localbus-clock)
+      ACC_LOCALBUS_CLOCK="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --acc-localbus-voltage)
+      ACC_LOCALBUS_VOLTAGE="$2"
       shift # past argument
       shift # past value
       ;;
@@ -172,11 +222,39 @@ if [ "${FLAGS}"  != "" ]; then
 fi
 
 ACC_OPTS=""
+
+# Legacy compatibility aliases for the compute domain
 if [ "$ACC_CLOCK" != "" ]; then
   ACC_OPTS+=" --acc-clock=$ACC_CLOCK"
 fi
 if [ "$ACC_VOLTAGE" != "" ]; then
   ACC_OPTS+=" --acc-voltage=$ACC_VOLTAGE"
+fi
+
+# Explicit accelerator subdomain operating points
+if [ "$ACC_COMPUTE_CLOCK" != "" ]; then
+  ACC_OPTS+=" --acc-compute-clock=$ACC_COMPUTE_CLOCK"
+fi
+if [ "$ACC_COMPUTE_VOLTAGE" != "" ]; then
+  ACC_OPTS+=" --acc-compute-voltage=$ACC_COMPUTE_VOLTAGE"
+fi
+if [ "$ACC_MEM_CLOCK" != "" ]; then
+  ACC_OPTS+=" --acc-mem-clock=$ACC_MEM_CLOCK"
+fi
+if [ "$ACC_MEM_VOLTAGE" != "" ]; then
+  ACC_OPTS+=" --acc-mem-voltage=$ACC_MEM_VOLTAGE"
+fi
+if [ "$ACC_DMA_CLOCK" != "" ]; then
+  ACC_OPTS+=" --acc-dma-clock=$ACC_DMA_CLOCK"
+fi
+if [ "$ACC_DMA_VOLTAGE" != "" ]; then
+  ACC_OPTS+=" --acc-dma-voltage=$ACC_DMA_VOLTAGE"
+fi
+if [ "$ACC_LOCALBUS_CLOCK" != "" ]; then
+  ACC_OPTS+=" --acc-localbus-clock=$ACC_LOCALBUS_CLOCK"
+fi
+if [ "$ACC_LOCALBUS_VOLTAGE" != "" ]; then
+  ACC_OPTS+=" --acc-localbus-voltage=$ACC_LOCALBUS_VOLTAGE"
 fi
 
 RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \

@@ -89,21 +89,110 @@ def addHWAccOptions(parser):
         help="""Name of benchmark to accelerate""",
         default="",
     )
-    # Dedicated accelerator clock/voltage domains
-    # (defaults to system domains)
+    # Dedicated accelerator clock/voltage domains.
+    # Legacy --acc-clock/--acc-voltage are retained as compatibility aliases
+    # for the accelerator compute domain.
     parser.add_argument(
         "--acc-clock",
         action="store",
         type=str,
         default=None,
-        help="Accelerator clock (e.g., 1GHz). Defaults to --sys-clock.",
+        help=(
+            "Legacy accelerator clock alias for --acc-compute-clock "
+            "(e.g., 1GHz). Defaults to --sys-clock."
+        ),
     )
     parser.add_argument(
         "--acc-voltage",
         action="store",
         type=str,
         default=None,
-        help="Accelerator voltage (e.g., 1.0V). Defaults to --sys-voltage.",
+        help=(
+            "Legacy accelerator voltage alias for --acc-compute-voltage "
+            "(e.g., 1.0V). Defaults to --sys-voltage."
+        ),
+    )
+
+    # Explicit accelerator subdomain clocks/voltages.
+    parser.add_argument(
+        "--acc-compute-clock",
+        action="store",
+        type=str,
+        default=None,
+        help=(
+            "Accelerator compute clock (e.g., 1GHz). "
+            "Defaults to --acc-clock if set, else --sys-clock."
+        ),
+    )
+    parser.add_argument(
+        "--acc-compute-voltage",
+        action="store",
+        type=str,
+        default=None,
+        help=(
+            "Accelerator compute voltage (e.g., 1.0V). "
+            "Defaults to --acc-voltage if set, else --sys-voltage."
+        ),
+    )
+    parser.add_argument(
+        "--acc-mem-clock",
+        action="store",
+        type=str,
+        default=None,
+        help=(
+            "Accelerator local-memory clock. Defaults to "
+            "--acc-compute-clock if set, else compute-domain default."
+        ),
+    )
+    parser.add_argument(
+        "--acc-mem-voltage",
+        action="store",
+        type=str,
+        default=None,
+        help=(
+            "Accelerator local-memory voltage. Defaults to "
+            "--acc-compute-voltage if set, else compute-domain default."
+        ),
+    )
+    parser.add_argument(
+        "--acc-dma-clock",
+        action="store",
+        type=str,
+        default=None,
+        help=(
+            "Accelerator DMA clock. Defaults to --acc-mem-clock if set, "
+            "else memory-domain default."
+        ),
+    )
+    parser.add_argument(
+        "--acc-dma-voltage",
+        action="store",
+        type=str,
+        default=None,
+        help=(
+            "Accelerator DMA voltage. Defaults to --acc-mem-voltage if set, "
+            "else memory-domain default."
+        ),
+    )
+    parser.add_argument(
+        "--acc-localbus-clock",
+        action="store",
+        type=str,
+        default=None,
+        help=(
+            "Accelerator local interconnect clock. Defaults to "
+            "--acc-mem-clock if set, else memory-domain default."
+        ),
+    )
+    parser.add_argument(
+        "--acc-localbus-voltage",
+        action="store",
+        type=str,
+        default=None,
+        help=(
+            "Accelerator local interconnect voltage. Defaults to "
+            "--acc-mem-voltage if set, else memory-domain default."
+        ),
     )
 
 
@@ -174,16 +263,78 @@ def build_test_system(np):
         clock=args.cpu_clock, voltage_domain=test_sys.cpu_voltage_domain
     )
 
-    # Create a dedicated accelerator voltage domain
-    test_sys.acc_voltage_domain = VoltageDomain(
-        voltage=(args.acc_voltage if args.acc_voltage else args.sys_voltage)
+    #   compute  <- legacy acc_* <- sys_*
+    #   mem      <- compute
+    #   dma      <- mem
+    #   localbus <- mem
+    acc_compute_voltage = (
+        args.acc_compute_voltage
+        if args.acc_compute_voltage
+        else (args.acc_voltage if args.acc_voltage else args.sys_voltage)
     )
-    # Create a source clock for the accelerators and set the clock period
-    test_sys.acc_clk_domain = SrcClockDomain(
-        clock=(args.acc_clock if args.acc_clock else args.sys_clock),
-        voltage_domain=test_sys.acc_voltage_domain,
+    acc_compute_clock = (
+        args.acc_compute_clock
+        if args.acc_compute_clock
+        else (args.acc_clock if args.acc_clock else args.sys_clock)
     )
-    # (Acc clock/voltage domains default to system domains if not set)
+
+    acc_mem_voltage = (
+        args.acc_mem_voltage if args.acc_mem_voltage else acc_compute_voltage
+    )
+    acc_mem_clock = (
+        args.acc_mem_clock if args.acc_mem_clock else acc_compute_clock
+    )
+
+    acc_dma_voltage = (
+        args.acc_dma_voltage if args.acc_dma_voltage else acc_mem_voltage
+    )
+    acc_dma_clock = args.acc_dma_clock if args.acc_dma_clock else acc_mem_clock
+
+    acc_localbus_voltage = (
+        args.acc_localbus_voltage
+        if args.acc_localbus_voltage
+        else acc_mem_voltage
+    )
+    acc_localbus_clock = (
+        args.acc_localbus_clock if args.acc_localbus_clock else acc_mem_clock
+    )
+
+    # Explicit accelerator compute domain.
+    test_sys.acc_compute_voltage_domain = VoltageDomain(
+        voltage=acc_compute_voltage
+    )
+    test_sys.acc_compute_clk_domain = SrcClockDomain(
+        clock=acc_compute_clock,
+        voltage_domain=test_sys.acc_compute_voltage_domain,
+    )
+
+    # Explicit accelerator local-memory domain.
+    test_sys.acc_mem_voltage_domain = VoltageDomain(voltage=acc_mem_voltage)
+    test_sys.acc_mem_clk_domain = SrcClockDomain(
+        clock=acc_mem_clock,
+        voltage_domain=test_sys.acc_mem_voltage_domain,
+    )
+
+    # Explicit accelerator DMA domain.
+    test_sys.acc_dma_voltage_domain = VoltageDomain(voltage=acc_dma_voltage)
+    test_sys.acc_dma_clk_domain = SrcClockDomain(
+        clock=acc_dma_clock,
+        voltage_domain=test_sys.acc_dma_voltage_domain,
+    )
+
+    # Explicit accelerator local interconnect domain.
+    test_sys.acc_localbus_voltage_domain = VoltageDomain(
+        voltage=acc_localbus_voltage
+    )
+    test_sys.acc_localbus_clk_domain = SrcClockDomain(
+        clock=acc_localbus_clock,
+        voltage_domain=test_sys.acc_localbus_voltage_domain,
+    )
+
+    # Backward-compatible aliases so existing configs that still bind to
+    # test_sys.acc_* continue to work during the transition.
+    test_sys.acc_voltage_domain = test_sys.acc_compute_voltage_domain
+    test_sys.acc_clk_domain = test_sys.acc_compute_clk_domain
 
     if buildEnv["USE_RISCV_ISA"]:
         test_sys.workload.bootloader = args.kernel

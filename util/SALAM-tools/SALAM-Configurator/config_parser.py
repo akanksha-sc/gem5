@@ -53,7 +53,7 @@ class AccCluster:
         # sys config YAML file when HWPath isn't defined
         self.hw_config_path = hw_config_path
         self.interconnect_clocks = interconnect_clocks or {
-            "local": "acc",
+            "local": "acc_localbus",
             "coh": "sys",
         }
         self.process_config(working_dir=working_dir)
@@ -312,25 +312,18 @@ class AccCluster:
             "	external_range = [AddrRange(0x00000000, local_low-1),"
             " AddrRange(local_high+1, 0xFFFFFFFF)]"
         )
-        lines.append("  # Bind cluster interconnect clock domains (YAML knob)")
-        if str(self.interconnect_clocks.get("local", "acc")).lower() == "acc":
-            lines.append(
-                "	clstr.local_bus.clk_domain = getattr("
-                "system, 'acc_clk_domain', system.clk_domain)"
-            )
-        else:
-            lines.append("	clstr.local_bus.clk_domain = " "system.clk_domain")
-
-        if str(self.interconnect_clocks.get("coh", "sys")).lower() == "acc":
-            lines.append(
-                "	clstr.coherency_bus.clk_domain = getattr("
-                "system, 'acc_clk_domain', system.clk_domain)"
-            )
-        else:
-            lines.append(
-                "	clstr.coherency_bus.clk_domain = " "system.clk_domain"
-            )
-
+        # Emit explicit cluster-domain bindings.
+        # local_bus follows the accelerator local interconnect domain.
+        # coherency_bus remains on the system / uncore domain.
+        lines.append(
+            "	# Bind cluster interconnect clock domains (generated default)"
+        )
+        lines.append(
+            "	clstr.local_bus.clk_domain = getattr("
+            "system, 'acc_localbus_clk_domain', "
+            "getattr(system, 'acc_clk_domain', system.clk_domain))"
+        )
+        lines.append("	clstr.coherency_bus.clk_domain = system.clk_domain")
         lines.append("")
         lines.append(
             "	system.iobus.mem_side_ports = clstr.local_bus.cpu_side_ports"
@@ -420,19 +413,19 @@ class Accelerator:
                 + str(self.size)
                 + ")"
             )
-
-        # Bind accelerator control/compute plane to accelerator clock domain.
+        # Bind generated accelerator control / compute plane to the
+        # explicit accelerator compute domain. Fall back to the legacy
+        # accelerator domain alias during transition.
         lines.append(
-            "clstr." + self.name + ".clk_domain = system.acc_clk_domain"
+            "clstr." + self.name + ".clk_domain = getattr("
+            "system, 'acc_compute_clk_domain', "
+            "getattr(system, 'acc_clk_domain', system.clk_domain))"
         )
-
         lines.append("AccConfig(clstr." + self.name + ", ir, hw_config)")
-
-        # Bind post-AccConfig children to accelerator clock domain.
         lines.append(
-            "clstr."
-            + self.name
-            + ".llvm_interface.clk_domain = system.acc_clk_domain"
+            "clstr." + self.name + ".llvm_interface.clk_domain = getattr("
+            "system, 'acc_compute_clk_domain', "
+            "getattr(system, 'acc_clk_domain', system.clk_domain))"
         )
 
         lines.append("")
@@ -555,9 +548,13 @@ class StreamDMA:
             + ")"
         )
 
-        # Bind DMA controller logic to accelerator clock domain.
+        # Bind stream DMA controller logic to the explicit accelerator
+        # DMA domain. Fall back to the legacy accelerator domain alias during
+        # transition.
         lines.append(
-            "clstr." + self.name + ".clk_domain = system.acc_clk_domain"
+            "clstr." + self.name + ".clk_domain = getattr("
+            "system, 'acc_dma_clk_domain', "
+            "getattr(system, 'acc_clk_domain', system.clk_domain))"
         )
         lines.append(
             dmaPath
@@ -635,9 +632,13 @@ class DMA:
             + ")"
         )
 
-        # Bind DMA controller logic to accelerator clock domain
+        # Bind noncoherent DMA controller logic to the explicit
+        # accelerator DMA domain. Fall back to the legacy accelerator domain
+        # alias during transition.
         lines.append(
-            "clstr." + self.name + ".clk_domain = system.acc_clk_domain"
+            "clstr." + self.name + ".clk_domain = getattr("
+            "system, 'acc_dma_clk_domain', "
+            "getattr(system, 'acc_clk_domain', system.clk_domain))"
         )
         lines.append(
             dmaPath
@@ -753,12 +754,13 @@ class Variable:
                 + str(self.bufferSize)
                 + ")"
             )
-
-            # Bind stream buffer arbitration to accelerator clock domain.
+            # Bind stream buffer arbitration to the explicit accelerator
+            # memory domain. Fall back to the legacy accelerator domain alias
+            # during transition.
             lines.append(
-                "clstr."
-                + self.name.lower()
-                + ".clk_domain = system.acc_clk_domain"
+                "clstr." + self.name.lower() + ".clk_domain = getattr("
+                "system, 'acc_mem_clk_domain', "
+                "getattr(system, 'acc_clk_domain', system.clk_domain))"
             )
             lines.append(
                 "clstr."
@@ -791,13 +793,15 @@ class Variable:
                 + self.name.lower()
                 + " = ScratchpadMemory(range = spmRange)"
             )
-            # NOTE: ScratchpadMemory is AbstractMemory (not ClockedObject).
-            # Drive its cycle semantics via a per-memory SALAMTickEngine.
-            # Make the engine a child of the memory so engine.owner defaults
-            # to Parent (the memory), satisfying CycleTicked.
+            # Bind the local-memory timing engine to the explicit
+            # accelerator memory domain. Fall back to the legacy accelerator
+            # domain alias during transition.
             lines.append(
-                "clstr." + self.name.lower() + ".engine = "
-                "SALAMTickEngine(clk_domain = system.acc_clk_domain)"
+                "clstr."
+                + self.name.lower()
+                + ".engine = SALAMTickEngine(clk_domain = getattr("
+                "system, 'acc_mem_clk_domain', "
+                "getattr(system, 'acc_clk_domain', system.clk_domain)))"
             )
             lines.append(
                 "clstr."
@@ -877,11 +881,15 @@ class Variable:
                 + self.name.lower()
                 + " = RegisterBank(range = regRange)"
             )
-            # NOTE: RegisterBank is AbstractMemory (not ClockedObject).
-            # Drive its cycle semantics via a per-memory SALAMTickEngine.
+            # Bind the register-bank timing engine to the explicit
+            # accelerator memory domain. Fall back to the legacy accelerator
+            # domain alias during transition.
             lines.append(
-                "clstr." + self.name.lower() + ".engine = "
-                "SALAMTickEngine(clk_domain = system.acc_clk_domain)"
+                "clstr."
+                + self.name.lower()
+                + ".engine = SALAMTickEngine(clk_domain = getattr("
+                "system, 'acc_mem_clk_domain', "
+                "getattr(system, 'acc_clk_domain', system.clk_domain)))"
             )
             lines.append(
                 "clstr."
@@ -921,10 +929,13 @@ class Variable:
                 + str(self.size)
                 + "B')"
             )
-
-            # Bind accelerator-local cache to accelerator clock domain.
+            # Generated cache objects default to the coherency / uncore
+            # side of the cluster unless you later choose to model them as
+            # private accelerator-local SRAM structures.
             lines.append(
-                "clstr." + self.name + ".clk_domain = system.acc_clk_domain"
+                "clstr."
+                + self.name
+                + ".clk_domain = clstr.coherency_bus.clk_domain"
             )
             lines.append(
                 "clstr."

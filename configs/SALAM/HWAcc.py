@@ -57,12 +57,17 @@ def makeHWAcc(options, system):
     ################### Creating the Accelerator Cluster #####################
     # Create a new Accelerator Cluster
     system.acctest = AccCluster()
-    # Bind cluster interconnect clock domains (manual script default):
-    # local_bus: acc, coherency_bus: sys
+
+    # Bind cluster interconnects to explicit domains.
+    # local_bus follows the accelerator local interconnect domain.
+    # coherency_bus remains on the system / uncore domain.
     system.acctest.local_bus.clk_domain = getattr(
-        system, "acc_clk_domain", system.clk_domain
+        system,
+        "acc_localbus_clk_domain",
+        getattr(system, "acc_clk_domain", system.clk_domain),
     )
     system.acctest.coherency_bus.clk_domain = system.clk_domain
+
     local_low = 0x2F000000
     local_high = 0x2FFFFFFF
     local_range = AddrRange(local_low, local_high)
@@ -80,18 +85,32 @@ def makeHWAcc(options, system):
     ################### Adding Accelerators to Cluster #######################
     # Add an accelerator to the cluster
     system.acctest.acc = CommInterface(devicename=options.accbench)
-    # Bind accelerator control/compute plane to accelerator clock domain.
-    system.acctest.acc.clk_domain = system.acc_clk_domain
+
+    # Bind the accelerator control / compute plane to the explicit
+    # accelerator compute domain. Fall back to the legacy accelerator domain
+    # alias during transition.
+    system.acctest.acc.clk_domain = getattr(
+        system,
+        "acc_compute_clk_domain",
+        getattr(system, "acc_clk_domain", system.clk_domain),
+    )
     AccConfig(system.acctest.acc, acc_config, acc_bench)
-    # Bind post-AccConfig children to accelerator clock domain.
-    system.acctest.acc.llvm_interface.clk_domain = system.acc_clk_domain
 
     # Add an SPM for the accelerator
     system.acctest.acc_spm = ScratchpadMemory()
+
     # NOTE: ScratchpadMemory is AbstractMemory (not ClockedObject), so it has
     # no clk_domain. Drive it via a per-memory SALAMTickEngine instead.
+
+    # Drive the local memory timing model from the explicit accelerator
+    # memory domain. Fall back to the legacy accelerator domain alias during
+    # transition.
     system.acctest.acc_spm.engine = SALAMTickEngine(
-        clk_domain=system.acc_clk_domain
+        clk_domain=getattr(
+            system,
+            "acc_mem_clk_domain",
+            getattr(system, "acc_clk_domain", system.clk_domain),
+        )
     )
     system.acctest.acc_spm.tick_engine = system.acctest.acc_spm.engine
 
@@ -118,8 +137,13 @@ def makeHWAcc(options, system):
         max_pending=32,
         int_num=95,
     )
-    # Bind DMA controller logic to accelerator clock domain.
-    system.acctest.dma.clk_domain = system.acc_clk_domain
+    # Bind DMA controller logic to the explicit accelerator DMA domain.
+    # Fall back to the legacy accelerator domain alias during transition.
+    system.acctest.dma.clk_domain = getattr(
+        system,
+        "acc_dma_clk_domain",
+        getattr(system, "acc_clk_domain", system.clk_domain),
+    )
     system.acctest._connect_cluster_dma(system, system.acctest.dma)
 
     system.acctest.stream_dma_0 = StreamDma(
@@ -135,8 +159,14 @@ def makeHWAcc(options, system):
     system.acctest.stream_dma_0.pio_delay = "1ns"
     system.acctest.stream_dma_0.rd_int = 210
     system.acctest.stream_dma_0.wr_int = 211
-    # Bind DMA controller logic to accelerator clock domain.
-    system.acctest.stream_dma_0.clk_domain = system.acc_clk_domain
+    # Bind stream DMA controller logic to the explicit accelerator DMA
+    # domain. Fall back to the legacy accelerator domain alias during
+    # transition.
+    system.acctest.stream_dma_0.clk_domain = getattr(
+        system,
+        "acc_dma_clk_domain",
+        getattr(system, "acc_clk_domain", system.clk_domain),
+    )
     system.acctest._connect_dma(system, system.acctest.stream_dma_0)
 
     system.acctest.stream_dma_1 = StreamDma(
@@ -152,5 +182,12 @@ def makeHWAcc(options, system):
     system.acctest.stream_dma_1.pio_delay = "1ns"
     system.acctest.stream_dma_1.rd_int = 212
     system.acctest.stream_dma_1.wr_int = 213
-    system.acctest.stream_dma_1.clk_domain = system.acc_clk_domain
+    # Bind stream DMA controller logic to the explicit accelerator DMA
+    # domain. Fall back to the legacy accelerator domain alias during
+    # transition.
+    system.acctest.stream_dma_1.clk_domain = getattr(
+        system,
+        "acc_dma_clk_domain",
+        getattr(system, "acc_clk_domain", system.clk_domain),
+    )
     system.acctest._connect_dma(system, system.acctest.stream_dma_1)
