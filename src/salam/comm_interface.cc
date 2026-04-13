@@ -110,6 +110,14 @@ CommInterface::MemSidePort::recvReqRetry()
 {
     assert(outstandingPkts.size());
 
+    if (readReq) {
+        owner->noteReadRetryBackpressure();
+    } else if (writeReq) {
+        owner->noteWriteRetryBackpressure();
+    } else {
+        owner->noteRetryBackpressure();
+    }
+
     if (debug()) {
         DPRINTF(CommInterface, "Got a retry...\n");
     }
@@ -149,6 +157,14 @@ void
 CommInterface::SPMPort::recvReqRetry()
 {
     assert(outstandingPkts.size());
+
+    if (readReq) {
+        owner->noteReadRetryBackpressure();
+    } else if (writeReq) {
+        owner->noteWriteRetryBackpressure();
+    } else {
+        owner->noteRetryBackpressure();
+    }
 
     if (debug()) {
         DPRINTF(CommInterface, "Got a retry...\n");
@@ -515,6 +531,7 @@ CommInterface::processMemoryRequests()
                     accRdQ.push_back(port->readReq);
                 }
             } else {
+                noteReadBackpressure();
                 if (debug()) {
                     DPRINTF(CommInterfaceQueues,
                             "Found no ports able to read %d bytes from %lx\n",
@@ -580,6 +597,7 @@ CommInterface::processMemoryRequests()
                     accWrQ.push_back(port->writeReq);
                 }
             } else {
+                noteWriteBackpressure();
                 if (debug()) {
                     DPRINTF(CommInterfaceQueues,
                             "Found no ports able to write %d bytes to %lx\n",
@@ -589,6 +607,7 @@ CommInterface::processMemoryRequests()
             }
         }
     } else {
+        noteAllPortsStalled();
         if (debug()) {
             DPRINTF(CommInterface, "All ports are stalled\n");
         }
@@ -602,6 +621,8 @@ CommInterface::processMemoryRequests()
 void
 CommInterface::tick()
 {
+    resetCycleIfaceStats();
+
     if (debug()) {
         DPRINTF(CommInterface, "Tick!\n");
     }
@@ -646,7 +667,9 @@ CommInterface::tryRead(MemSidePort *port)
     PacketPtr pkt = new Packet(req, MemCmd::ReadReq);
     pkt->allocate();
     readReq->pkt = pkt;
+    readReq->markIssued();
     port->sendPacket(pkt);
+    countIssuedAccess(readReq->currentReadAddr, size, true);
 
     readReq->currentReadAddr += size;
 
@@ -713,7 +736,9 @@ CommInterface::tryWrite(MemSidePort *port)
     uint8_t *pkt_data = (uint8_t *)req->getExtraData();
     pkt->dataDynamic(pkt_data);
     writeReq->pkt = pkt;
+    writeReq->markIssued();
     port->sendPacket(pkt);
+    countIssuedAccess(writeReq->currentWriteAddr, size, false);
 
     writeReq->currentWriteAddr += size;
     writeReq->writeLeft -= size;
@@ -760,7 +785,9 @@ CommInterface::tryRead(SPMPort *port)
     PacketPtr pkt = new Packet(req, MemCmd::ReadReq);
     pkt->allocate();
     readReq->pkt = pkt;
+    readReq->markIssued();
     port->sendPacket(pkt);
+    countIssuedAccess(readReq->currentReadAddr, size, true);
 
     readReq->currentReadAddr += size;
 
@@ -827,7 +854,9 @@ CommInterface::tryWrite(SPMPort *port)
     uint8_t *pkt_data = (uint8_t *)req->getExtraData();
     pkt->dataDynamic(pkt_data);
     writeReq->pkt = pkt;
+    writeReq->markIssued();
     port->sendPacket(pkt);
+    countIssuedAccess(writeReq->currentWriteAddr, size, false);
 
     writeReq->currentWriteAddr += size;
     writeReq->writeLeft -= size;
@@ -853,9 +882,9 @@ CommInterface::tryRead(RegPort *port)
         }
         return;
     }
+    const Addr issuedAddr = readReq->currentReadAddr;
     int size = readReq->readLeft;
-    RequestPtr req =
-        make_shared<Request>(readReq->currentReadAddr, size, flags, masterId);
+    RequestPtr req = make_shared<Request>(issuedAddr, size, flags, masterId);
     if (debug()) {
         DPRINTF(CommInterface,
                 "Trying to read addr: 0x%016x, "
@@ -865,12 +894,14 @@ CommInterface::tryRead(RegPort *port)
     PacketPtr pkt = new Packet(req, MemCmd::ReadReq);
     pkt->allocate();
     readReq->pkt = pkt;
+    readReq->markIssued();
     readReq->currentReadAddr += size;
     readReq->readLeft -= size;
     if (readReq->readLeft <= 0) {
         readReq->needToRead = false;
     }
     port->sendPacket(pkt);
+    countIssuedAccess(issuedAddr, size, true);
 
     if (!(readReq->readLeft > 0)) {
         kick();
@@ -890,6 +921,7 @@ CommInterface::tryWrite(RegPort *port)
         return;
     }
 
+    const Addr issuedAddr = writeReq->currentWriteAddr;
     int size = writeReq->writeLeft;
 
     Request::Flags flags;
@@ -897,8 +929,7 @@ CommInterface::tryWrite(RegPort *port)
     std::memcpy(
         data, &(writeReq->buffer[writeReq->totalLength - writeReq->writeLeft]),
         size);
-    RequestPtr req = make_shared<Request>(writeReq->currentWriteAddr, size,
-                                          flags, masterId);
+    RequestPtr req = make_shared<Request>(issuedAddr, size, flags, masterId);
     req->setExtraData((uint64_t)data);
 
     if (debug()) {
@@ -909,7 +940,7 @@ CommInterface::tryWrite(RegPort *port)
         DPRINTF(CommInterface,
                 "Trying to write to addr: 0x%016x, %d bytes, "
                 "data 0x%08x through port: %s\n",
-                writeReq->currentWriteAddr, size,
+                issuedAddr, size,
                 *((uint64_t *)(&(writeReq->buffer[writeReq->totalLength -
                                                   writeReq->writeLeft]))),
                 port->name());
@@ -919,12 +950,14 @@ CommInterface::tryWrite(RegPort *port)
     uint8_t *pkt_data = (uint8_t *)req->getExtraData();
     pkt->dataDynamic(pkt_data);
     writeReq->pkt = pkt;
+    writeReq->markIssued();
     writeReq->currentWriteAddr += size;
     writeReq->writeLeft -= size;
     if (writeReq->writeLeft <= 0) {
         writeReq->needToWrite = false;
     }
     port->sendPacket(pkt);
+    countIssuedAccess(issuedAddr, size, false);
 
     if (!(writeReq->writeLeft > 0)) {
         kick();
@@ -1237,3 +1270,32 @@ CommInterface::clearMemRequest(MemoryRequest *req, bool isRead)
 void
 CommInterface::startup()
 {}
+
+SalamMemTargetClass
+CommInterface::classifyTargetForStats(Addr add)
+{
+    if (inStreamRange(add)) {
+        return SalamMemTargetClass::Stream;
+    }
+    if (inSPMRange(add)) {
+        return SalamMemTargetClass::SPM;
+    }
+    if (inLocalRange(add)) {
+        return SalamMemTargetClass::Local;
+    }
+    if (inGlobalRange(add)) {
+        return SalamMemTargetClass::Global;
+    }
+    return SalamMemTargetClass::Local;
+}
+
+void
+CommInterface::countIssuedAccess(Addr addr, size_t size, bool is_read)
+{
+    const size_t t = static_cast<size_t>(classifyTargetForStats(addr));
+    const size_t a = is_read ? static_cast<size_t>(SalamAccessKind::Read)
+                             : static_cast<size_t>(SalamAccessKind::Write);
+
+    cycleIfaceStats.memOps[t][a]++;
+    cycleIfaceStats.memBytes[t][a] += size;
+}

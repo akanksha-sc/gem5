@@ -61,6 +61,7 @@ MemoryRequest::MemoryRequest(Addr add, size_t len)
         readsDone[i] = false;
     }
     pkt = NULL;
+    issuedToFabric = false;
 }
 
 MemoryRequest::MemoryRequest(Addr add, const void *data, size_t len)
@@ -86,6 +87,7 @@ MemoryRequest::MemoryRequest(Addr add, const void *data, size_t len)
     readsDone = new bool[length];
     std::memcpy(buffer, data, length);
     pkt = NULL;
+    issuedToFabric = false;
 }
 
 std::string

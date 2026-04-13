@@ -175,9 +175,9 @@ class Instruction : public Value
         return committed;
     }
     bool
-    hasFunctionalUnit()
+    hasFunctionalUnit() const
     {
-        return false;
+        return functional_unit != 0;
     }
     bool
     debug()
@@ -194,6 +194,16 @@ class Instruction : public Value
     getFunctionalUnit()
     {
         return functional_unit;
+    }
+    void
+    setHWInterface(HWInterface *hw)
+    {
+        hw_interface = hw;
+    }
+    HWInterface *
+    getHWInterface() const
+    {
+        return hw_interface;
     }
     virtual bool
     isReturn()
@@ -235,7 +245,14 @@ class Instruction : public Value
     {
         return false;
     }
-    virtual bool launch();
+    enum class LaunchStatus
+    {
+        DeniedNoFU = 0,
+        LaunchedAndCommitted,
+        LaunchedInFlight
+    };
+
+    virtual LaunchStatus launch();
     virtual bool commit();
     virtual bool ready();
     virtual void

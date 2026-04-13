@@ -31,14 +31,19 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 #!/bin/bash
+set -euo pipefail
+
 BENCH=""
 BENCH_PATH=""
 CONFIG_NAME=""
-FLAGS="NoncoherentDma"
+FLAGS="" # "NoncoherentDma"
 BUILD=True
 DEBUG=False
 PRINT_TO_FILE=False
 VALGRIND=False
+OUTDIR=""
+TEST_METRICS=False
+
 # Legacy ACC_CLOCK / ACC_VOLTAGE are compatibility aliases for compute
 ACC_CLOCK=""
 ACC_VOLTAGE=""
@@ -92,6 +97,10 @@ while [[ $# -gt 0 ]]; do
       VALGRIND=True
       shift # past argument
       shift # past value
+      ;;
+    --test-metrics)
+      TEST_METRICS=True
+      shift
       ;;
     --sys-clock)
       SYS_CLOCK="$2"
@@ -186,8 +195,8 @@ if [ "$BENCH_PATH" == "" ]; then
 	BENCH_PATH=$BENCH
 fi
 
-if [ "$OUTDIR" == "" ]; then
-	OUTDIR=BM_ARM_OUT/$BENCH_PATH/
+if [ -z "${OUTDIR:-}" ]; then
+	OUTDIR="BM_ARM_OUT/$BENCH_PATH/"
 fi
 
 if [ ${DEBUG} == True ]; then
@@ -272,9 +281,14 @@ if [ $BUILD == True ]; then
   make all -C "$ACC_BENCH_PATH/$BENCH_PATH"
 fi
 
-if [ ${PRINT_TO_FILE} == True ]; then
-	mkdir -p "$OUTDIR"
+mkdir -p "$OUTDIR"
+
+if [ ${PRINT_TO_FILE} == True ] || [ ${TEST_METRICS} == True ]; then
 	$RUN_SCRIPT > "${OUTDIR}"/debug-trace.txt
 else
 	$RUN_SCRIPT
+fi
+
+if [ ${TEST_METRICS} == True ]; then
+  python3 "$M5_PATH"/util/SALAM-tools/test_metrics.py "$OUTDIR" | tee "${OUTDIR}"/test.log
 fi

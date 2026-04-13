@@ -54,6 +54,7 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit)
                 functional_units->_integer_adder->use_functional_unit();
                 return true;
             }
+            functional_units->_integer_adder->note_deny();
             break;
         }
         case INTMULTI: {
@@ -61,6 +62,7 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit)
                 functional_units->_integer_multiplier->use_functional_unit();
                 return true;
             }
+            functional_units->_integer_multiplier->note_deny();
             break;
         }
         case INTSHIFTER: {
@@ -68,6 +70,7 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit)
                 functional_units->_bit_shifter->use_functional_unit();
                 return true;
             }
+            functional_units->_bit_shifter->note_deny();
             break;
         }
         case INTBITWISE: {
@@ -75,6 +78,7 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit)
                 functional_units->_bitwise_operations->use_functional_unit();
                 return true;
             }
+            functional_units->_bitwise_operations->note_deny();
             break;
         }
         case FPSPADDER: {
@@ -82,6 +86,7 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit)
                 functional_units->_float_adder->use_functional_unit();
                 return true;
             }
+            functional_units->_float_adder->note_deny();
             break;
         }
         case FPDPADDER: {
@@ -89,6 +94,7 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit)
                 functional_units->_double_adder->use_functional_unit();
                 return true;
             }
+            functional_units->_double_adder->note_deny();
             break;
         }
         case FPSPMULTI: {
@@ -96,6 +102,7 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit)
                 functional_units->_float_multiplier->use_functional_unit();
                 return true;
             }
+            functional_units->_float_multiplier->note_deny();
             break;
         }
         case FPSPDIVID: {
@@ -103,6 +110,7 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit)
                 functional_units->_float_divider->use_functional_unit();
                 return true;
             }
+            functional_units->_float_divider->note_deny();
             break;
         }
         case FPDPMULTI: {
@@ -110,6 +118,7 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit)
                 functional_units->_double_multiplier->use_functional_unit();
                 return true;
             }
+            functional_units->_double_multiplier->note_deny();
             break;
         }
         case FPDPDIVID: {
@@ -117,6 +126,7 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit)
                 functional_units->_double_divider->use_functional_unit();
                 return true;
             }
+            functional_units->_double_divider->note_deny();
             break;
         }
         case COMPARE: {
@@ -136,6 +146,7 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit)
                 functional_units->_bit_register->use_functional_unit();
                 return true;
             }
+            functional_units->_bit_register->note_deny();
             break;
         }
         case COUNTER: {
@@ -214,6 +225,74 @@ HWInterface::clearFunctionalUnit(uint64_t unit)
         }
         default: {
             // assert()
+        }
+    }
+}
+
+FunctionalUnitBase *
+HWInterface::getFunctionalUnit(uint64_t functional_unit)
+{
+    switch (functional_unit) {
+        case INTADDER:
+            return functional_units->_integer_adder;
+        case INTMULTI:
+            return functional_units->_integer_multiplier;
+        case INTSHIFTER:
+            return functional_units->_bit_shifter;
+        case INTBITWISE:
+            return functional_units->_bitwise_operations;
+        case FPSPADDER:
+            return functional_units->_float_adder;
+        case FPDPADDER:
+            return functional_units->_double_adder;
+        case FPSPMULTI:
+            return functional_units->_float_multiplier;
+        case FPSPDIVID:
+            return functional_units->_float_divider;
+        case FPDPMULTI:
+            return functional_units->_double_multiplier;
+        case FPDPDIVID:
+            return functional_units->_double_divider;
+        case REGISTER:
+            return functional_units->_bit_register;
+        default:
+            return nullptr;
+    }
+}
+
+void
+HWInterface::resetRuntimeFuStats()
+{
+    for (auto *fu : functional_units->functional_unit_list) {
+        if (fu) {
+            fu->reset_runtime_stats();
+        }
+    }
+}
+
+void
+HWInterface::sampleFuCycle()
+{
+    for (auto *fu : functional_units->functional_unit_list) {
+        if (fu) {
+            fu->sample_cycle();
+        }
+    }
+}
+
+void
+HWInterface::copyFuCycleStats(HW_Cycle_Stats &stats)
+{
+    static constexpr uint64_t fuClassToMacro[kNumFuClasses] = {
+        INTADDER,  INTMULTI,  INTSHIFTER, INTBITWISE, FPSPADDER, FPDPADDER,
+        FPSPMULTI, FPSPDIVID, FPDPMULTI,  FPDPDIVID,  REGISTER};
+    for (size_t i = 0; i < kNumFuClasses; i++) {
+        auto *fu = getFunctionalUnit(fuClassToMacro[i]);
+        if (fu) {
+            stats.fuBusySlots[i] = fu->get_in_use();
+            stats.fuAccepted[i] = fu->get_cycle_accepts();
+            stats.fuDenied[i] = fu->get_cycle_denies();
+            stats.fuPeakBusySlots[i] = fu->get_cycle_peak_in_use();
         }
     }
 }

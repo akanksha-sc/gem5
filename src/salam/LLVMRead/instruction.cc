@@ -47,21 +47,24 @@ namespace SALAM
 //--------------------------------------------------------------------------//
 
 SALAM::Instruction::Instruction(uint64_t id, gem5::SimObject *owner, bool dbg)
-    : Value(id, owner, dbg)
+    : Value(id, owner, dbg), hw_interface(nullptr)
 {
     currentCycle = 0;
 }
 
 SALAM::Instruction::Instruction(uint64_t id, gem5::SimObject *owner, bool dbg,
                                 uint64_t OpCode)
-    : Value(id, owner, dbg), llvmOpCode(OpCode)
+    : Value(id, owner, dbg), llvmOpCode(OpCode), hw_interface(nullptr)
 {
     currentCycle = 0;
 }
 
 SALAM::Instruction::Instruction(uint64_t id, gem5::SimObject *owner, bool dbg,
                                 uint64_t OpCode, uint64_t cycles)
-    : Value(id, owner, dbg), llvmOpCode(OpCode), cycleCount(cycles)
+    : Value(id, owner, dbg),
+      llvmOpCode(OpCode),
+      cycleCount(cycles),
+      hw_interface(nullptr)
 {
     currentCycle = 0;
 }
@@ -71,7 +74,8 @@ SALAM::Instruction::Instruction(uint64_t id, gem5::SimObject *owner, bool dbg,
     : Value(id, owner, dbg),
       llvmOpCode(OpCode),
       cycleCount(cycles),
-      functional_unit(fu)
+      functional_unit(fu),
+      hw_interface(nullptr)
 {
     currentCycle = 0;
 }
@@ -203,35 +207,45 @@ SALAM::Instruction::ready()
     return false;
 }
 
-bool
+SALAM::Instruction::LaunchStatus
 SALAM::Instruction::launch()
 {
     if (hasFunctionalUnit()) {
         if (!hw_interface->availableFunctionalUnit(getFunctionalUnit())) {
-            return false;
-            std::cout << "Waiting on next available FU\n";
-        } else {
+            if (dbg) {
+                DPRINTFS(Runtime, owner,
+                         "||  Launch denied: waiting for FU type %llu\n",
+                         getFunctionalUnit());
+                DPRINTFS(Runtime, owner, "||==launch================\n");
+            }
+            return LaunchStatus::DeniedNoFU;
         }
     }
+
     launched = true;
-    if (getCycleCount() == 0) { // Instruction ready to be committed
+
+    if (getCycleCount() == 0) { // Instruction is committed immediately
         if (dbg) {
             DPRINTFS(Runtime, owner, "||  0 Cycle Instruction\n");
         }
         compute();
         commit();
-    } else {
-        currentCycle++;
-        compute();
+
+        if (dbg) {
+            DPRINTFS(Runtime, owner, "||==Return: LaunchedAndCommitted\n");
+            DPRINTFS(Runtime, owner, "||==launch================\n");
+        }
+        return LaunchStatus::LaunchedAndCommitted;
     }
+
+    currentCycle++;
+    compute();
+
     if (dbg) {
-        DPRINTFS(Runtime, owner, "||==Return: %s\n",
-                 isCommitted() ? "true" : "false");
-    }
-    if (dbg) {
+        DPRINTFS(Runtime, owner, "||==Return: LaunchedInFlight\n");
         DPRINTFS(Runtime, owner, "||==launch================\n");
     }
-    return isCommitted();
+    return LaunchStatus::LaunchedInFlight;
 }
 
 bool

@@ -64,6 +64,10 @@ class MemoryRequest
 
     PacketPtr pkt;
     RequestPort *port;
+    // Has this request ever been handed to a CommInterface port?
+    // Used to distinguish "still queued / issue-backpressured" from
+    // "already issued, now waiting for service/response".
+    bool issuedToFabric;
 
   public:
     MemoryRequest(Addr add, size_t len);
@@ -93,6 +97,17 @@ class MemoryRequest
     getAddress()
     {
         return address;
+    }
+    void
+    markIssued()
+    {
+        issuedToFabric = true;
+    }
+
+    bool
+    hasBeenIssued() const
+    {
+        return issuedToFabric;
     }
     std::string printBuffer();
 };

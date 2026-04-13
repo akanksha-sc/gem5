@@ -80,7 +80,151 @@ class LLVMInterface : public AccComputeUnit
     std::string topName;
     uint32_t scheduling_threshold;
     int cycle;
+    // Debug / sanity metric only
+    // Counts compute-domain runtime cycles where there was active work
+    // in-flight, but no forward progress this cycle
     int stalls;
+
+    // Simulated accelerator metrics
+    uint64_t dynInstsIssued = 0;
+    uint64_t dynInstsCommitted = 0;
+    uint64_t dynLoadsIssued = 0;
+    uint64_t dynLoadsCommitted = 0;
+    uint64_t dynStoresIssued = 0;
+    uint64_t dynStoresCommitted = 0;
+
+    // Compute launch accounting:
+    //   Attempts  = scheduler tried to launch a compute op
+    //   Launched  = launch accepted (immediate commit or in-flight)
+    //   Committed = compute op retired
+    uint64_t dynComputeLaunchAttempts = 0;
+    uint64_t dynComputeLaunched = 0;
+    uint64_t dynComputeCommitted = 0;
+
+    uint64_t dynCallsIssued = 0;
+    uint64_t dynCallsCommitted = 0;
+
+    enum class CycleCause : uint8_t
+    {
+        UsefulCompute = 0,
+        UsefulMemory,
+        UsefulControl,
+        DependencyStall,
+        FuCapacityStall,
+        ComputeLatencyWait,
+        MemoryServiceWait,
+        MemoryIssueBackpressure,
+        ComputeAndMemoryOutstandingWait,
+        SchedulingBlocked,
+        Idle
+    };
+
+    struct CycleSignals
+    {
+        bool anyReservationWork = false;
+        bool anyOutstandingMemory = false;
+        bool anyOutstandingCompute = false;
+
+        bool anyReadyMemory = false;
+        bool anyReadyCompute = false;
+
+        bool dependencyBlocked = false;
+        bool fuDenied = false;
+        bool lockstepBlocked = false;
+        bool thresholdBlocked = false;
+        bool callBlocked = false;
+        bool loadRawHazard = false;
+
+        bool unissuedMemoryReq = false;
+
+        bool reservationNonEmpty = false;
+        bool readQueueNonEmpty = false;
+        bool writeQueueNonEmpty = false;
+        bool computeQueueNonEmpty = false;
+
+        void
+        reset()
+        {
+            *this = CycleSignals{};
+        }
+    };
+
+    CycleSignals cycleSignals;
+
+    // Disjoint cycle breakdown. These must sum to runtime cycles
+    uint64_t usefulComputeCycles = 0;
+    uint64_t usefulMemoryCycles = 0;
+    uint64_t usefulControlCycles = 0;
+    uint64_t dependencyStallCycles = 0;
+    uint64_t fuCapacityStallCycles = 0;
+    uint64_t computeLatencyWaitCycles = 0;
+    uint64_t memoryServiceWaitCycles = 0;
+    uint64_t memoryIssueBackpressureCycles = 0;
+    uint64_t computeAndMemoryOutstandingWaitCycles = 0;
+    uint64_t schedulingBlockedCycles = 0;
+    uint64_t idleCycles = 0;
+
+    // Overlapping diagnostic cycle counters
+    uint64_t loadRawHazardCycles = 0;
+    uint64_t callWaitCycles = 0;
+    uint64_t thresholdBlockedCycles = 0;
+    uint64_t lockstepBlockedCycles = 0;
+    uint64_t memoryBackpressureCycles = 0;
+    uint64_t allPortsStalledCycles = 0;
+    uint64_t portRetryCycles = 0;
+    uint64_t reservationNonEmptyCycles = 0;
+    uint64_t readQueueNonEmptyCycles = 0;
+    uint64_t writeQueueNonEmptyCycles = 0;
+    uint64_t computeQueueNonEmptyCycles = 0;
+
+    uint64_t invocationCount = 0;
+
+    uint64_t aggCycles = 0;
+    uint64_t aggDynInstsIssued = 0;
+    uint64_t aggDynInstsCommitted = 0;
+    uint64_t aggDynLoadsIssued = 0;
+    uint64_t aggDynLoadsCommitted = 0;
+    uint64_t aggDynStoresIssued = 0;
+    uint64_t aggDynStoresCommitted = 0;
+    uint64_t aggDynComputeLaunchAttempts = 0;
+    uint64_t aggDynComputeLaunched = 0;
+    uint64_t aggDynComputeCommitted = 0;
+    uint64_t aggDynCallsIssued = 0;
+    uint64_t aggDynCallsCommitted = 0;
+
+    uint64_t aggUsefulComputeCycles = 0;
+    uint64_t aggUsefulMemoryCycles = 0;
+    uint64_t aggUsefulControlCycles = 0;
+    uint64_t aggDependencyStallCycles = 0;
+    uint64_t aggFuCapacityStallCycles = 0;
+    uint64_t aggComputeLatencyWaitCycles = 0;
+    uint64_t aggMemoryServiceWaitCycles = 0;
+    uint64_t aggMemoryIssueBackpressureCycles = 0;
+    uint64_t aggComputeAndMemoryOutstandingWaitCycles = 0;
+    uint64_t aggSchedulingBlockedCycles = 0;
+    uint64_t aggIdleCycles = 0;
+
+    bool windowStatsEnable;
+    uint32_t windowSize;
+
+    struct WindowStats
+    {
+        uint64_t cycles = 0;
+        uint64_t usefulCompute = 0;
+        uint64_t usefulMemory = 0;
+        uint64_t usefulControl = 0;
+        uint64_t depStall = 0;
+        uint64_t fuStall = 0;
+        uint64_t cmpWait = 0;
+        uint64_t memWait = 0;
+        uint64_t memBpWait = 0;
+        uint64_t bothWait = 0;
+        uint64_t schedBlocked = 0;
+        uint64_t idle = 0;
+    };
+
+    WindowStats curWindow;
+    uint64_t windowIndex = 0;
 
     bool running;
     bool loadOpScheduled;
@@ -115,7 +259,6 @@ class LLVMInterface : public AccComputeUnit
         std::map<MemoryRequest *, uint64_t> writeQueueMap;
         std::map<uint64_t, std::shared_ptr<SALAM::Instruction>> computeQueue;
         std::shared_ptr<SALAM::BasicBlock> previousBB;
-        HW_Cycle_Stats hw_cycle_stats;
         uint32_t scheduling_threshold;
         bool returned = false;
         bool lockstep;
@@ -169,6 +312,42 @@ class LLVMInterface : public AccComputeUnit
         {
             return (computeQueue.find(uid) != computeQueue.end());
         }
+        inline bool
+        hasUnissuedMemRequests() const
+        {
+            for (const auto &it : readQueueMap) {
+                if (!it.first->hasBeenIssued()) {
+                    return true;
+                }
+            }
+            for (const auto &it : writeQueueMap) {
+                if (!it.first->hasBeenIssued()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        int
+        reservationDepth() const
+        {
+            return reservation.size();
+        }
+        int
+        readDepth() const
+        {
+            return readQueue.size();
+        }
+        int
+        writeDepth() const
+        {
+            return writeQueue.size();
+        }
+        int
+        computeDepth() const
+        {
+            return computeQueue.size();
+        }
 
       public:
         ActiveFunction(LLVMInterface *_owner,
@@ -215,6 +394,28 @@ class LLVMInterface : public AccComputeUnit
     std::map<MemoryRequest *, ActiveFunction *> globalReadQueue;
     std::map<MemoryRequest *, ActiveFunction *> globalWriteQueue;
 
+    // One owner-level cycle record per LLVMInterface tick
+    HW_Cycle_Stats tick_hw_cycle_stats;
+
+    // Async memory callbacks can arrive outside the queue-processing flow
+    // Hold exact commit events here until the current owner tick is finalized
+    int pendingLoadsCommitted = 0;
+    int pendingStoresCommitted = 0;
+
+    inline void
+    foldPendingMemStatsIntoTickCycle()
+    {
+        tick_hw_cycle_stats.loadsCommitted += pendingLoadsCommitted;
+        tick_hw_cycle_stats.storesCommitted += pendingStoresCommitted;
+    }
+
+    inline void
+    clearPendingMemStats()
+    {
+        pendingLoadsCommitted = 0;
+        pendingStoresCommitted = 0;
+    }
+
     std::vector<std::shared_ptr<SALAM::Function>> functions;
     std::vector<std::shared_ptr<SALAM::Value>> values;
 
@@ -243,6 +444,28 @@ class LLVMInterface : public AccComputeUnit
     void writeCommit(MemoryRequest *req);
     void dumpModule(llvm::Module *m);
     void printResults();
+    void emitSummaryLine() const;
+    void snapshotQueueDepthStart();
+    void snapshotQueueDepthEnd();
+    void sampleQueueDepthPeaks();
+    int totalReservationDepth() const;
+    int totalReadDepth() const;
+    int totalWriteDepth() const;
+    int totalComputeDepth() const;
+    void captureCommInterfaceCycleStats();
+    void captureFuCycleStats();
+    void captureComputeMemoryOverlapStats();
+    void printTrafficSummary(const HW_Stats_Summary &summary) const;
+    void printResourceSummary(const HW_Stats_Summary &summary) const;
+    void printOverlapSummary(const HW_Stats_Summary &summary) const;
+    void printQueueSummary(const HW_Stats_Summary &summary) const;
+    void updateWindowStats(CycleCause cause);
+    void emitWindowSummary() const;
+    void resetWindowStats();
+    void rollUpCurrentInvocationIntoAggregate();
+    bool hasCurrentInvocationData() const;
+    uint64_t disjointCycleBreakdownTotal() const;
+    void printDisjointCycleBreakdown() const;
     void launchFunction(std::shared_ptr<SALAM::Function> callee,
                         std::shared_ptr<SALAM::Instruction> caller);
     void launchTopFunction();
@@ -277,6 +500,11 @@ class LLVMInterface : public AccComputeUnit
     {
         hwTime = hwTime + timeDelta;
     }
+    // uint64_t
+    // executedNodesDebug() const
+    // {
+    //     return dynInstsCommitted;
+    // }
 };
 
 #endif //__SALAM_LLVM_INTERFACE_HH__

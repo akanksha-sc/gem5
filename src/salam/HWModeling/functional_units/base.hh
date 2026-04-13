@@ -73,9 +73,18 @@ class FunctionalUnitBase
     double _area;
     double _path_delay;
 
-    uint64_t _available;
+    uint64_t _available = 0;
 
-    uint64_t _in_use;
+    uint64_t _in_use = 0;
+    uint64_t _accept_count = 0;
+    uint64_t _deny_count = 0;
+    uint64_t _busy_slot_sum = 0;
+    uint64_t _active_cycles = 0;
+    uint64_t _peak_busy_slots = 0;
+
+    uint64_t _cycle_accepts = 0;
+    uint64_t _cycle_denies = 0;
+    uint64_t _cycle_peak_in_use = 0;
 
   public:
     FunctionalUnitBase();
@@ -116,7 +125,9 @@ class FunctionalUnitBase
           _dynamic_energy(dynamic_energy),
           _leakage_power(leakage_power),
           _area(area),
-          _path_delay(path_delay)
+          _path_delay(path_delay),
+          _available(limit),
+          _in_use(0)
     {}
     std::string
     get_alias()
@@ -251,26 +262,38 @@ class FunctionalUnitBase
     bool
     is_available()
     {
-        return (_in_use >= _available);
+        return (_available == 0) || (_in_use < _available);
     }
     void
     use_functional_unit()
     {
         _in_use++;
+        _accept_count++;
+        _cycle_accepts++;
+        if (_in_use > _peak_busy_slots) {
+            _peak_busy_slots = _in_use;
+        }
+        if (_in_use > _cycle_peak_in_use) {
+            _cycle_peak_in_use = _in_use;
+        }
     }
     void
     clear_functional_unit()
     {
-        _in_use--;
+        if (_in_use > 0) {
+            _in_use--;
+        }
     }
     void
     set_functional_unit_limit(uint64_t available)
     {
+        _limit = available;
         _available = available;
     }
     void
     inc_functional_unit_limit()
     {
+        _limit++;
         _available++;
     }
     uint64_t
@@ -283,6 +306,78 @@ class FunctionalUnitBase
     get_in_use()
     {
         return _in_use;
+    }
+    void
+    note_deny()
+    {
+        _deny_count++;
+        _cycle_denies++;
+    }
+    void
+    sample_cycle()
+    {
+        _busy_slot_sum += _in_use;
+        if (_in_use > 0) {
+            _active_cycles++;
+        }
+        if (_in_use > _peak_busy_slots) {
+            _peak_busy_slots = _in_use;
+        }
+        _cycle_accepts = 0;
+        _cycle_denies = 0;
+        _cycle_peak_in_use = 0;
+    }
+    void
+    reset_runtime_stats()
+    {
+        _accept_count = 0;
+        _deny_count = 0;
+        _busy_slot_sum = 0;
+        _active_cycles = 0;
+        _peak_busy_slots = 0;
+        _cycle_accepts = 0;
+        _cycle_denies = 0;
+        _cycle_peak_in_use = 0;
+    }
+    uint64_t
+    get_accept_count() const
+    {
+        return _accept_count;
+    }
+    uint64_t
+    get_deny_count() const
+    {
+        return _deny_count;
+    }
+    uint64_t
+    get_busy_slot_sum() const
+    {
+        return _busy_slot_sum;
+    }
+    uint64_t
+    get_active_cycles() const
+    {
+        return _active_cycles;
+    }
+    uint64_t
+    get_peak_busy_slots() const
+    {
+        return _peak_busy_slots;
+    }
+    uint64_t
+    get_cycle_accepts() const
+    {
+        return _cycle_accepts;
+    }
+    uint64_t
+    get_cycle_denies() const
+    {
+        return _cycle_denies;
+    }
+    uint64_t
+    get_cycle_peak_in_use() const
+    {
+        return _cycle_peak_in_use;
     }
 };
 #endif // __HWMODEL_FUNCTIONAL_UNIT_BASE_HH__

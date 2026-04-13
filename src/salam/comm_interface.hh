@@ -35,6 +35,7 @@
 #ifndef __SALAM_COMM_INTERFACE_HH__
 #define __SALAM_COMM_INTERFACE_HH__
 
+#include <cstring>
 #include <list>
 #include <queue>
 #include <vector>
@@ -42,6 +43,7 @@
 #include "dev/arm/base_gic.hh"
 #include "dev/io_device.hh"
 #include "params/CommInterface.hh"
+#include "salam/HWModeling/hw_statistics.hh"
 #include "salam/LLVMRead/debug_flags.hh"
 #include "salam/LLVMRead/mem_request.hh"
 #include "salam/acc_compute_unit.hh"
@@ -69,11 +71,135 @@ class CommInterface : public BasicPioDevice
     ByteOrder endian;
     bool debugEnabled;
 
+    struct CycleIfaceStats
+    {
+        bool hadBackpressure = false;
+        bool allPortsStalled = false;
+        bool sawRetry = false;
+
+        bool hadReadBackpressure = false;
+        bool hadWriteBackpressure = false;
+        bool sawReadRetry = false;
+        bool sawWriteRetry = false;
+
+        uint64_t memOps[kNumTargetClasses][kNumAccessKinds] = {};
+        uint64_t memBytes[kNumTargetClasses][kNumAccessKinds] = {};
+
+        void
+        reset()
+        {
+            hadBackpressure = false;
+            allPortsStalled = false;
+            sawRetry = false;
+            hadReadBackpressure = false;
+            hadWriteBackpressure = false;
+            sawReadRetry = false;
+            sawWriteRetry = false;
+            std::memset(memOps, 0, sizeof(memOps));
+            std::memset(memBytes, 0, sizeof(memBytes));
+        }
+    };
+
+    CycleIfaceStats cycleIfaceStats;
+
   public:
     bool
     debug()
     {
         return debugEnabled;
+    }
+    void
+    resetCycleIfaceStats()
+    {
+        cycleIfaceStats.reset();
+    }
+    void
+    noteBackpressure()
+    {
+        cycleIfaceStats.hadBackpressure = true;
+    }
+
+    void
+    noteAllPortsStalled()
+    {
+        cycleIfaceStats.hadBackpressure = true;
+        cycleIfaceStats.allPortsStalled = true;
+    }
+
+    void
+    noteRetryBackpressure()
+    {
+        cycleIfaceStats.hadBackpressure = true;
+        cycleIfaceStats.sawRetry = true;
+    }
+
+    bool
+    hadIssueBackpressureThisCycle() const
+    {
+        return cycleIfaceStats.hadBackpressure;
+    }
+
+    bool
+    allPortsStalledThisCycle() const
+    {
+        return cycleIfaceStats.allPortsStalled;
+    }
+
+    bool
+    sawRetryThisCycle() const
+    {
+        return cycleIfaceStats.sawRetry;
+    }
+    void
+    noteReadBackpressure()
+    {
+        cycleIfaceStats.hadBackpressure = true;
+        cycleIfaceStats.hadReadBackpressure = true;
+    }
+    void
+    noteWriteBackpressure()
+    {
+        cycleIfaceStats.hadBackpressure = true;
+        cycleIfaceStats.hadWriteBackpressure = true;
+    }
+    void
+    noteReadRetryBackpressure()
+    {
+        cycleIfaceStats.hadBackpressure = true;
+        cycleIfaceStats.sawRetry = true;
+        cycleIfaceStats.sawReadRetry = true;
+    }
+    void
+    noteWriteRetryBackpressure()
+    {
+        cycleIfaceStats.hadBackpressure = true;
+        cycleIfaceStats.sawRetry = true;
+        cycleIfaceStats.sawWriteRetry = true;
+    }
+    bool
+    hadReadIssueBackpressureThisCycle() const
+    {
+        return cycleIfaceStats.hadReadBackpressure;
+    }
+    bool
+    hadWriteIssueBackpressureThisCycle() const
+    {
+        return cycleIfaceStats.hadWriteBackpressure;
+    }
+    bool
+    sawReadRetryThisCycle() const
+    {
+        return cycleIfaceStats.sawReadRetry;
+    }
+    bool
+    sawWriteRetryThisCycle() const
+    {
+        return cycleIfaceStats.sawWriteRetry;
+    }
+    const CycleIfaceStats &
+    getCycleIfaceStats() const
+    {
+        return cycleIfaceStats;
     }
 
   protected:
@@ -385,6 +511,9 @@ class CommInterface : public BasicPioDevice
     MemSidePort *getValidStreamPort(Addr add, size_t len, bool read);
     SPMPort *getValidSPMPort(Addr add, size_t len, bool read);
     RegPort *getValidRegPort(Addr add);
+
+    SalamMemTargetClass classifyTargetForStats(Addr add);
+    void countIssuedAccess(Addr addr, size_t size, bool is_read);
 
     CommInterface *comm;
     RequestorID masterId;

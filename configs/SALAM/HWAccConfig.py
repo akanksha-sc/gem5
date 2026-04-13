@@ -74,43 +74,27 @@ def AccConfig(acc, bench_file, config_file):
     acc.hw_interface.cycle_counts = CycleCounts()
     # acc.hw_interface.cycle_counts
 
-    if benchPath[m5PathLen + 1] == "mobilenetv2":
-        fu_yaml = open(config_file)
-        for yaml_inst_list in yaml.safe_load_all(fu_yaml):
-            document = yaml_inst_list["hw_config"]
-            current_acc = yaml_inst_list["hw_config"]["name"] + "_" + benchname
-            if benchPath[9] == current_acc:
-                print(current_acc + " Profile Loaded")
-                print(yaml_inst_list["hw_config"][benchname])
-                inst_list = yaml_inst_list["hw_config"][current_acc][
-                    "instructions"
-                ].keys()
-                for instruction in inst_list:
-                    setattr(
-                        acc.hw_interface.cycle_counts,
-                        instruction,
-                        yaml_inst_list["hw_config"][current_acc][
-                            "instructions"
-                        ][instruction]["runtime_cycles"],
+    def _load_instruction_overrides():
+        if benchPath[m5PathLen + 1] == "mobilenetv2":
+            with open(config_file) as fu_yaml:
+                for yaml_inst_list in yaml.safe_load_all(fu_yaml):
+                    current_acc = (
+                        yaml_inst_list["hw_config"]["name"] + "_" + benchname
                     )
-        fu_yaml.close()
+                    if benchPath[9] == current_acc:
+                        return yaml_inst_list["hw_config"][current_acc][
+                            "instructions"
+                        ]
+            return {}
+        else:
+            with open(config_file) as fu_yaml:
+                yaml_inst_list = yaml.safe_load(fu_yaml)
+            bench_cfg = yaml_inst_list["hw_config"].get(benchname)
+            if bench_cfg is None:
+                return {}
+            return bench_cfg["instructions"]
 
-    else:
-        fu_yaml = open(config_file)
-        yaml_inst_list = yaml.safe_load(fu_yaml)
-        if yaml_inst_list["hw_config"][benchname] is not None:
-            inst_list = yaml_inst_list["hw_config"][benchname][
-                "instructions"
-            ].keys()
-            for instruction in inst_list:
-                setattr(
-                    acc.hw_interface.cycle_counts,
-                    instruction,
-                    yaml_inst_list["hw_config"][benchname]["instructions"][
-                        instruction
-                    ]["runtime_cycles"],
-                )
-        fu_yaml.close()
+    inst_overrides = _load_instruction_overrides()
 
     #  Functional Units
     acc.hw_interface.functional_units = FunctionalUnits()
@@ -125,6 +109,24 @@ def AccConfig(acc, bench_file, config_file):
     acc.hw_interface.functional_units.double_divider = DoubleDivider()
     acc.hw_interface.functional_units.float_adder = FloatAdder()
     acc.hw_interface.functional_units.float_multiplier = FloatMultiplier()
+
+    fu_enum_map = {}
+    for fu_name in [
+        "double_multiplier",
+        "bit_register",
+        "bitwise_operations",
+        "double_adder",
+        "float_divider",
+        "bit_shifter",
+        "integer_multiplier",
+        "integer_adder",
+        "double_divider",
+        "float_adder",
+        "float_multiplier",
+    ]:
+        fu_obj = getattr(acc.hw_interface.functional_units, fu_name, None)
+        if fu_obj is not None and hasattr(fu_obj, "enum_value"):
+            fu_enum_map[int(fu_obj.enum_value)] = fu_obj
 
     #  Instructions
     acc.hw_interface.inst_config = InstConfig()
@@ -180,7 +182,46 @@ def AccConfig(acc, bench_file, config_file):
     acc.hw_interface.inst_config.xor_inst = XorInst()
     acc.hw_interface.inst_config.zext = Zext()
 
+    # Apply instruction-level overrides from hw_config
+    for inst_name, inst_data in inst_overrides.items():
+        if "runtime_cycles" in inst_data:
+            setattr(
+                acc.hw_interface.cycle_counts,
+                inst_name,
+                int(inst_data["runtime_cycles"]),
+            )
+
+        inst_obj = getattr(acc.hw_interface.inst_config, inst_name, None)
+        if inst_obj is None:
+            continue
+
+        if "functional_unit" in inst_data:
+            inst_obj.functional_unit = int(inst_data["functional_unit"])
+        if "functional_unit_limit" in inst_data:
+            inst_obj.functional_unit_limit = int(
+                inst_data["functional_unit_limit"]
+            )
+        if "opcode_num" in inst_data:
+            inst_obj.opcode_num = int(inst_data["opcode_num"])
+        if "runtime_cycles" in inst_data:
+            inst_obj.runtime_cycles = int(inst_data["runtime_cycles"])
+
+    # Apply explicit FU capacities from hw_config.
+    #   functional_unit_limit == 0 => keep legacy/unbounded behavior
+    #   functional_unit_limit > 0  => set explicit capacity
+    for inst_name, inst_data in inst_overrides.items():
+        fu_enum = int(inst_data.get("functional_unit", 0))
+        fu_limit = int(inst_data.get("functional_unit_limit", 0))
+        if fu_limit > 0 and fu_enum in fu_enum_map:
+            fu_obj = fu_enum_map[fu_enum]
+            fu_obj.limit = max(int(getattr(fu_obj, "limit", 0)), fu_limit)
+
     acc.hw_interface.salam_power_model = SALAMPowerModel()
-    acc.hw_interface.hw_statistics = HWStatistics()
+    acc.hw_interface.hw_statistics = HWStatistics(
+        cycle_tracking=True,
+        debug=False,
+        stat_buffer_size=10000,
+        stat_buffer_predefine=2,
+    )
     acc.hw_interface.simulator_config = SimulatorConfig()
     acc.hw_interface.opcodes = InstOpCodes()

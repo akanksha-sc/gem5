@@ -110,15 +110,25 @@ class InstOpCodes : public SimObject
 
     InstOpCodes();
     InstOpCodes(const InstOpCodesParams &p);
+
     void
     update_usage(uint64_t OpCode)
     {
         usage[OpCode]++;
-    };
+    }
+
     uint64_t
     get_usage(uint64_t OpCode)
     {
         return usage[OpCode];
+    }
+
+    void
+    reset_usage()
+    {
+        for (auto &entry : usage) {
+            entry.second = 0;
+        }
     }
 };
 

@@ -362,8 +362,8 @@ class FunctionalUnitGenerator:
             self.base_header_file.write("\t\tdouble _leakage_power;\n")
             self.base_header_file.write("\t\tdouble _area;\n")
             self.base_header_file.write("\t\tdouble _path_delay;\n\n")
-            self.base_header_file.write("\t\tuint64_t _available;\n\n")
-            self.base_header_file.write("\t\tuint64_t _in_use;\n\n")
+            self.base_header_file.write("\t\tuint64_t _available = 0;\n\n")
+            self.base_header_file.write("\t\tuint64_t _in_use = 0;\n\n")
             # methods
 
             # define public members and methods
@@ -435,7 +435,9 @@ class FunctionalUnitGenerator:
                 "\t\t\t_leakage_power(leakage_power),\n"
             )
             self.base_header_file.write("\t\t\t_area(area),\n")
-            self.base_header_file.write("\t\t\t_path_delay(path_delay) { }\n")
+            self.base_header_file.write("\t\t\t_path_delay(path_delay),\n")
+            self.base_header_file.write("\t\t\t_available(limit),\n")
+            self.base_header_file.write("\t\t\t_in_use(0) { }\n")
 
             # Getters / Setters
             self.base_header_file.write(
@@ -518,20 +520,23 @@ class FunctionalUnitGenerator:
                 "\t\tdouble get_path_delay() { return _path_delay; }\n"
             )
             self.base_header_file.write(
-                "\t\tbool is_available() { return (_in_use >= _available); }\n"
+                "\t\tbool is_available()"
+                " { return (_available == 0) || (_in_use < _available); }\n"
             )
             self.base_header_file.write(
                 "\t\tvoid use_functional_unit() { _in_use++; }\n"
             )
             self.base_header_file.write(
-                "\t\tvoid clear_functional_unit() { _in_use--; }\n"
+                "\t\tvoid clear_functional_unit() "
+                "{ if (_in_use > 0) _in_use--; }\n"
             )
             self.base_header_file.write(
                 "\t\tvoid set_functional_unit_limit(uint64_t available)"
-                "{ _available = available; }\n"
+                "{  _limit = available; _available = available; }\n"
             )
             self.base_header_file.write(
-                "\t\tvoid inc_functional_unit_limit() { _available++; }\n"
+                "\t\tvoid inc_functional_unit_limit() "
+                "{ _limit++; _available++; }\n"
             )
             self.base_header_file.write(
                 "\t\tuint64_t get_functional_unit_limit()"
@@ -1176,7 +1181,17 @@ class InstConfigGenerator:
                 "\t\t\tuint32_t functional_unit_limit,\n"
             )
             self.base_header_file.write("\t\t\tuint32_t opcode_num,\n")
-            self.base_header_file.write("\t\t\tuint32_t runtime_cycles) { }\n")
+            self.base_header_file.write("\t\t\tuint32_t runtime_cycles)\n")
+            self.base_header_file.write(
+                "\t\t\t: _functional_unit(functional_unit),\n"
+            )
+            self.base_header_file.write(
+                "\t\t\t  _functional_unit_limit(functional_unit_limit),\n"
+            )
+            self.base_header_file.write("\t\t\t  _opcode_num(opcode_num),\n")
+            self.base_header_file.write(
+                "\t\t\t  _runtime_cycles(runtime_cycles) { }\n"
+            )
 
             # Getters / Setters
             self.base_header_file.write(

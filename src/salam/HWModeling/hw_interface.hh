@@ -71,6 +71,10 @@ class HWInterface : public SimObject
     HWInterface(const HWInterfaceParams &params);
     bool availableFunctionalUnit(uint64_t functional_unit);
     void clearFunctionalUnit(uint64_t functional_unit);
+    FunctionalUnitBase *getFunctionalUnit(uint64_t functional_unit);
+    void resetRuntimeFuStats();
+    void sampleFuCycle();
+    void copyFuCycleStats(HW_Cycle_Stats &stats);
 };
 
 // TODO: Figure out a better way to link floating point instructions
