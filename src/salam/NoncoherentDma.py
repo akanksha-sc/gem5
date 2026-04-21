@@ -41,7 +41,9 @@ class NoncoherentDma(DmaDevice):
     devicename = Param.String("noncoherent_dma", "Name of DMA device")
     cluster_dma = RequestPort("Cluster-side DMA port")
     pio_addr = Param.Addr("Device Address")
-    pio_delay = Param.Latency("100ns", "PIO Latency")
+    mmio_cycles = Param.Cycles(
+        10, "PIO/MMIO response latency in DMA-domain cycles"
+    )
     pio_size = Param.Addr(21, "MMR Size")
     buffer_size = Param.UInt64(1024, "Read buffer size")
     max_pending = Param.Unsigned(8, "Maximum number of pending DMA reads")

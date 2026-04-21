@@ -525,6 +525,7 @@ class CommInterface : public BasicPioDevice
     virtual void tick();
     // Cycle-based scheduling helper
     void kick();
+    Tick mmioBusyTicks() const;
 
     bool running;
     bool computationNeeded;
@@ -545,6 +546,7 @@ class CommInterface : public BasicPioDevice
 
     bool processingDone;
     Cycles processCycles;
+    Cycles mmioCycles;
 
     bool reset_spm;
 

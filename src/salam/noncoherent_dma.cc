@@ -39,7 +39,7 @@ NoncoherentDma::NoncoherentDma(const NoncoherentDmaParams &p)
     : DmaDevice(p),
       devname(p.devicename),
       pioAddr(p.pio_addr),
-      pioDelay(p.pio_delay),
+      mmioCycles(p.mmio_cycles),
       pioSize(p.pio_size),
       bufferSize(p.buffer_size),
       maxPending(p.max_pending),
@@ -69,6 +69,13 @@ NoncoherentDma::NoncoherentDma(const NoncoherentDmaParams &p)
     DST = (uint64_t *)(mmreg + 9);
     LEN = (int *)(mmreg + 17);
     running = false;
+}
+
+Tick
+NoncoherentDma::mmioBusyTicks() const
+{
+    const Cycles c = (mmioCycles == Cycles(0)) ? Cycles(1) : mmioCycles;
+    return clockEdge(c) - curTick();
 }
 
 AddrRangeList
@@ -194,7 +201,7 @@ NoncoherentDma::read(PacketPtr pkt)
     }
 
     pkt->makeAtomicResponse();
-    return pioDelay;
+    return mmioBusyTicks();
 }
 
 Tick
@@ -213,7 +220,7 @@ NoncoherentDma::write(PacketPtr pkt)
         schedule(tickEvent, nextCycle());
     }
     pkt->makeAtomicResponse();
-    return pioDelay;
+    return mmioBusyTicks();
 }
 
 Port &

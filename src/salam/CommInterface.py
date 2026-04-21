@@ -72,6 +72,9 @@ class CommInterface(BasicPioDevice):
     int_num = Param.Int32(-1, "Interrupt number that connects to GIC")
     # Cycle-based internal scheduling period (clock-domain driven)
     process_cycles = Param.Cycles(1, "CommInterface tick period in cycles")
+    mmio_cycles = Param.Cycles(
+        10, "PIO/MMIO response latency in compute-domain cycles"
+    )
     premap_data = Param.Bool(
         False,
         "Whether or not the memory read/write locations for data predefined",

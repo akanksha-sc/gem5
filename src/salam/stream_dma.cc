@@ -42,13 +42,13 @@ StreamDma::StreamDma(const StreamDmaParams &p)
       statusIn(this, false),
       statusOut(this, true),
       pioAddr(p.pio_addr),
-      pioDelay(p.pio_delay),
+      mmioCycles(p.mmio_cycles),
       pioSize(p.pio_size),
       streamAddr(p.stream_addr),
       streamSize(p.stream_size),
       statusAddr(p.status_addr),
       statusSize(p.status_size),
-      memDelay(p.mem_delay),
+      streamLatencyCycles(p.stream_latency_cycles),
       rdBufferSize(p.read_buffer_size),
       wrBufferSize(p.write_buffer_size),
       maxPending(p.max_pending),
@@ -57,7 +57,7 @@ StreamDma::StreamDma(const StreamDmaParams &p)
       rdInt(p.rd_int),
       wrInt(p.wr_int),
       tickEvent(this),
-      bandwidth(p.bandwidth)
+      bytesPerCycle(p.bytes_per_cycle)
 {
     readFifo = new DmaReadFifo(dmaPort, rdBufferSize, maxReqSize, maxPending);
     writeFifo =
@@ -82,6 +82,23 @@ StreamDma::StreamDma(const StreamDmaParams &p)
     running = false;
 
     endian = sys->getGuestByteOrder();
+}
+
+Tick
+StreamDma::mmioBusyTicks() const
+{
+    const Cycles c = (mmioCycles == Cycles(0)) ? Cycles(1) : mmioCycles;
+    return clockEdge(c) - curTick();
+}
+
+Tick
+StreamDma::streamBusyTicks(size_t len, bool isRead) const
+{
+    const unsigned bpc = (bytesPerCycle == 0) ? 1 : bytesPerCycle;
+    const Cycles xfer((len + bpc - 1) / bpc);
+    const Cycles total = streamLatencyCycles + xfer;
+    const Cycles c = (total == Cycles(0)) ? Cycles(1) : total;
+    return clockEdge(c) - curTick();
 }
 
 AddrRangeList
@@ -278,7 +295,7 @@ StreamDma::read(PacketPtr pkt)
         schedule(tickEvent, nextCycle());
     }
     pkt->makeAtomicResponse();
-    return pioDelay;
+    return mmioBusyTicks();
 }
 
 Tick
@@ -304,7 +321,7 @@ StreamDma::write(PacketPtr pkt)
         schedule(tickEvent, nextCycle());
     }
     pkt->makeAtomicResponse();
-    return pioDelay;
+    return mmioBusyTicks();
 }
 
 Tick
@@ -334,7 +351,7 @@ StreamDma::streamRead(PacketPtr pkt)
             panic("Read size too big?\n");
             break;
     }
-    Tick duration = pkt->getSize() * bandwidth;
+    Tick duration = streamBusyTicks(pkt->getSize(), true);
     pkt->makeAtomicResponse();
     return duration;
 }
@@ -349,8 +366,9 @@ StreamDma::streamWrite(PacketPtr pkt)
     writeFifo->fill(data, pkt->getSize());
     delete[] data;
 
+    Tick duration = streamBusyTicks(pkt->getSize(), false);
     pkt->makeAtomicResponse();
-    return pioDelay;
+    return duration;
 }
 
 Tick
@@ -390,7 +408,7 @@ StreamDma::status(PacketPtr pkt, bool readStatus)
                 break;
         }
     }
-    Tick duration = pkt->getSize() * bandwidth;
+    Tick duration = streamBusyTicks(pkt->getSize(), true);
     pkt->makeAtomicResponse();
     return duration;
 }

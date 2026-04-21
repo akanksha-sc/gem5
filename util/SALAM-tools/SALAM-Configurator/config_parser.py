@@ -564,7 +564,9 @@ class StreamDMA:
             + str(self.pio)
         )
         lines.append(dmaPath + "stream_size = " + str(self.size))
-        lines.append(dmaPath + "pio_delay = '1ns'")
+        lines.append(dmaPath + "mmio_cycles = 1")
+        lines.append(dmaPath + "stream_latency_cycles = 1")
+        lines.append(dmaPath + "bytes_per_cycle = 136")
         if self.rd_int != None:
             lines.append(dmaPath + "rd_int = " + str(self.rd_int))
         if self.wr_int != None:

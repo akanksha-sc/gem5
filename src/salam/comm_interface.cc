@@ -66,6 +66,7 @@ CommInterface::CommInterface(const CommInterfaceParams &p)
       tickEvent(this),
       cacheLineSize(p.cache_line_size),
       processCycles(p.process_cycles),
+      mmioCycles(p.mmio_cycles),
       reset_spm(p.reset_spm)
 {
     FLAG_OFFSET = 0;
@@ -96,6 +97,13 @@ CommInterface::kick()
             (processCycles == Cycles(0)) ? Cycles(1) : processCycles;
         schedule(tickEvent, clockEdge(delta));
     }
+}
+
+Tick
+CommInterface::mmioBusyTicks() const
+{
+    const Cycles c = (mmioCycles == Cycles(0)) ? Cycles(1) : mmioCycles;
+    return clockEdge(c) - curTick();
 }
 
 bool
@@ -1073,7 +1081,7 @@ CommInterface::read(PacketPtr pkt)
     }
 
     pkt->makeAtomicResponse();
-    return pioDelay;
+    return mmioBusyTicks();
 }
 
 Tick
@@ -1137,7 +1145,7 @@ CommInterface::write(PacketPtr pkt)
         int_flag = false;
     }
     kick();
-    return pioDelay;
+    return mmioBusyTicks();
 }
 
 uint64_t

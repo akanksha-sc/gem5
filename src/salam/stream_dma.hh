@@ -43,6 +43,7 @@
 #include "salam/LLVMRead/debug_flags.hh"
 #include "salam/dma_write_fifo.hh"
 #include "salam/stream_port.hh"
+#include "sim/core.hh"
 
 /*
     Steaming DMA device with 2 modes.
@@ -138,13 +139,13 @@ class StreamDma : public DmaDevice
     DmaReadFifo *readFifo;
     DmaWriteFifo *writeFifo;
     Addr pioAddr;
-    Tick pioDelay;
+    const Cycles mmioCycles;
     Addr pioSize;
     Addr streamAddr;
     Addr streamSize;
     Addr statusAddr;
     Addr statusSize;
-    Tick memDelay;
+    const Cycles streamLatencyCycles;
     size_t rdBufferSize;
     size_t wrBufferSize;
     unsigned maxPending;
@@ -180,7 +181,7 @@ class StreamDma : public DmaDevice
 
     TickEvent tickEvent;
 
-    const double bandwidth;
+    const unsigned bytesPerCycle;
 
     uint8_t *mmreg;
     uint8_t *FLAGS;
@@ -229,13 +230,17 @@ class StreamDma : public DmaDevice
     Tick streamWrite(PacketPtr pkt);
     Tick status(PacketPtr pkt, bool readStatus);
 
+    Tick mmioBusyTicks() const;
+    Tick streamBusyTicks(size_t len, bool isRead) const;
+
     bool tvalid(PacketPtr pkt);
     bool tvalid(size_t len, bool isRead);
 
     double
     getBandwidth()
     {
-        return bandwidth;
+        const unsigned bpc = (bytesPerCycle == 0) ? 1 : bytesPerCycle;
+        return static_cast<double>(clockPeriod()) / static_cast<double>(bpc);
     };
 
     Port &getPort(const std::string &if_name,

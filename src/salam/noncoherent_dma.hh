@@ -42,6 +42,7 @@
 #include "params/NoncoherentDma.hh"
 #include "salam/LLVMRead/debug_flags.hh"
 #include "salam/dma_write_fifo.hh"
+#include "sim/core.hh"
 
 //------------------------------------------
 //    Memory Map
@@ -61,7 +62,7 @@ class NoncoherentDma : public DmaDevice
     DmaWriteFifo *accSideWriteFifo;
     DmaWriteFifo *writeFifo;
     Addr pioAddr;
-    Addr pioDelay;
+    Cycles mmioCycles;
     Addr pioSize;
     size_t bufferSize;
     unsigned maxPending;
@@ -99,6 +100,7 @@ class NoncoherentDma : public DmaDevice
     AddrRangeList getAddrRanges() const;
 
     void tick();
+    Tick mmioBusyTicks() const;
 
     Tick read(PacketPtr pkt);
     Tick write(PacketPtr pkt);
