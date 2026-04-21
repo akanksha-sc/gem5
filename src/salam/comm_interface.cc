@@ -130,6 +130,9 @@ CommInterface::MemSidePort::recvReqRetry()
         DPRINTF(CommInterface, "Got a retry...\n");
     }
     while (outstandingPkts.size() && sendTimingReq(outstandingPkts.front())) {
+        PacketPtr sent = outstandingPkts.front();
+        owner->countAcceptedAccess(sent->req->getPaddr(), sent->getSize(),
+                                   sent->isRead());
         if (debug()) {
             DPRINTF(CommInterface, "Unblocked, sent blocked packet.\n");
         }
@@ -178,6 +181,9 @@ CommInterface::SPMPort::recvReqRetry()
         DPRINTF(CommInterface, "Got a retry...\n");
     }
     while (outstandingPkts.size() && sendTimingReq(outstandingPkts.front())) {
+        PacketPtr sent = outstandingPkts.front();
+        owner->countAcceptedAccess(sent->req->getPaddr(), sent->getSize(),
+                                   sent->isRead());
         if (debug()) {
             DPRINTF(CommInterface, "Unblocked, sent blocked packet.\n");
         }
@@ -676,8 +682,12 @@ CommInterface::tryRead(MemSidePort *port)
     pkt->allocate();
     readReq->pkt = pkt;
     readReq->markIssued();
+    const Addr issued_read_addr = readReq->currentReadAddr;
     port->sendPacket(pkt);
-    countIssuedAccess(readReq->currentReadAddr, size, true);
+    countIssuedAccess(issued_read_addr, size, true);
+    if (!port->isStalled()) {
+        countAcceptedAccess(issued_read_addr, size, true);
+    }
 
     readReq->currentReadAddr += size;
 
@@ -745,8 +755,12 @@ CommInterface::tryWrite(MemSidePort *port)
     pkt->dataDynamic(pkt_data);
     writeReq->pkt = pkt;
     writeReq->markIssued();
+    const Addr issued_write_addr = writeReq->currentWriteAddr;
     port->sendPacket(pkt);
-    countIssuedAccess(writeReq->currentWriteAddr, size, false);
+    countIssuedAccess(issued_write_addr, size, false);
+    if (!port->isStalled()) {
+        countAcceptedAccess(issued_write_addr, size, false);
+    }
 
     writeReq->currentWriteAddr += size;
     writeReq->writeLeft -= size;
@@ -794,8 +808,12 @@ CommInterface::tryRead(SPMPort *port)
     pkt->allocate();
     readReq->pkt = pkt;
     readReq->markIssued();
+    const Addr issued_read_addr = readReq->currentReadAddr;
     port->sendPacket(pkt);
-    countIssuedAccess(readReq->currentReadAddr, size, true);
+    countIssuedAccess(issued_read_addr, size, true);
+    if (!port->isStalled()) {
+        countAcceptedAccess(issued_read_addr, size, true);
+    }
 
     readReq->currentReadAddr += size;
 
@@ -863,8 +881,12 @@ CommInterface::tryWrite(SPMPort *port)
     pkt->dataDynamic(pkt_data);
     writeReq->pkt = pkt;
     writeReq->markIssued();
+    const Addr issued_write_addr = writeReq->currentWriteAddr;
     port->sendPacket(pkt);
-    countIssuedAccess(writeReq->currentWriteAddr, size, false);
+    countIssuedAccess(issued_write_addr, size, false);
+    if (!port->isStalled()) {
+        countAcceptedAccess(issued_write_addr, size, false);
+    }
 
     writeReq->currentWriteAddr += size;
     writeReq->writeLeft -= size;
@@ -910,6 +932,7 @@ CommInterface::tryRead(RegPort *port)
     }
     port->sendPacket(pkt);
     countIssuedAccess(issuedAddr, size, true);
+    countAcceptedAccess(issuedAddr, size, true);
 
     if (!(readReq->readLeft > 0)) {
         kick();
@@ -966,6 +989,7 @@ CommInterface::tryWrite(RegPort *port)
     }
     port->sendPacket(pkt);
     countIssuedAccess(issuedAddr, size, false);
+    countAcceptedAccess(issuedAddr, size, false);
 
     if (!(writeReq->writeLeft > 0)) {
         kick();
@@ -1304,6 +1328,17 @@ CommInterface::countIssuedAccess(Addr addr, size_t size, bool is_read)
     const size_t a = is_read ? static_cast<size_t>(SalamAccessKind::Read)
                              : static_cast<size_t>(SalamAccessKind::Write);
 
-    cycleIfaceStats.memOps[t][a]++;
-    cycleIfaceStats.memBytes[t][a] += size;
+    cycleIfaceStats.issuedMemOps[t][a]++;
+    cycleIfaceStats.issuedMemBytes[t][a] += size;
+}
+
+void
+CommInterface::countAcceptedAccess(Addr addr, size_t size, bool is_read)
+{
+    const size_t t = static_cast<size_t>(classifyTargetForStats(addr));
+    const size_t a = is_read ? static_cast<size_t>(SalamAccessKind::Read)
+                             : static_cast<size_t>(SalamAccessKind::Write);
+
+    cycleIfaceStats.acceptedMemOps[t][a]++;
+    cycleIfaceStats.acceptedMemBytes[t][a] += size;
 }

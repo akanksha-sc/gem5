@@ -82,8 +82,13 @@ class CommInterface : public BasicPioDevice
         bool sawReadRetry = false;
         bool sawWriteRetry = false;
 
-        uint64_t memOps[kNumTargetClasses][kNumAccessKinds] = {};
-        uint64_t memBytes[kNumTargetClasses][kNumAccessKinds] = {};
+        // Issued traffic: counted when CommInterface issues onto the path
+        // (sendPacket / tryRead/tryWrite). Accepted traffic: counted when the
+        // downstream port immediately accepts the send, or on retry unblock.
+        uint64_t issuedMemOps[kNumTargetClasses][kNumAccessKinds] = {};
+        uint64_t issuedMemBytes[kNumTargetClasses][kNumAccessKinds] = {};
+        uint64_t acceptedMemOps[kNumTargetClasses][kNumAccessKinds] = {};
+        uint64_t acceptedMemBytes[kNumTargetClasses][kNumAccessKinds] = {};
 
         void
         reset()
@@ -95,8 +100,10 @@ class CommInterface : public BasicPioDevice
             hadWriteBackpressure = false;
             sawReadRetry = false;
             sawWriteRetry = false;
-            std::memset(memOps, 0, sizeof(memOps));
-            std::memset(memBytes, 0, sizeof(memBytes));
+            std::memset(issuedMemOps, 0, sizeof(issuedMemOps));
+            std::memset(issuedMemBytes, 0, sizeof(issuedMemBytes));
+            std::memset(acceptedMemOps, 0, sizeof(acceptedMemOps));
+            std::memset(acceptedMemBytes, 0, sizeof(acceptedMemBytes));
         }
     };
 
@@ -514,6 +521,7 @@ class CommInterface : public BasicPioDevice
 
     SalamMemTargetClass classifyTargetForStats(Addr add);
     void countIssuedAccess(Addr addr, size_t size, bool is_read);
+    void countAcceptedAccess(Addr addr, size_t size, bool is_read);
 
     CommInterface *comm;
     RequestorID masterId;

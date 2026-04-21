@@ -135,19 +135,19 @@ HWStatistics::summarize() const
             summary.totalCallsIssued += cycle.callsIssued;
             summary.totalCallsCommitted += cycle.callsCommitted;
 
-            summary.reservationDepthSum += cycle.reservationDepth;
-            summary.readQueueDepthSum += cycle.readQueueDepth;
-            summary.writeQueueDepthSum += cycle.writeQueueDepth;
-            summary.computeQueueDepthSum += cycle.computeQueueDepth;
+            summary.reservationDepthSum += cycle.reservationDepthStart;
+            summary.readQueueDepthSum += cycle.readQueueDepthStart;
+            summary.writeQueueDepthSum += cycle.writeQueueDepthStart;
+            summary.computeQueueDepthSum += cycle.computeQueueDepthStart;
 
             summary.maxReservationDepth = std::max<uint64_t>(
-                summary.maxReservationDepth, cycle.reservationDepth);
+                summary.maxReservationDepth, cycle.reservationDepthPeak);
             summary.maxReadQueueDepth = std::max<uint64_t>(
-                summary.maxReadQueueDepth, cycle.readQueueDepth);
+                summary.maxReadQueueDepth, cycle.readQueueDepthPeak);
             summary.maxWriteQueueDepth = std::max<uint64_t>(
-                summary.maxWriteQueueDepth, cycle.writeQueueDepth);
+                summary.maxWriteQueueDepth, cycle.writeQueueDepthPeak);
             summary.maxComputeQueueDepth = std::max<uint64_t>(
-                summary.maxComputeQueueDepth, cycle.computeQueueDepth);
+                summary.maxComputeQueueDepth, cycle.computeQueueDepthPeak);
 
             summary.loadRawHazardCycles += cycle.hadLoadRawHazard ? 1 : 0;
             summary.fuCapacityDenyCycles += cycle.hadFuCapacityDeny ? 1 : 0;
@@ -158,6 +158,8 @@ HWStatistics::summarize() const
                 cycle.hadIssueBackpressure ? 1 : 0;
             summary.allPortsStalledCycles += cycle.hadAllPortsStalled ? 1 : 0;
             summary.portRetryCycles += cycle.hadPortRetry ? 1 : 0;
+            summary.unissuedMemoryReqCycles +=
+                cycle.hadUnissuedMemoryReq ? 1 : 0;
 
             summary.outstandingMemoryCycles +=
                 cycle.hadOutstandingMemory ? 1 : 0;
@@ -207,8 +209,12 @@ HWStatistics::summarize() const
 
             for (size_t t = 0; t < kNumTargetClasses; ++t) {
                 for (size_t a = 0; a < kNumAccessKinds; ++a) {
-                    summary.totalMemOps[t][a] += cycle.memOps[t][a];
-                    summary.totalMemBytes[t][a] += cycle.memBytes[t][a];
+                    summary.totalIssuedMemOps[t][a] += cycle.memOps[t][a];
+                    summary.totalIssuedMemBytes[t][a] += cycle.memBytes[t][a];
+                    summary.totalAcceptedMemOps[t][a] +=
+                        cycle.memAcceptedOps[t][a];
+                    summary.totalAcceptedMemBytes[t][a] +=
+                        cycle.memAcceptedBytes[t][a];
                 }
             }
 
@@ -240,32 +246,32 @@ HWStatistics::print(bool dump_cycles)
     std::cout << "Cycles Recorded: " << summary.cyclesRecorded << std::endl;
 
     if (summary.cyclesRecorded > 0) {
-        std::cout << "Average Reservation Depth: "
+        std::cout << "Average Reservation Depth (sampled at tick start): "
                   << static_cast<double>(summary.reservationDepthSum) /
                          summary.cyclesRecorded
                   << std::endl;
-        std::cout << "Average Read Queue Depth: "
+        std::cout << "Average Read Queue Depth (sampled at tick start): "
                   << static_cast<double>(summary.readQueueDepthSum) /
                          summary.cyclesRecorded
                   << std::endl;
-        std::cout << "Average Write Queue Depth: "
+        std::cout << "Average Write Queue Depth (sampled at tick start): "
                   << static_cast<double>(summary.writeQueueDepthSum) /
                          summary.cyclesRecorded
                   << std::endl;
-        std::cout << "Average Compute Queue Depth: "
+        std::cout << "Average Compute Queue Depth (sampled at tick start): "
                   << static_cast<double>(summary.computeQueueDepthSum) /
                          summary.cyclesRecorded
                   << std::endl;
     }
 
-    std::cout << "Max Reservation Depth: " << summary.maxReservationDepth
+    std::cout << "Max Reservation Depth Peak: " << summary.maxReservationDepth
               << std::endl;
-    std::cout << "Max Read Queue Depth: " << summary.maxReadQueueDepth
+    std::cout << "Max Read Queue Depth Peak: " << summary.maxReadQueueDepth
               << std::endl;
-    std::cout << "Max Write Queue Depth: " << summary.maxWriteQueueDepth
+    std::cout << "Max Write Queue Depth Peak: " << summary.maxWriteQueueDepth
               << std::endl;
-    std::cout << "Max Compute Queue Depth: " << summary.maxComputeQueueDepth
-              << std::endl;
+    std::cout << "Max Compute Queue Depth Peak: "
+              << summary.maxComputeQueueDepth << std::endl;
 
     std::cout << "Total Internal Load Completions: "
               << summary.totalInternalLoadCompletions << std::endl;
@@ -302,6 +308,8 @@ HWStatistics::print(bool dump_cycles)
     std::cout << "All Ports Stalled Cycles: " << summary.allPortsStalledCycles
               << std::endl;
     std::cout << "Port Retry Cycles: " << summary.portRetryCycles << std::endl;
+    std::cout << "Unissued Memory Request Cycles: "
+              << summary.unissuedMemoryReqCycles << std::endl;
 
     std::cout << "Outstanding Memory Cycles: "
               << summary.outstandingMemoryCycles << std::endl;

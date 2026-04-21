@@ -103,6 +103,7 @@ class LLVMInterface : public AccComputeUnit
 
     uint64_t dynCallsIssued = 0;
     uint64_t dynCallsCommitted = 0;
+    uint64_t dynInternalLoadCompletions = 0;
 
     enum class CycleCause : uint8_t
     {
@@ -160,6 +161,7 @@ class LLVMInterface : public AccComputeUnit
     uint64_t computeLatencyWaitCycles = 0;
     uint64_t memoryServiceWaitCycles = 0;
     uint64_t memoryIssueBackpressureCycles = 0;
+    uint64_t unissuedMemoryReqCycles = 0;
     uint64_t computeAndMemoryOutstandingWaitCycles = 0;
     uint64_t schedulingBlockedCycles = 0;
     uint64_t idleCycles = 0;
@@ -191,6 +193,8 @@ class LLVMInterface : public AccComputeUnit
     uint64_t aggDynComputeCommitted = 0;
     uint64_t aggDynCallsIssued = 0;
     uint64_t aggDynCallsCommitted = 0;
+    uint64_t aggInternalLoadCompletions = 0;
+    uint64_t aggExternalLoadCompletions = 0;
 
     uint64_t aggUsefulComputeCycles = 0;
     uint64_t aggUsefulMemoryCycles = 0;
@@ -200,6 +204,7 @@ class LLVMInterface : public AccComputeUnit
     uint64_t aggComputeLatencyWaitCycles = 0;
     uint64_t aggMemoryServiceWaitCycles = 0;
     uint64_t aggMemoryIssueBackpressureCycles = 0;
+    uint64_t aggUnissuedMemoryReqCycles = 0;
     uint64_t aggComputeAndMemoryOutstandingWaitCycles = 0;
     uint64_t aggSchedulingBlockedCycles = 0;
     uint64_t aggIdleCycles = 0;
@@ -379,7 +384,8 @@ class LLVMInterface : public AccComputeUnit
         inline bool
         canReturn()
         {
-            return queuesClear() && reservation.front()->isReturn();
+            return queuesClear() && !reservation.empty() &&
+                   reservation.front()->isReturn();
         }
         void launchRead(std::shared_ptr<SALAM::Instruction> readInst);
         void launchWrite(std::shared_ptr<SALAM::Instruction> writeInst);

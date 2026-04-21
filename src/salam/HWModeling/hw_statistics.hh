@@ -131,6 +131,7 @@ struct HW_Cycle_Stats
     bool hadIssueBackpressure;
     bool hadAllPortsStalled;
     bool hadPortRetry;
+    bool hadUnissuedMemoryReq;
 
     bool hadOutstandingMemory;
     bool hadOutstandingCompute;
@@ -166,11 +167,15 @@ struct HW_Cycle_Stats
     bool hadComputeAndMemoryOutstanding;
     bool hadComputeAndMemoryReady;
 
-    // Issue-attempt counters: counted when a request enters the interface
-    // path (after sendPacket), not on downstream acceptance.  Totals are
-    // accurate; per-cycle timing is slightly optimistic for stalled sends.
+    // Issued traffic counters: counted when a request is issued onto the
+    // CommInterface path, not when the downstream target finally accepts it.
+    // Totals are truthful as issued traffic. They are not accepted-traffic
+    // counters.
     uint64_t memOps[kNumTargetClasses][kNumAccessKinds];
     uint64_t memBytes[kNumTargetClasses][kNumAccessKinds];
+
+    uint64_t memAcceptedOps[kNumTargetClasses][kNumAccessKinds];
+    uint64_t memAcceptedBytes[kNumTargetClasses][kNumAccessKinds];
 
     uint64_t fuBusySlots[kNumFuClasses];
     uint64_t fuPeakBusySlots[kNumFuClasses];
@@ -206,6 +211,7 @@ struct HW_Cycle_Stats
         hadIssueBackpressure = false;
         hadAllPortsStalled = false;
         hadPortRetry = false;
+        hadUnissuedMemoryReq = false;
 
         hadOutstandingMemory = false;
         hadOutstandingCompute = false;
@@ -243,6 +249,8 @@ struct HW_Cycle_Stats
 
         std::memset(memOps, 0, sizeof(memOps));
         std::memset(memBytes, 0, sizeof(memBytes));
+        std::memset(memAcceptedOps, 0, sizeof(memAcceptedOps));
+        std::memset(memAcceptedBytes, 0, sizeof(memAcceptedBytes));
         std::memset(fuBusySlots, 0, sizeof(fuBusySlots));
         std::memset(fuPeakBusySlots, 0, sizeof(fuPeakBusySlots));
         std::memset(fuAccepted, 0, sizeof(fuAccepted));
@@ -286,6 +294,7 @@ struct HW_Stats_Summary
     uint64_t issueBackpressureCycles = 0;
     uint64_t allPortsStalledCycles = 0;
     uint64_t portRetryCycles = 0;
+    uint64_t unissuedMemoryReqCycles = 0;
 
     uint64_t outstandingMemoryCycles = 0;
     uint64_t outstandingComputeCycles = 0;
@@ -320,8 +329,10 @@ struct HW_Stats_Summary
     uint64_t computeAndMemoryOutstandingCycles = 0;
     uint64_t computeAndMemoryReadyCycles = 0;
 
-    uint64_t totalMemOps[kNumTargetClasses][kNumAccessKinds] = {};
-    uint64_t totalMemBytes[kNumTargetClasses][kNumAccessKinds] = {};
+    uint64_t totalIssuedMemOps[kNumTargetClasses][kNumAccessKinds] = {};
+    uint64_t totalIssuedMemBytes[kNumTargetClasses][kNumAccessKinds] = {};
+    uint64_t totalAcceptedMemOps[kNumTargetClasses][kNumAccessKinds] = {};
+    uint64_t totalAcceptedMemBytes[kNumTargetClasses][kNumAccessKinds] = {};
 
     uint64_t fuBusySlotSum[kNumFuClasses] = {};
     uint64_t fuPeakBusySlots[kNumFuClasses] = {};

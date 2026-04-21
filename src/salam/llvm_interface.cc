@@ -168,6 +168,11 @@ LLVMInterface::snapshotQueueDepthStart()
     const int wr = totalWriteDepth();
     const int cmp = totalComputeDepth();
 
+    tick_hw_cycle_stats.reservationDepth = r;
+    tick_hw_cycle_stats.readQueueDepth = rd;
+    tick_hw_cycle_stats.writeQueueDepth = wr;
+    tick_hw_cycle_stats.computeQueueDepth = cmp;
+
     tick_hw_cycle_stats.reservationDepthStart = r;
     tick_hw_cycle_stats.readQueueDepthStart = rd;
     tick_hw_cycle_stats.writeQueueDepthStart = wr;
@@ -548,8 +553,12 @@ LLVMInterface::captureCommInterfaceCycleStats()
 
     for (size_t t = 0; t < kNumTargetClasses; ++t) {
         for (size_t a = 0; a < kNumAccessKinds; ++a) {
-            tick_hw_cycle_stats.memOps[t][a] += cs.memOps[t][a];
-            tick_hw_cycle_stats.memBytes[t][a] += cs.memBytes[t][a];
+            tick_hw_cycle_stats.memOps[t][a] += cs.issuedMemOps[t][a];
+            tick_hw_cycle_stats.memBytes[t][a] += cs.issuedMemBytes[t][a];
+            tick_hw_cycle_stats.memAcceptedOps[t][a] +=
+                cs.acceptedMemOps[t][a];
+            tick_hw_cycle_stats.memAcceptedBytes[t][a] +=
+                cs.acceptedMemBytes[t][a];
         }
     }
 }
@@ -733,6 +742,9 @@ LLVMInterface::tick()
     if (memoryBackpressure) {
         memoryBackpressureCycles++;
     }
+    if (cycleSignals.unissuedMemoryReq) {
+        unissuedMemoryReqCycles++;
+    }
     if (comm->allPortsStalledThisCycle()) {
         allPortsStalledCycles++;
     }
@@ -841,6 +853,8 @@ LLVMInterface::tick()
         tick_hw_cycle_stats.hadAllPortsStalled =
             comm->allPortsStalledThisCycle();
         tick_hw_cycle_stats.hadPortRetry = comm->sawRetryThisCycle();
+        tick_hw_cycle_stats.hadUnissuedMemoryReq =
+            cycleSignals.unissuedMemoryReq;
 
         tick_hw_cycle_stats.hadOutstandingMemory =
             cycleSignals.anyOutstandingMemory;
@@ -1152,6 +1166,7 @@ LLVMInterface::ActiveFunction::launchRead(
 
         owner->dynInstsCommitted++;
         owner->dynLoadsCommitted++;
+        owner->dynInternalLoadCompletions++;
         owner->tick_hw_cycle_stats.internalLoadCompletions++;
         owner->tick_hw_cycle_stats.loadsCommitted++;
     } else {
@@ -1325,6 +1340,11 @@ LLVMInterface::rollUpCurrentInvocationIntoAggregate()
         computeAndMemoryOutstandingWaitCycles;
     aggSchedulingBlockedCycles += schedulingBlockedCycles;
     aggIdleCycles += idleCycles;
+
+    aggUnissuedMemoryReqCycles += unissuedMemoryReqCycles;
+    aggInternalLoadCompletions += dynInternalLoadCompletions;
+    aggExternalLoadCompletions +=
+        (dynLoadsCommitted - dynInternalLoadCompletions);
 }
 
 void
@@ -1381,6 +1401,7 @@ LLVMInterface::initialize()
     dynComputeCommitted = 0;
     dynCallsIssued = 0;
     dynCallsCommitted = 0;
+    dynInternalLoadCompletions = 0;
 
     cycleSignals.reset();
 
@@ -1403,6 +1424,7 @@ LLVMInterface::initialize()
     memoryBackpressureCycles = 0;
     allPortsStalledCycles = 0;
     portRetryCycles = 0;
+    unissuedMemoryReqCycles = 0;
     reservationNonEmptyCycles = 0;
     readQueueNonEmptyCycles = 0;
     writeQueueNonEmptyCycles = 0;
@@ -1522,6 +1544,9 @@ LLVMInterface::emitSummaryLine() const
               << " cycle_call_commit=" << cycle_call_commit
               << " cycle_internal_load_completions="
               << cycle_internal_load_completions
+              << " internal_load_commit=" << cycle_internal_load_completions
+              << " external_load_commit="
+              << (cycle_load_commit - cycle_internal_load_completions)
               << " useful_compute=" << usefulComputeCycles
               << " useful_memory=" << usefulMemoryCycles
               << " useful_control=" << usefulControlCycles
@@ -1530,6 +1555,7 @@ LLVMInterface::emitSummaryLine() const
               << " cmp_wait=" << computeLatencyWaitCycles
               << " mem_wait=" << memoryServiceWaitCycles
               << " mem_bp_wait=" << memoryIssueBackpressureCycles
+              << " unissued_mem_req=" << unissuedMemoryReqCycles
               << " both_outstanding_wait="
               << computeAndMemoryOutstandingWaitCycles
               << " sched_blocked=" << schedulingBlockedCycles
@@ -1539,38 +1565,64 @@ LLVMInterface::emitSummaryLine() const
               << " threshold_blocked=" << thresholdBlockedCycles
               << " lockstep_wait=" << lockstepBlockedCycles
               << " all_ports_stalled=" << allPortsStalledCycles
-              << " port_retry=" << portRetryCycles << " stalls=" << stalls;
+              << " port_retry=" << portRetryCycles
+              << " debug_stalls=" << stalls;
 
     if (hw->hw_statistics->use_cycle_tracking()) {
         const auto s = hw->hw_statistics->summarize();
-        std::cout << " read_bp=" << s.readIssueBackpressureCycles
-                  << " write_bp=" << s.writeIssueBackpressureCycles
-                  << " read_retry=" << s.readRetryCycles
-                  << " write_retry=" << s.writeRetryCycles
-                  << " local_rd_bytes="
-                  << s.totalMemBytes[(size_t)SalamMemTargetClass::Local]
+        std::cout
+            << " read_bp=" << s.readIssueBackpressureCycles
+            << " write_bp=" << s.writeIssueBackpressureCycles
+            << " read_retry=" << s.readRetryCycles
+            << " write_retry=" << s.writeRetryCycles
+            << " local_rd_issued_bytes="
+            << s.totalIssuedMemBytes[(size_t)SalamMemTargetClass::Local]
                                     [(size_t)SalamAccessKind::Read]
-                  << " local_wr_bytes="
-                  << s.totalMemBytes[(size_t)SalamMemTargetClass::Local]
+            << " local_wr_issued_bytes="
+            << s.totalIssuedMemBytes[(size_t)SalamMemTargetClass::Local]
                                     [(size_t)SalamAccessKind::Write]
-                  << " global_rd_bytes="
-                  << s.totalMemBytes[(size_t)SalamMemTargetClass::Global]
+            << " global_rd_issued_bytes="
+            << s.totalIssuedMemBytes[(size_t)SalamMemTargetClass::Global]
                                     [(size_t)SalamAccessKind::Read]
-                  << " global_wr_bytes="
-                  << s.totalMemBytes[(size_t)SalamMemTargetClass::Global]
+            << " global_wr_issued_bytes="
+            << s.totalIssuedMemBytes[(size_t)SalamMemTargetClass::Global]
                                     [(size_t)SalamAccessKind::Write]
-                  << " spm_rd_bytes="
-                  << s.totalMemBytes[(size_t)SalamMemTargetClass::SPM]
+            << " spm_rd_issued_bytes="
+            << s.totalIssuedMemBytes[(size_t)SalamMemTargetClass::SPM]
                                     [(size_t)SalamAccessKind::Read]
-                  << " spm_wr_bytes="
-                  << s.totalMemBytes[(size_t)SalamMemTargetClass::SPM]
+            << " spm_wr_issued_bytes="
+            << s.totalIssuedMemBytes[(size_t)SalamMemTargetClass::SPM]
                                     [(size_t)SalamAccessKind::Write]
-                  << " stream_rd_bytes="
-                  << s.totalMemBytes[(size_t)SalamMemTargetClass::Stream]
+            << " stream_rd_issued_bytes="
+            << s.totalIssuedMemBytes[(size_t)SalamMemTargetClass::Stream]
                                     [(size_t)SalamAccessKind::Read]
-                  << " stream_wr_bytes="
-                  << s.totalMemBytes[(size_t)SalamMemTargetClass::Stream]
-                                    [(size_t)SalamAccessKind::Write];
+            << " stream_wr_issued_bytes="
+            << s.totalIssuedMemBytes[(size_t)SalamMemTargetClass::Stream]
+                                    [(size_t)SalamAccessKind::Write]
+            << " local_rd_accepted_bytes="
+            << s.totalAcceptedMemBytes[(size_t)SalamMemTargetClass::Local]
+                                      [(size_t)SalamAccessKind::Read]
+            << " local_wr_accepted_bytes="
+            << s.totalAcceptedMemBytes[(size_t)SalamMemTargetClass::Local]
+                                      [(size_t)SalamAccessKind::Write]
+            << " global_rd_accepted_bytes="
+            << s.totalAcceptedMemBytes[(size_t)SalamMemTargetClass::Global]
+                                      [(size_t)SalamAccessKind::Read]
+            << " global_wr_accepted_bytes="
+            << s.totalAcceptedMemBytes[(size_t)SalamMemTargetClass::Global]
+                                      [(size_t)SalamAccessKind::Write]
+            << " spm_rd_accepted_bytes="
+            << s.totalAcceptedMemBytes[(size_t)SalamMemTargetClass::SPM]
+                                      [(size_t)SalamAccessKind::Read]
+            << " spm_wr_accepted_bytes="
+            << s.totalAcceptedMemBytes[(size_t)SalamMemTargetClass::SPM]
+                                      [(size_t)SalamAccessKind::Write]
+            << " stream_rd_accepted_bytes="
+            << s.totalAcceptedMemBytes[(size_t)SalamMemTargetClass::Stream]
+                                      [(size_t)SalamAccessKind::Read]
+            << " stream_wr_accepted_bytes="
+            << s.totalAcceptedMemBytes[(size_t)SalamMemTargetClass::Stream]
+                                      [(size_t)SalamAccessKind::Write];
     }
 
     std::cout << std::endl;
@@ -1598,10 +1650,14 @@ LLVMInterface::emitSummaryLine() const
                   << " agg_cmp_wait=" << aggComputeLatencyWaitCycles
                   << " agg_mem_wait=" << aggMemoryServiceWaitCycles
                   << " agg_mem_bp_wait=" << aggMemoryIssueBackpressureCycles
+                  << " agg_unissued_mem_req=" << aggUnissuedMemoryReqCycles
                   << " agg_both_outstanding_wait="
                   << aggComputeAndMemoryOutstandingWaitCycles
                   << " agg_sched_blocked=" << aggSchedulingBlockedCycles
-                  << " agg_idle=" << aggIdleCycles << std::endl;
+                  << " agg_idle=" << aggIdleCycles
+                  << " agg_internal_load_commit=" << aggInternalLoadCompletions
+                  << " agg_external_load_commit=" << aggExternalLoadCompletions
+                  << std::endl;
     }
 }
 
@@ -2102,25 +2158,45 @@ LLVMInterface::printTrafficSummary(const HW_Stats_Summary &summary) const
 
     static const char *targetNames[] = {"Local", "Global", "SPM", "Stream"};
 
-    std::cout << "  Memory Traffic (issue-attempt counts)" << std::endl;
-    std::cout << "  -------------------------------------" << std::endl;
+    std::cout << "  Memory Traffic (issued vs accepted)" << std::endl;
+    std::cout << "  -----------------------------------" << std::endl;
     for (size_t t = 0; t < kNumTargetClasses; ++t) {
-        const uint64_t rd_ops =
-            summary.totalMemOps[t][(size_t)SalamAccessKind::Read];
-        const uint64_t wr_ops =
-            summary.totalMemOps[t][(size_t)SalamAccessKind::Write];
-        const uint64_t rd_bytes =
-            summary.totalMemBytes[t][(size_t)SalamAccessKind::Read];
-        const uint64_t wr_bytes =
-            summary.totalMemBytes[t][(size_t)SalamAccessKind::Write];
-        if (rd_ops == 0 && wr_ops == 0) {
+        const uint64_t rd_ops_iss =
+            summary.totalIssuedMemOps[t][(size_t)SalamAccessKind::Read];
+        const uint64_t wr_ops_iss =
+            summary.totalIssuedMemOps[t][(size_t)SalamAccessKind::Write];
+        const uint64_t rd_bytes_iss =
+            summary.totalIssuedMemBytes[t][(size_t)SalamAccessKind::Read];
+        const uint64_t wr_bytes_iss =
+            summary.totalIssuedMemBytes[t][(size_t)SalamAccessKind::Write];
+        const uint64_t rd_ops_acc =
+            summary.totalAcceptedMemOps[t][(size_t)SalamAccessKind::Read];
+        const uint64_t wr_ops_acc =
+            summary.totalAcceptedMemOps[t][(size_t)SalamAccessKind::Write];
+        const uint64_t rd_bytes_acc =
+            summary.totalAcceptedMemBytes[t][(size_t)SalamAccessKind::Read];
+        const uint64_t wr_bytes_acc =
+            summary.totalAcceptedMemBytes[t][(size_t)SalamAccessKind::Write];
+        if (rd_ops_iss == 0 && wr_ops_iss == 0) {
             continue;
         }
         std::string prefix = targetNames[t];
-        printLabelValue(prefix + " Read Ops", std::to_string(rd_ops));
-        printLabelValue(prefix + " Read Bytes", std::to_string(rd_bytes));
-        printLabelValue(prefix + " Write Ops", std::to_string(wr_ops));
-        printLabelValue(prefix + " Write Bytes", std::to_string(wr_bytes));
+        printLabelValue(prefix + " Issued Read Ops",
+                        std::to_string(rd_ops_iss));
+        printLabelValue(prefix + " Issued Read Bytes",
+                        std::to_string(rd_bytes_iss));
+        printLabelValue(prefix + " Issued Write Ops",
+                        std::to_string(wr_ops_iss));
+        printLabelValue(prefix + " Issued Write Bytes",
+                        std::to_string(wr_bytes_iss));
+        printLabelValue(prefix + " Accepted Read Ops",
+                        std::to_string(rd_ops_acc));
+        printLabelValue(prefix + " Accepted Read Bytes",
+                        std::to_string(rd_bytes_acc));
+        printLabelValue(prefix + " Accepted Write Ops",
+                        std::to_string(wr_ops_acc));
+        printLabelValue(prefix + " Accepted Write Bytes",
+                        std::to_string(wr_bytes_acc));
     }
     printLabelValue("Read Issue Backpressure Cycles",
                     std::to_string(summary.readIssueBackpressureCycles));

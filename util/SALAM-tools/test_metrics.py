@@ -177,7 +177,24 @@ def check_summary(tr: TestRunner, s: dict):
             as_int(s, "cycle_internal_load_completions")
             <= as_int(s, "cycle_load_commit"),
             f"{as_int(s, 'cycle_internal_load_completions')} > "
-            "{as_int(s, 'cycle_load_commit')}",
+            f"{as_int(s, 'cycle_load_commit')}",
+        )
+
+        if "internal_load_commit" in s and "external_load_commit" in s:
+            tr.record(
+                f"{name}: internal+external load commit matches",
+                as_int(s, "internal_load_commit")
+                + as_int(s, "external_load_commit")
+                == load_commit,
+                f"{as_int(s, 'internal_load_commit')} + "
+                f"{as_int(s, 'external_load_commit')} != {load_commit}",
+            )
+
+    if "unissued_mem_req" in s:
+        tr.record(
+            f"{name}: unissued_mem_req <= mem_bp_wait",
+            as_int(s, "unissued_mem_req") <= as_int(s, "mem_bp_wait"),
+            f"{as_int(s, 'unissued_mem_req')} > {as_int(s, 'mem_bp_wait')}",
         )
 
     tr.record(
@@ -205,9 +222,9 @@ def check_summary(tr: TestRunner, s: dict):
         ),
     )
     tr.record(
-        f"{name}: stalls <= runtime",
-        as_int(s, "stalls") <= runtime,
-        f"stalls={as_int(s, 'stalls')} runtime={runtime}",
+        f"{name}: debug_stalls <= runtime",
+        as_int(s, "debug_stalls") <= runtime,
+        f"debug_stalls={as_int(s, 'debug_stalls')} runtime={runtime}",
     )
 
 
