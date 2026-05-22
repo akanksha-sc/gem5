@@ -35,8 +35,6 @@
 import argparse
 import os
 import shutil
-from http.client import FOUND
-from unittest import expectedFailure
 
 import config_parser
 import yaml
@@ -72,7 +70,6 @@ def parse_cur_args():
         help="Name of the generated python files. For a sys_name of gemm, the"
         " configurator generates both fs_gemm.py & gemm.py in configs/SALAM).",
         required=True,
-        default=None,
     )
     argparser.add_argument(
         "--config-name",
@@ -82,7 +79,28 @@ def parse_cur_args():
         default="config.yml",
     )
     argparser.add_argument(
-        "--m5-path", help="Path to M5 Directory", required=False, default=None
+        "--m5-path",
+        help="gem5 root. Defaults to M5_PATH.",
+        required=False,
+        default=None,
+    )
+    argparser.add_argument(
+        "--no-fs-template",
+        action="store_true",
+        default=False,
+        help="Do not generate configs/SALAM/fs_<bench>.py.",
+    )
+    argparser.add_argument(
+        "--emit-manifest",
+        action="store_true",
+        default=False,
+        help="Emit configs/SALAM/<bench>.manifest.yml for stdlib launchers.",
+    )
+    argparser.add_argument(
+        "--acc-bench-path",
+        required=False,
+        default=None,
+        help="Benchmark root. Defaults to ACC_BENCH_PATH.",
     )
     return argparser.parse_args()
 
@@ -462,36 +480,93 @@ def writeLines(writer, lines):
         writer.write("	" + line + "\n")
 
 
+def emit_legacy_fs_template(
+    m5_path, config_path, file_name, salam_acc_clock, salam_acc_voltage
+):
+    shutil.copyfile(
+        m5_path + "/util/SALAM-tools/SALAM-Configurator/fs_template.py",
+        config_path + "fs_" + file_name + ".py",
+    )
+    with open(config_path + "fs_" + file_name + ".py") as f:
+        full_system = f.readlines()
+
+    parse_args_idx = None
+    for i, ln in enumerate(full_system):
+        if ln.strip() == "import TEMPLATE":
+            full_system[i] = f"import {file_name}\n"
+        elif "TEMPLATE.makeHWAcc(" in ln:
+            full_system[i] = ln.replace("TEMPLATE.", f"{file_name}.")
+        elif ln.strip() == "args = parser.parse_args()":
+            parse_args_idx = i
+
+    if parse_args_idx is not None and (
+        salam_acc_clock is not None or salam_acc_voltage is not None
+    ):
+        inject = []
+        inject.append("\n")
+        inject.append(
+            "# SALAM: YAML-derived accelerator clock/voltage defaults.\n"
+        )
+        if salam_acc_clock is not None:
+            inject.append("if getattr(args, 'acc_clock', None) is None:\n")
+            inject.append(f"    args.acc_clock = '{salam_acc_clock}'\n")
+        if salam_acc_voltage is not None:
+            inject.append("if getattr(args, 'acc_voltage', None) is None:\n")
+            inject.append(f"    args.acc_voltage = '{salam_acc_voltage}'\n")
+        full_system[parse_args_idx + 1 : parse_args_idx + 1] = inject
+
+    with open(config_path + "fs_" + file_name + ".py", "w") as f:
+        f.writelines(full_system)
+
+
+def emit_manifest(
+    config_path,
+    file_name,
+    args,
+    working_dir,
+    main_yml_path,
+    clusters,
+    legacy_fs_emitted,
+):
+    manifest = {
+        "manifest_version": 1,
+        "bench": file_name,
+        "bench_path": args.bench_path,
+        "config_name": args.config_name,
+        "working_dir": working_dir,
+        "main_yml": main_yml_path,
+        "generated_module": f"{file_name}.py",
+        "legacy_fs": f"fs_{file_name}.py",
+        "legacy_fs_emitted": legacy_fs_emitted,
+        "base_address": "0x2f000000",
+        "max_address": "0x2fffffff",
+        "clusters": [
+            {
+                "name": c.name,
+                "base_address": hex(c.base_address),
+                "top_address": hex(c.top_address),
+            }
+            for c in clusters
+        ],
+    }
+
+    with open(config_path + file_name + ".manifest.yml", "w") as f:
+        yaml.safe_dump(manifest, f, sort_keys=False)
+
+
 def main():
 
     args = parse_cur_args()
-    # This requires M5_PATH to point to your gem5-SALAM directory
-    M5_Path = os.getenv("M5_PATH")
-    acc_bench_path = os.getenv("ACC_BENCH_PATH")
+    M5_Path = os.getenv("M5_PATH") or args.m5_path
+    acc_bench_path = os.getenv("ACC_BENCH_PATH") or args.acc_bench_path
 
     if M5_Path is None:
-        print("Looking for Path Argument from Command Line")
-        if args.m5_path is None:
-            raise Exception("Path argument required when M5_PATH not set")
-        M5_Path = args.path
-        if M5_Path is None:
-            raise Exception("M5_PATH Not Found")
+        raise Exception("M5_PATH or --m5-path required")
 
     if acc_bench_path is None:
-        print("Looking for Path Argument from Command Line")
-        if args.m5_path is None:
-            raise Exception(
-                "Path argument required when ACC_BENCH_PATH not set"
-            )
-        acc_bench_path = args.path
-        if acc_bench_path is None:
-            raise Exception("ACC_BENCH_PATH Not Found")
+        raise Exception("ACC_BENCH_PATH or --acc-bench-path required")
 
-    # Set file information
-    if args.sys_name == None:
-        file_name = os.path.basename(os.path.normpath(args.sys_path))
-    else:
-        file_name = args.sys_name
+    file_name = args.sys_name
     config_path = M5_Path + "/configs/SALAM/"
     working_dir = acc_bench_path + "/" + args.bench_path + "/"
     main_yml_path = working_dir + args.config_name
@@ -533,44 +608,35 @@ def main():
     gen_header(
         header_list=header_list, clusters=clusters, working_dir=working_dir
     )
-    # Generate full system file
-    shutil.copyfile(
-        M5_Path + "/util/SALAM-tools/SALAM-Configurator/fs_template.py",
-        config_path + "fs_" + file_name + ".py",
-    )
-    f = open(config_path + "fs_" + file_name + ".py")
-    fullSystem = f.readlines()
 
-    parse_args_idx = None
-    for i, ln in enumerate(fullSystem):
-        if ln.strip() == "import TEMPLATE":
-            fullSystem[i] = f"import {file_name}\n"
-        elif "TEMPLATE.makeHWAcc(" in ln:
-            fullSystem[i] = ln.replace("TEMPLATE.", f"{file_name}.")
-        elif ln.strip() == "args = parser.parse_args()":
-            parse_args_idx = i
+    # The stdlib flow still needs configs/SALAM/<bench>.py and generated
+    # benchmark headers, but it does not need configs/SALAM/fs_<bench>.py.
+    # In that flow, run_salam_stdlib.py builds the system and imports
+    # <bench>.py only for makeHWAcc(args, system).
 
-    # Apply YAML defaults for acc clock/voltage when not provided on CLI
-    if parse_args_idx is not None and (
-        salam_acc_clock is not None or salam_acc_voltage is not None
-    ):
-        inject = []
-        inject.append("\n")
-        inject.append(
-            "# SALAM: YAML-derived accelerator clock/voltage defaults.\n"
+    emit_legacy_fs = not args.no_fs_template
+    if emit_legacy_fs:
+        emit_legacy_fs_template(
+            m5_path=M5_Path,
+            config_path=config_path,
+            file_name=file_name,
+            salam_acc_clock=salam_acc_clock,
+            salam_acc_voltage=salam_acc_voltage,
         )
-        if salam_acc_clock is not None:
-            inject.append("if getattr(args, 'acc_clock', None) is None:\n")
-            inject.append(f"    args.acc_clock = '{salam_acc_clock}'\n")
-        if salam_acc_voltage is not None:
-            inject.append("if getattr(args, 'acc_voltage', None) is None:\n")
-            inject.append(f"    args.acc_voltage = '{salam_acc_voltage}'\n")
-        fullSystem[parse_args_idx + 1 : parse_args_idx + 1] = inject
 
-    f = open(config_path + "fs_" + file_name + ".py", "w")
-    f.writelines(fullSystem)
+    if args.emit_manifest:
+        emit_manifest(
+            config_path=config_path,
+            file_name=file_name,
+            args=args,
+            working_dir=working_dir,
+            main_yml_path=main_yml_path,
+            clusters=clusters,
+            legacy_fs_emitted=emit_legacy_fs,
+        )
+
     # Warn if the size is greater than allowed
-    if clusters[-1].top_address > max_address:
+    if clusters and clusters[-1].top_address > max_address:
         print("WARNING: Address range is greater than defined for gem5")
 
 
