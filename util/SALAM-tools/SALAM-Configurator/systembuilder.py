@@ -557,8 +557,8 @@ def emit_manifest(
 def main():
 
     args = parse_cur_args()
-    M5_Path = os.getenv("M5_PATH") or args.m5_path
-    acc_bench_path = os.getenv("ACC_BENCH_PATH") or args.acc_bench_path
+    M5_Path = args.m5_path or os.getenv("M5_PATH")
+    acc_bench_path = args.acc_bench_path or os.getenv("ACC_BENCH_PATH")
 
     if M5_Path is None:
         raise Exception("M5_PATH or --m5-path required")

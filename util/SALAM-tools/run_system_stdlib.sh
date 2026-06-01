@@ -56,6 +56,11 @@ ACC_DMA_VOLTAGE=""
 ACC_LOCALBUS_CLOCK=""
 ACC_LOCALBUS_VOLTAGE=""
 
+SYS_VOLTAGE=""
+MEM_SIZE="16GB"
+ACC_CACHE=False
+L2CACHE=False
+
 while [[ $# -gt 0 ]]; do
   case $1 in
     --bench)
@@ -105,6 +110,24 @@ while [[ $# -gt 0 ]]; do
     --sys-clock)
       SYS_CLOCK="$2"
       shift
+      shift
+      ;;
+    --sys-voltage)
+      SYS_VOLTAGE="$2"
+      shift
+      shift
+      ;;
+    --mem-size)
+      MEM_SIZE="$2"
+      shift
+      shift
+      ;;
+    --acc-cache)
+      ACC_CACHE=True
+      shift
+      ;;
+    --l2cache)
+      L2CACHE=True
       shift
       ;;
     --acc-clock)
@@ -243,11 +266,23 @@ GEM5_CMD+=(
   "--bench-path" "$BENCH_PATH"
   "--config-name" "$CONFIG_NAME"
   "--kernel" "$KERNEL"
-  "--mem-size" "16GB"
+  "--mem-size" "$MEM_SIZE"
 )
 
 if [[ -n "${SYS_CLOCK:-}" ]]; then
   GEM5_CMD+=("--sys-clock" "$SYS_CLOCK")
+fi
+
+if [[ -n "$SYS_VOLTAGE" ]]; then
+  GEM5_CMD+=("--sys-voltage" "$SYS_VOLTAGE")
+fi
+
+if [[ "$ACC_CACHE" == True ]]; then
+  GEM5_CMD+=("--acc-cache")
+fi
+
+if [[ "$L2CACHE" == True ]]; then
+  GEM5_CMD+=("--l2cache")
 fi
 
 if [[ -n "$ACC_CLOCK" ]]; then

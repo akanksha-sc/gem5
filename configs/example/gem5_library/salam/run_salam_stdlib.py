@@ -95,20 +95,16 @@ def parse_args():
 
     p.add_argument("--acc-cache", action="store_true")
 
-    l2_group = p.add_mutually_exclusive_group()
-    l2_group.add_argument(
+    p.add_argument(
         "--l2cache",
-        dest="l2cache",
         action="store_true",
-        help="Enable the stdlib L2 cache path for SALAM options.",
+        default=False,
+        help=(
+            "Legacy SALAM option passed to generated configs. "
+            "This stdlib runner does not implement true L2-coherent "
+            "accelerator attachment yet."
+        ),
     )
-    l2_group.add_argument(
-        "--no-l2cache",
-        dest="l2cache",
-        action="store_false",
-        help="Disable l2cache in the generated SALAM options object.",
-    )
-    p.set_defaults(l2cache=True)
 
     p.add_argument("--acc-clock", default=None)
     p.add_argument("--acc-voltage", default=None)
@@ -193,6 +189,13 @@ def main():
 
     if not Path(args.kernel).is_file():
         fatal(f"Kernel/bare-metal ELF not found: {args.kernel}")
+
+    if args.l2cache:
+        warn(
+            "--l2cache is accepted as a legacy generated-config option, "
+            "but this stdlib runner currently aliases tol2bus to membus and "
+            "does not implement true L2-coherent accelerator attachment."
+        )
 
     if args.sys_voltage != "1.0V":
         warn(

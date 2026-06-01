@@ -5,12 +5,10 @@
 
 """Stdlib ARM board adapter for generated gem5-SALAM accelerator configs."""
 
-from __future__ import annotations
-
-from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import (
     TYPE_CHECKING,
+    NamedTuple,
     Optional,
 )
 
@@ -21,7 +19,7 @@ from m5.objects import (
     Root,
     SrcClockDomain,
     VExpress_GEM5_Base,
-    VExpress_GEM5_Foundation,
+    VExpress_GEM5_V1,
     VoltageDomain,
 )
 from m5.util import fatal
@@ -53,8 +51,7 @@ class _SalamArmBaremetalWorkload(ArmFsWorkload):
         self.addr_check = False
 
 
-@dataclass
-class SALAMClockConfig:
+class SALAMClockConfig(NamedTuple):
     compute_clock: str
     compute_voltage: str
     mem_clock: str
@@ -79,16 +76,16 @@ class SALAMArmBoard(ArmBoard):
     def __init__(
         self,
         clk_freq: str,
-        processor: AbstractProcessor,
-        memory: AbstractMemorySystem,
-        cache_hierarchy: AbstractCacheHierarchy,
+        processor: "AbstractProcessor",
+        memory: "AbstractMemorySystem",
+        cache_hierarchy: "AbstractCacheHierarchy",
         *,
         salam_module,
         salam_options: SimpleNamespace,
         salam_clocks: SALAMClockConfig,
         baremetal_binary: str,
-        platform: VExpress_GEM5_Base | None = None,
-        release: ArmRelease | None = None,
+        platform: Optional[VExpress_GEM5_Base] = None,
+        release: Optional[ArmRelease] = None,
     ) -> None:
         self._salam_module = salam_module
         self._salam_options = salam_options
@@ -97,7 +94,7 @@ class SALAMArmBoard(ArmBoard):
         self._salam_attached = False
 
         if platform is None:
-            platform = VExpress_GEM5_Foundation()
+            platform = VExpress_GEM5_V1()
         if release is None:
             release = ArmDefaultRelease()
 
@@ -239,7 +236,7 @@ class SALAMArmBoard(ArmBoard):
         self._salam_module.makeHWAcc(self._salam_options, self)
         self._salam_attached = True
 
-    def _pre_instantiate(self, full_system: bool | None = None) -> Root:
+    def _pre_instantiate(self, full_system: Optional[bool] = None) -> Root:
         # Intentionally bypass ArmBoard._pre_instantiate()
         # as it generates a DTB and configure bootloader / kernel-disk state.
         # SALAM's ARM flow is bare-metal and uses no DTB.
