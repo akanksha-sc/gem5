@@ -32,8 +32,592 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "salam_power_model.hh"
+#include "salam/HWModeling/salam_power_model.hh"
+
+#include <algorithm>
+
+#include "salam/HWModeling/functional_units.hh"
+#include "salam/HWModeling/functional_units/base.hh"
 
 SALAMPowerModel::SALAMPowerModel(const SALAMPowerModelParams &params)
-    : SimObject(params)
+    : SimObject(params),
+      accum_(nullptr),
+      functional_units_(nullptr),
+      half_adder_area_cap_(params.half_adder_area_cap),
+      half_adder_dynamic_(params.half_adder_dynamic),
+      integer_mul_dynamic_(params.integer_mul_dynamic),
+      fp_add_dynamic_(params.fp_add_dynamic),
+      fp_mul_dynamic_(params.fp_mul_dynamic),
+      dynamic_activity_scale_(params.dynamic_activity_scale),
+      static_synthesis_floor_(params.static_synthesis_floor)
 {}
+
+SALAMPowerModel::~SALAMPowerModel()
+{
+    delete accum_;
+}
+
+namespace
+{
+
+PowerModelConfig
+makePowerConfig(uint8_t half_adder_dynamic, uint8_t integer_mul_dynamic,
+                uint8_t fp_add_dynamic, uint8_t fp_mul_dynamic,
+                double dynamic_activity_scale, bool static_synthesis_floor)
+{
+    PowerModelConfig cfg;
+    cfg.half_adder = static_cast<HalfAdderDynamicMode>(half_adder_dynamic);
+    cfg.int_mul = static_cast<IntMulDynamicMode>(integer_mul_dynamic);
+    cfg.fp_add = static_cast<FpAddDynamicMode>(fp_add_dynamic);
+    cfg.fp_mul = static_cast<FpMulDynamicMode>(fp_mul_dynamic);
+    cfg.dynamic_activity_scale = dynamic_activity_scale;
+    cfg.static_synthesis_floor = static_synthesis_floor;
+    return cfg;
+}
+
+} // namespace
+
+const PowerAccumulator &
+SALAMPowerModel::accumulator() const
+{
+    return *accum_;
+}
+
+PowerAccumulator &
+SALAMPowerModel::accumulator()
+{
+    return *accum_;
+}
+
+void
+SALAMPowerModel::ensureAccumulator()
+{
+    if (!accum_) {
+        assert(functional_units_);
+        accum_ = new PowerAccumulator(functional_units_);
+    }
+    accum_->setConfig(makePowerConfig(
+        half_adder_dynamic_, integer_mul_dynamic_, fp_add_dynamic_,
+        fp_mul_dynamic_, dynamic_activity_scale_, static_synthesis_floor_));
+}
+
+void
+SALAMPowerModel::bindFunctionalUnits(FunctionalUnits *fu)
+{
+    functional_units_ = fu;
+    if (accum_ && functional_units_ != fu) {
+        delete accum_;
+        accum_ = nullptr;
+    }
+}
+
+void
+SALAMPowerModel::initializePowerModel(const FUCounts &static_counts)
+{
+    ensureAccumulator();
+    accum_->configureStaticCounts(static_counts);
+}
+
+void
+SALAMPowerModel::updateCycle(const FUCounts &units)
+{
+    if (!accum_)
+        return;
+    accum_->updateCycle(units);
+}
+
+void
+SALAMPowerModel::finalize(const FUCounts &static_units, int cycles)
+{
+    if (!accum_)
+        return;
+    accum_->finalize(static_units, cycles, half_adder_area_cap_);
+}
+
+void
+SALAMPowerModel::calculateRegisterPower(const RegUsage &usage, int cycles,
+                                        double avg_regs, double avg_bits)
+{
+    if (!accum_)
+        return;
+    accum_->calculateRegisterPower(usage, cycles, avg_regs, avg_bits);
+}
+
+void
+SALAMPowerModel::recordFinalizedPower(double dynamic_mw, double static_mw,
+                                      double area_um2)
+{
+    dynamic_power_w_ = dynamic_mw * 1e-3;
+    static_power_w_ = static_mw * 1e-3;
+    area_um2_ = area_um2;
+}
+
+void
+RegisterStats::collect(std::vector<std::shared_ptr<SALAM::Value>> &values)
+{
+    registers.clear();
+    for (auto &val : values) {
+        if (!val->isInstruction())
+            continue;
+        auto reg = val->getReg();
+        if (reg && reg->isTracked())
+            registers.push_back(reg.get());
+    }
+    reg_total = registers.size();
+}
+
+void
+RegisterStats::beginCycle()
+{
+    snap_reads.clear();
+    snap_writes.clear();
+    for (auto *reg : registers) {
+        snap_reads.push_back(reg->getReads());
+        snap_writes.push_back(reg->getWrites());
+    }
+}
+
+void
+RegisterStats::endCycle()
+{
+    if (snap_reads.size() != registers.size())
+        return;
+
+    int count = 0;
+    int size = 0;
+    for (size_t i = 0; i < registers.size(); ++i) {
+        auto *reg = registers[i];
+        if (reg->getReads() > snap_reads[i] ||
+            reg->getWrites() > snap_writes[i]) {
+            count++;
+            size += 32;
+        }
+    }
+    reg_avg_usage_sum += count;
+    reg_avg_size_sum += size;
+    if (count > reg_max_usage)
+        reg_max_usage = count;
+    cycles_tracked++;
+}
+
+double
+RegisterStats::averageUsage() const
+{
+    if (cycles_tracked == 0)
+        return 0;
+    return (double)reg_avg_usage_sum / cycles_tracked;
+}
+
+double
+RegisterStats::averageSize() const
+{
+    if (reg_avg_usage_sum == 0)
+        return 0;
+    return (double)reg_avg_size_sum / reg_avg_usage_sum;
+}
+
+RegUsage
+RegisterStats::totalAccess() const
+{
+    RegUsage usage;
+    for (auto *reg : registers) {
+        usage.reads += reg->getReads();
+        usage.writes += reg->getWrites();
+    }
+    return usage;
+}
+
+PowerAccumulator::PowerAccumulator(FunctionalUnits *functional_units)
+    : fu(functional_units)
+{}
+
+FunctionalUnitBase *
+PowerAccumulator::adder() const
+{
+    return fu->_integer_adder;
+}
+
+FunctionalUnitBase *
+PowerAccumulator::multiplier() const
+{
+    return fu->_integer_multiplier;
+}
+
+FunctionalUnitBase *
+PowerAccumulator::bitwise() const
+{
+    return fu->_bitwise_operations;
+}
+
+FunctionalUnitBase *
+PowerAccumulator::shifter() const
+{
+    return fu->_bit_shifter;
+}
+
+FunctionalUnitBase *
+PowerAccumulator::fpAddSp() const
+{
+    return fu->_float_adder;
+}
+
+FunctionalUnitBase *
+PowerAccumulator::fpAddDp() const
+{
+    return fu->_double_adder;
+}
+
+FunctionalUnitBase *
+PowerAccumulator::fpMulSp() const
+{
+    return fu->_float_multiplier;
+}
+
+FunctionalUnitBase *
+PowerAccumulator::fpMulDp() const
+{
+    return fu->_double_multiplier;
+}
+
+FunctionalUnitBase *
+PowerAccumulator::regBit() const
+{
+    return fu->_bit_register;
+}
+
+int
+PowerAccumulator::fpPipelineFactor() const
+{
+    const int cycles = static_cast<int>(fpMulDp()->get_cycles());
+    return cycles > 0 ? cycles : kFpMacroFactor;
+}
+
+static int32_t
+capFuCount(int32_t count, uint32_t limit)
+{
+    if (limit == 0)
+        return count;
+    return std::min(count, static_cast<int32_t>(limit));
+}
+
+FUCounts
+PowerAccumulator::capHalfAdderUnits(const FUCounts &units, int cap)
+{
+    if (cap <= 0)
+        return units;
+
+    const int total = units.compare + units.gep;
+    if (total <= cap)
+        return units;
+
+    FUCounts capped = units;
+    capped.compare = static_cast<int32_t>(
+        (static_cast<int64_t>(units.compare) * cap + total / 2) / total);
+    capped.gep = cap - capped.compare;
+    return capped;
+}
+
+FUCounts
+PowerAccumulator::applyHardwareLimits(const FUCounts &units) const
+{
+    FUCounts capped = units;
+    capped.int_adder_units =
+        capFuCount(units.int_adder_units, adder()->get_limit());
+    capped.int_multiply_units =
+        capFuCount(units.int_multiply_units, multiplier()->get_limit());
+    capped.int_shifter_units =
+        capFuCount(units.int_shifter_units, shifter()->get_limit());
+    capped.int_bit_units =
+        capFuCount(units.int_bit_units, bitwise()->get_limit());
+    capped.fp_sp_adder = capFuCount(units.fp_sp_adder, fpAddSp()->get_limit());
+    capped.fp_dp_adder = capFuCount(units.fp_dp_adder, fpAddDp()->get_limit());
+    capped.fp_sp_multiply =
+        capFuCount(units.fp_sp_multiply, fpMulSp()->get_limit());
+    capped.fp_dp_multiply =
+        capFuCount(units.fp_dp_multiply, fpMulDp()->get_limit());
+    return capped;
+}
+
+void
+PowerAccumulator::accumulatePerCycleLeakage(const FUCounts &units)
+{
+    fu_leakage_per_cycle +=
+        adder()->get_leakage_power() * units.int_adder_units;
+    fu_leakage_per_cycle +=
+        multiplier()->get_leakage_power() * units.int_multiply_units;
+    fu_leakage_per_cycle +=
+        bitwise()->get_leakage_power() * units.int_bit_units;
+    fu_leakage_per_cycle +=
+        shifter()->get_leakage_power() * units.int_shifter_units;
+    fu_leakage_per_cycle += fpAddSp()->get_leakage_power() * units.fp_sp_adder;
+    fu_leakage_per_cycle += fpAddDp()->get_leakage_power() * units.fp_dp_adder;
+    fu_leakage_per_cycle +=
+        fpMulSp()->get_leakage_power() * units.fp_sp_multiply;
+    fu_leakage_per_cycle +=
+        fpMulDp()->get_leakage_power() * units.fp_dp_multiply;
+}
+
+bool
+PowerAccumulator::integerOnlyStatic() const
+{
+    return static_synthesis_.fp_dp_adder == 0 &&
+           static_synthesis_.fp_sp_adder == 0 &&
+           static_synthesis_.fp_dp_multiply == 0 &&
+           static_synthesis_.fp_sp_multiply == 0;
+}
+
+void
+PowerAccumulator::configureStaticCounts(const FUCounts &static_units)
+{
+    static_synthesis_ = static_units;
+}
+
+void
+PowerAccumulator::accumulateDynamic(const FUCounts &units)
+{
+    double cycle_dynamic = 0;
+    double static_rtl_bundle = 0;
+    const double add_dyn =
+        adder()->get_switch_power() + adder()->get_internal_power();
+    const double mul_dyn =
+        multiplier()->get_switch_power() + multiplier()->get_internal_power();
+    const double fp_sp_add_dyn =
+        fpAddSp()->get_switch_power() + fpAddSp()->get_internal_power();
+    const double fp_dp_add_dyn =
+        fpAddDp()->get_switch_power() + fpAddDp()->get_internal_power();
+    const double fp_sp_mul_dyn =
+        fpMulSp()->get_switch_power() + fpMulSp()->get_internal_power();
+    const double fp_dp_mul_dyn =
+        fpMulDp()->get_switch_power() + fpMulDp()->get_internal_power();
+    const int pipe = fpPipelineFactor();
+    const double half_dyn = kAdd05nsInternal + kAdd05nsSwitch;
+
+    if (config_.static_synthesis_floor) {
+        const int s_half = static_synthesis_.compare + static_synthesis_.gep;
+        cycle_dynamic += static_synthesis_.int_adder_units * add_dyn;
+        cycle_dynamic += static_synthesis_.int_multiply_units * mul_dyn;
+        cycle_dynamic += s_half * half_dyn;
+        cycle_dynamic += static_synthesis_.fp_dp_adder * fp_dp_add_dyn * pipe;
+        if (static_synthesis_.fp_dp_multiply > 0)
+            cycle_dynamic += fp_dp_mul_dyn * pipe;
+        else if (static_synthesis_.fp_sp_multiply > 0)
+            cycle_dynamic += fp_sp_mul_dyn * pipe;
+        full_adder_op_cycles += static_synthesis_.int_adder_units;
+        int_multiplier_op_cycles += static_synthesis_.int_multiply_units;
+        half_adder_op_cycles += s_half;
+        if (static_synthesis_.fp_dp_multiply > 0)
+            fp_dp_multiplier_op_cycles += static_synthesis_.fp_dp_multiply;
+        const double scaled = cycle_dynamic * config_.dynamic_activity_scale;
+        fu_dynamic_energy += scaled;
+        return;
+    }
+
+    cycle_dynamic += add_dyn * units.int_adder_units;
+    full_adder_op_cycles += units.int_adder_units;
+
+    switch (config_.int_mul) {
+        case IntMulDynamicMode::STATIC_PER_UNIT:
+            if (static_synthesis_.int_multiply_units > 0)
+                cycle_dynamic +=
+                    static_synthesis_.int_multiply_units * mul_dyn * pipe;
+            int_multiplier_op_cycles += static_synthesis_.int_multiply_units;
+            break;
+        case IntMulDynamicMode::SHARED_MACRO:
+            if (units.int_multiply_units > 0)
+                cycle_dynamic += mul_dyn * pipe;
+            int_multiplier_op_cycles += units.int_multiply_units;
+            break;
+        case IntMulDynamicMode::RUNTIME:
+        default: {
+            const int static_int_mul = static_synthesis_.int_multiply_units;
+            if (static_int_mul > 0 && integerOnlyStatic()) {
+                if (static_int_mul >= kIntMulStaticPerUnitThreshold)
+                    cycle_dynamic += static_int_mul * mul_dyn * pipe;
+                else
+                    cycle_dynamic += mul_dyn * pipe;
+            } else {
+                cycle_dynamic += mul_dyn * units.int_multiply_units;
+            }
+            int_multiplier_op_cycles += units.int_multiply_units;
+            break;
+        }
+    }
+
+    cycle_dynamic +=
+        (bitwise()->get_switch_power() + bitwise()->get_internal_power()) *
+        units.int_bit_units;
+    cycle_dynamic +=
+        (shifter()->get_switch_power() + shifter()->get_internal_power()) *
+        units.int_shifter_units;
+
+    const bool serialized_fp_mul =
+        config_.fp_mul == FpMulDynamicMode::PER_UNIT_SERIALIZED ||
+        fpMulDp()->get_limit() == 1;
+
+    if (serialized_fp_mul) {
+        if (config_.fp_add == FpAddDynamicMode::SHARED_MACRO) {
+            if (units.fp_dp_adder > 0)
+                cycle_dynamic += fp_dp_add_dyn * pipe;
+        } else {
+            cycle_dynamic += fp_dp_add_dyn * units.fp_dp_adder * pipe;
+        }
+        cycle_dynamic += fp_sp_add_dyn * units.fp_sp_adder * pipe;
+        if (units.fp_dp_multiply > 0) {
+            cycle_dynamic += fp_dp_mul_dyn * units.fp_dp_multiply;
+            fp_dp_multiplier_op_cycles += units.fp_dp_multiply;
+        }
+        if (units.fp_sp_multiply > 0) {
+            cycle_dynamic += fp_sp_mul_dyn * units.fp_sp_multiply;
+            fp_sp_multiplier_op_cycles += units.fp_sp_multiply;
+        }
+    } else {
+        if (config_.fp_add == FpAddDynamicMode::SHARED_MACRO) {
+            if (units.fp_sp_adder > 0)
+                cycle_dynamic += fp_sp_add_dyn * pipe;
+            if (units.fp_dp_adder > 0)
+                cycle_dynamic += fp_dp_add_dyn * pipe;
+        } else {
+            cycle_dynamic += fp_sp_add_dyn * units.fp_sp_adder * pipe;
+            cycle_dynamic += fp_dp_add_dyn * units.fp_dp_adder * pipe;
+        }
+
+        if (config_.fp_mul == FpMulDynamicMode::STATIC_RTL_BUNDLE) {
+            if (static_synthesis_.fp_dp_multiply > 0) {
+                static_rtl_bundle += fp_dp_mul_dyn * pipe;
+                fp_dp_multiplier_op_cycles += static_synthesis_.fp_dp_multiply;
+            } else if (static_synthesis_.fp_sp_multiply > 0) {
+                static_rtl_bundle += fp_sp_mul_dyn * pipe;
+                fp_sp_multiplier_op_cycles += static_synthesis_.fp_sp_multiply;
+            }
+        } else if (config_.fp_mul == FpMulDynamicMode::PER_UNIT) {
+            if (units.fp_sp_multiply > 0) {
+                cycle_dynamic += fp_sp_mul_dyn * units.fp_sp_multiply;
+                fp_sp_multiplier_op_cycles += units.fp_sp_multiply;
+            }
+            if (units.fp_dp_multiply > 0) {
+                cycle_dynamic += fp_dp_mul_dyn * units.fp_dp_multiply;
+                fp_dp_multiplier_op_cycles += units.fp_dp_multiply;
+            }
+        } else {
+            if (units.fp_sp_multiply > 0) {
+                cycle_dynamic += fp_sp_mul_dyn * pipe;
+                fp_sp_multiplier_op_cycles += units.fp_sp_multiply;
+            }
+            if (units.fp_dp_multiply > 0) {
+                cycle_dynamic += fp_dp_mul_dyn * pipe;
+                fp_dp_multiplier_op_cycles += units.fp_dp_multiply;
+            }
+        }
+    }
+
+    if (config_.half_adder == HalfAdderDynamicMode::STATIC_FLOOR) {
+        const int static_half = static_synthesis_.compare +
+                                static_synthesis_.gep +
+                                static_synthesis_.conversion;
+        cycle_dynamic += half_dyn * static_half;
+        half_adder_op_cycles += static_half;
+    } else {
+        const int half_adder_ops =
+            units.counter_units + units.conversion + units.compare + units.gep;
+        half_adder_op_cycles += half_adder_ops;
+        cycle_dynamic += half_dyn * half_adder_ops;
+    }
+
+    cycle_dynamic += static_rtl_bundle;
+
+    double scaled = cycle_dynamic;
+    if (config_.dynamic_activity_scale != 1.0) {
+        if (config_.fp_mul == FpMulDynamicMode::STATIC_RTL_BUNDLE &&
+            static_rtl_bundle > 0.0) {
+            scaled = static_rtl_bundle + (cycle_dynamic - static_rtl_bundle) *
+                                             config_.dynamic_activity_scale;
+        } else {
+            scaled = cycle_dynamic * config_.dynamic_activity_scale;
+        }
+    }
+
+    fu_dynamic_energy += scaled;
+}
+
+void
+PowerAccumulator::updateCycle(const FUCounts &units)
+{
+    accumulatePerCycleLeakage(units);
+    accumulateDynamic(units);
+}
+
+void
+PowerAccumulator::calculateStaticLeakage(const FUCounts &units)
+{
+    fu_final_leakage = adder()->get_leakage_power() * units.int_adder_units;
+    fu_final_leakage +=
+        multiplier()->get_leakage_power() * units.int_multiply_units;
+    fu_final_leakage += bitwise()->get_leakage_power() * units.int_bit_units;
+    fu_final_leakage +=
+        shifter()->get_leakage_power() * units.int_shifter_units;
+    fu_final_leakage += fpAddSp()->get_leakage_power() * units.fp_sp_adder;
+    fu_final_leakage += fpAddDp()->get_leakage_power() * units.fp_dp_adder;
+    if (units.fp_sp_multiply > 0)
+        fu_final_leakage += fpMulSp()->get_leakage_power();
+    if (units.fp_dp_multiply > 0)
+        fu_final_leakage += fpMulDp()->get_leakage_power();
+
+    const int half_adder_static = units.conversion + units.compare + units.gep;
+    fu_final_leakage += kAdd05nsLeakage * half_adder_static;
+}
+
+void
+PowerAccumulator::calculateStaticArea(const FUCounts &units)
+{
+    const bool has_fp = units.fp_dp_adder > 0 || units.fp_sp_adder > 0 ||
+                        units.fp_dp_multiply > 0 || units.fp_sp_multiply > 0;
+    const bool integer_only = units.int_multiply_units == 0 && !has_fp;
+
+    fu_area = multiplier()->get_area() * units.int_multiply_units;
+    fu_area += bitwise()->get_area() * units.int_bit_units;
+    fu_area += shifter()->get_area() * units.int_shifter_units;
+    fu_area += fpAddDp()->get_area() * units.fp_dp_adder;
+    fu_area += fpAddSp()->get_area() * units.fp_sp_adder;
+    if (units.fp_sp_multiply > 0)
+        fu_area += fpMulSp()->get_area();
+    if (units.fp_dp_multiply > 0)
+        fu_area += fpMulDp()->get_area();
+
+    if (units.int_adder_units > 0 &&
+        (integer_only ||
+         (units.int_multiply_units > 0 && half_adder_cap_cfg > 0)))
+        fu_area += adder()->get_area() * units.int_adder_units;
+
+    const int half_adder_static = units.compare + units.gep;
+    if (half_adder_static > 0 &&
+        (integer_only ||
+         (units.int_multiply_units > 0 && half_adder_cap_cfg > 0)))
+        fu_area += kAdd05nsArea * half_adder_static;
+}
+
+void
+PowerAccumulator::calculateRegisterPower(const RegUsage &usage, int cycles,
+                                         double avg_regs, double avg_bits)
+{
+    if (cycles <= 0 || avg_regs <= 0)
+        return;
+
+    const double scale = (avg_regs / cycles) * (avg_bits / avg_regs);
+    const double reg_dyn =
+        regBit()->get_internal_power() + regBit()->get_switch_power();
+    reg_leakage = regBit()->get_leakage_power() * scale;
+    reg_dynamic_energy =
+        ((double)usage.reads + (double)usage.writes) * scale * reg_dyn;
+    reg_area = scale * regBit()->get_area();
+}
+
+void
+PowerAccumulator::finalize(const FUCounts &static_units, int cycles,
+                           int half_adder_cap)
+{
+    half_adder_cap_cfg = half_adder_cap;
+    const FUCounts synthesis = applyHardwareLimits(static_units);
+    calculateStaticLeakage(synthesis);
+    FUCounts area_units = capHalfAdderUnits(synthesis, half_adder_cap);
+    calculateStaticArea(area_units);
+}

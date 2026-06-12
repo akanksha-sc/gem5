@@ -826,6 +826,52 @@ class FMul : public Instruction
 std::shared_ptr<SALAM::Instruction>
 createFMulInst(uint64_t id, gem5::SimObject *owner, bool dbg, uint64_t OpCode,
                uint64_t cycles, uint64_t fu);
+// SALAM-FMulAdd // ---------------------------------------------------------//
+
+class FMulAdd : public Instruction
+{
+  private:
+    std::vector<std::vector<uint64_t>> conditions;
+    SALAM::Debugger *dbgr;
+    uint64_t currentCycle;
+
+  protected:
+  public:
+    FMulAdd(uint64_t id, gem5::SimObject *owner, bool dbg, uint64_t OpCode,
+            uint64_t cycles, uint64_t fu);
+    ~FMulAdd() = default;
+    void initialize(llvm::Value *irval, irvmap *irmap,
+                    SALAM::valueListTy *valueList);
+    uint64_t
+    getCycleCount()
+    {
+        return conditions.at(0).at(2);
+    }
+    void compute();
+    void
+    dump()
+    {
+        if (dbgr->enabled()) {
+            dumper();
+            inst_dbg->dumper(static_cast<SALAM::Instruction *>(this));
+        }
+    }
+    void dumper();
+    std::shared_ptr<SALAM::FMulAdd>
+    clone() const
+    {
+        return std::static_pointer_cast<SALAM::FMulAdd>(createClone());
+    }
+    virtual std::shared_ptr<SALAM::Value>
+    createClone() const override
+    {
+        return std::shared_ptr<SALAM::FMulAdd>(new SALAM::FMulAdd(*this));
+    }
+};
+
+std::shared_ptr<SALAM::Instruction>
+createFMulAddInst(uint64_t id, gem5::SimObject *owner, bool dbg,
+                  uint64_t OpCode, uint64_t cycles, uint64_t fu);
 // SALAM-UDiv // ------------------------------------------------------------//
 
 class UDiv : public Instruction

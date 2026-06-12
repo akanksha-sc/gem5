@@ -743,50 +743,50 @@ class FunctionalUnitGenerator:
                 + '.yml")\n'
             )
             self.simobject_file.write(
-                "\tinternal_power = Param.UInt32("
-                + str(self.hwmodel.internal_power)
+                "\tinternal_power = Param.Float("
+                + repr(self.hwmodel.internal_power)
                 + ', "Default values set from '
                 + self.alias
                 + '.yml")\n'
             )
             self.simobject_file.write(
-                "\tswitch_power = Param.UInt32("
-                + str(self.hwmodel.switch_power)
+                "\tswitch_power = Param.Float("
+                + repr(self.hwmodel.switch_power)
                 + ', "Default values set from '
                 + self.alias
                 + '.yml")\n'
             )
             self.simobject_file.write(
-                "\tdynamic_power = Param.UInt32("
-                + str(self.hwmodel.dynamic_power)
+                "\tdynamic_power = Param.Float("
+                + repr(self.hwmodel.dynamic_power)
                 + ', "Default values set from '
                 + self.alias
                 + '.yml")\n'
             )
             self.simobject_file.write(
-                "\tdynamic_energy = Param.UInt32("
-                + str(self.hwmodel.dynamic_energy)
+                "\tdynamic_energy = Param.Float("
+                + repr(self.hwmodel.dynamic_energy)
                 + ', "Default values set from '
                 + self.alias
                 + '.yml")\n'
             )
             self.simobject_file.write(
-                "\tleakage_power = Param.UInt32("
-                + str(self.hwmodel.leakage_power)
+                "\tleakage_power = Param.Float("
+                + repr(self.hwmodel.leakage_power)
                 + ', "Default values set from '
                 + self.alias
                 + '.yml")\n'
             )
             self.simobject_file.write(
-                "\tarea = Param.UInt32("
-                + str(self.hwmodel.area)
+                "\tarea = Param.Float("
+                + repr(self.hwmodel.area)
                 + ', "Default values set from '
                 + self.alias
                 + '.yml")\n'
             )
             self.simobject_file.write(
-                "\tpath_delay = Param.UInt32("
-                + str(self.hwmodel.path_delay)
+                "\tpath_delay = Param.Float("
+                + repr(self.hwmodel.path_delay)
                 + ', "Default values set from '
                 + self.alias
                 + '.yml")\n\n'

@@ -87,7 +87,12 @@ class HWModel:
         self.inst_list = []
 
     def get_fu_list(self):
-        return self.fu_list
+        fu_impl_dir = os.path.join(SALAM_DIR, "HWModeling", "functional_units")
+        supported = []
+        for fu in self.fu_list:
+            if os.path.isfile(os.path.join(fu_impl_dir, fu + ".hh")):
+                supported.append(fu)
+        return supported
 
     def get_instruction_list(self):
         self.fu_yaml = open(self.inst_list_yaml)
@@ -187,42 +192,87 @@ os.makedirs(os.path.join(GEN_BASE, "functional_units"), exist_ok=True)
 os.makedirs(os.path.join(GEN_BASE, "instructions"), exist_ok=True)
 
 benchmark_args = HWArgs()
-generate_hw_models = HWModel(benchname=benchmark_args.bench, latency="5ns")
+generate_hw_models = HWModel(
+    benchname=benchmark_args.bench, latency=benchmark_args.latency
+)
 fu_file_generator = FunctionalUnitGenerator(
     fu_directory=os.path.join(SALAM_DIR, "FunctionalUnits.py")
 )
-fu_file_generator.initialize_functional_unit_base_header_file()
-fu_file_generator.initalize_fu_list_header(generate_hw_models.get_fu_list())
-fu_file_generator.initialize_simobject_file(generate_hw_models.get_fu_list())
+
+if benchmark_args.fu_only:
+    fu_file_generator.initialize_simobject_file(
+        generate_hw_models.get_fu_list()
+    )
+else:
+    fu_file_generator.initialize_functional_unit_base_header_file()
+    fu_file_generator.initalize_fu_list_header(
+        generate_hw_models.get_fu_list()
+    )
+    fu_file_generator.initialize_simobject_file(
+        generate_hw_models.get_fu_list()
+    )
 
 for functional_unit in generate_hw_models.get_fu_list():
-    generate_hw_models.generate_hw(functional_unit)
+    fu_yaml_path = (
+        generate_hw_models.yaml_dir
+        + "/"
+        + functional_unit
+        + "/"
+        + functional_unit
+        + ".yml"
+    )
+    with open(fu_yaml_path) as fu_yaml:
+        data = yaml.load(fu_yaml, Loader=yaml.FullLoader)
+    params = data["functional_unit"]["parameters"]
+    generate_hw_models.alias = params["alias"]
+    generate_hw_models.stages = params["stages"]
+    generate_hw_models.cycles = params["cycles"]
+    generate_hw_models.enum_value = params["enum_value"]
+    generate_hw_models.int_size = params["datatypes"]["integer"]["size"]
+    generate_hw_models.int_sign = params["datatypes"]["integer"]["sign"]
+    generate_hw_models.int_apmode = params["datatypes"]["integer"]["APMode"]
+    generate_hw_models.fp_size = params["datatypes"]["floating_point"]["size"]
+    generate_hw_models.fp_sign = params["datatypes"]["floating_point"]["sign"]
+    generate_hw_models.fp_apmode = params["datatypes"]["floating_point"][
+        "APMode"
+    ]
+    generate_hw_models.ptr_size = params["datatypes"]["pointer"]["size"]
+    generate_hw_models.ptr_sign = params["datatypes"]["pointer"]["sign"]
+    generate_hw_models.ptr_apmode = params["datatypes"]["pointer"]["APMode"]
+    generate_hw_models.limit = params["limit"]
     generate_hw_models.generate_power_model(functional_unit)
+    if not benchmark_args.fu_only:
+        generate_hw_models.generate_hw(functional_unit)
     fu_file_generator.set_fu(functional_unit)
-    fu_file_generator.functional_unit_header_generator(generate_hw_models)
+    if not benchmark_args.fu_only:
+        fu_file_generator.functional_unit_header_generator(generate_hw_models)
     fu_file_generator.simobject_generator(generate_hw_models)
 
-inst_cfg_gen = InstConfigGenerator()
+if not benchmark_args.fu_only:
+    inst_cfg_gen = InstConfigGenerator()
 
-inst_cfg_gen.initialize_inst_config_base_header_file()
-inst_cfg_gen.instruction_simobject_generator(generate_hw_models)
-inst_cfg_gen.initalize_inst_config_header(
-    generate_hw_models.get_instruction_list()
-)
-for inst in generate_hw_models.get_instruction_list()["instructions"].keys():
-    inst_cfg_gen.inst_config_header_generator(inst)
+    inst_cfg_gen.initialize_inst_config_base_header_file()
+    inst_cfg_gen.instruction_simobject_generator(generate_hw_models)
+    inst_cfg_gen.initalize_inst_config_header(
+        generate_hw_models.get_instruction_list()
+    )
+    for inst in generate_hw_models.get_instruction_list()[
+        "instructions"
+    ].keys():
+        inst_cfg_gen.inst_config_header_generator(inst)
 
-# source + SCons
-inst_cfg_gen.generate_inst_config_source(
-    generate_hw_models.get_instruction_list()
-)
-inst_cfg_gen.generate_inst_config_sconscript(
-    generate_hw_models.get_instruction_list()["instructions"]
-)
-fu_file_generator.generate_fu_list_source(generate_hw_models.get_fu_list())
-fu_file_generator.generate_functional_unit_sconscript(
-    generate_hw_models.get_fu_list()
-)
+    # source + SCons
+    inst_cfg_gen.generate_inst_config_source(
+        generate_hw_models.get_instruction_list()
+    )
+    inst_cfg_gen.generate_inst_config_sconscript(
+        generate_hw_models.get_instruction_list()["instructions"]
+    )
+if not benchmark_args.fu_only:
+    fu_file_generator.generate_fu_list_source(generate_hw_models.get_fu_list())
+    fu_file_generator.generate_functional_unit_sconscript(
+        generate_hw_models.get_fu_list()
+    )
 
 if __name__ == "__main__":
     pass

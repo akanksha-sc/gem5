@@ -186,6 +186,7 @@ class AccCluster:
             pio_size = None
             int_num = None
             ir_path = None
+            top_name = None
             hw_config_path = self.hw_config_path
             debug = False
 
@@ -206,6 +207,8 @@ class AccCluster:
                         print("Acc Error: " + hex(pio_address))
                 if "IrPath" in device_dict:
                     ir_path = device_dict["IrPath"]
+                if "TopName" in device_dict:
+                    top_name = device_dict["TopName"]
                 if "HWPath" in device_dict:
                     hw_config_path = device_dict["HWPath"]
                 if "PIOMaster" in device_dict:
@@ -286,6 +289,7 @@ class AccCluster:
                     int_num=int_num,
                     working_dir=working_dir,
                     ir_path=ir_path,
+                    top_name=top_name,
                     config_path=self.config_path,
                     hw_config_path=hw_config_path,
                     variables=variables,
@@ -361,11 +365,13 @@ class Accelerator:
         ir_path: str,
         config_path: str,
         hw_config_path: str,
+        top_name: str = None,
         variables=None,
         debug: bool = False,
     ):
 
         self.name = name.lower()
+        self.top_name = top_name
         self.pio_masters = pio_masters
         self.local_connections = local_connections
         self.address = address
@@ -422,11 +428,21 @@ class Accelerator:
             "getattr(system, 'acc_clk_domain', system.clk_domain))"
         )
         lines.append("AccConfig(clstr." + self.name + ", ir, hw_config)")
+        if self.top_name:
+            lines.append(
+                "clstr."
+                + self.name
+                + '.llvm_interface.top_name = "'
+                + self.top_name
+                + '"'
+            )
         lines.append(
             "clstr." + self.name + ".llvm_interface.clk_domain = getattr("
             "system, 'acc_compute_clk_domain', "
             "getattr(system, 'acc_clk_domain', system.clk_domain))"
         )
+        lines.append("clstr." + self.name + ".process_cycles = 1")
+        lines.append("clstr." + self.name + ".mmio_cycles = 1")
 
         lines.append("")
 
@@ -650,6 +666,7 @@ class DMA:
         )
         lines.append(dmaPath + "max_req_size = " + str(self.maxReq))
         lines.append(dmaPath + "buffer_size = " + str(self.size))
+        lines.append(dmaPath + "mmio_cycles = 1")
         lines.append(
             "clstr." + self.name + ".dma = clstr.coherency_bus.cpu_side_ports"
         )
@@ -802,8 +819,9 @@ class Variable:
                 "clstr."
                 + self.name.lower()
                 + ".engine = SALAMTickEngine(clk_domain = getattr("
-                "system, 'acc_mem_clk_domain', "
-                "getattr(system, 'acc_clk_domain', system.clk_domain)))"
+                "system, 'acc_spm_clk_domain', "
+                "getattr(system, 'acc_mem_clk_domain', "
+                "getattr(system, 'acc_clk_domain', system.clk_domain))))"
             )
             lines.append(
                 "clstr."
@@ -811,6 +829,9 @@ class Variable:
                 + ".tick_engine = clstr."
                 + self.name.lower()
                 + ".engine"
+            )
+            lines.append(
+                "clstr." + self.name.lower() + ".access_latency_cycles = 1"
             )
             # Probably need to add table and read mode to the YAML File
             lines.append(
@@ -899,6 +920,12 @@ class Variable:
                 + ".tick_engine = clstr."
                 + self.name.lower()
                 + ".engine"
+            )
+            lines.append(
+                "clstr." + self.name.lower() + ".read_latency_cycles = 0"
+            )
+            lines.append(
+                "clstr." + self.name.lower() + ".write_visibility_cycles = 1"
             )
             lines.append(
                 "clstr."

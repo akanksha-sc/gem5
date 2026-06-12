@@ -55,6 +55,8 @@ ACC_DMA_CLOCK=""
 ACC_DMA_VOLTAGE=""
 ACC_LOCALBUS_CLOCK=""
 ACC_LOCALBUS_VOLTAGE=""
+ACC_SPM_CLOCK=""
+ACC_SPM_VOLTAGE=""
 
 SYS_VOLTAGE=""
 MEM_SIZE="16GB"
@@ -177,6 +179,16 @@ while [[ $# -gt 0 ]]; do
       ;;
     --acc-localbus-voltage)
       ACC_LOCALBUS_VOLTAGE="$2"
+      shift
+      shift
+      ;;
+    --acc-spm-clock)
+      ACC_SPM_CLOCK="$2"
+      shift
+      shift
+      ;;
+    --acc-spm-voltage)
+      ACC_SPM_VOLTAGE="$2"
       shift
       shift
       ;;
@@ -315,10 +327,17 @@ fi
 if [[ -n "$ACC_LOCALBUS_VOLTAGE" ]]; then
   GEM5_CMD+=("--acc-localbus-voltage" "$ACC_LOCALBUS_VOLTAGE")
 fi
+if [[ -n "$ACC_SPM_CLOCK" ]]; then
+  GEM5_CMD+=("--acc-spm-clock" "$ACC_SPM_CLOCK")
+fi
+if [[ -n "$ACC_SPM_VOLTAGE" ]]; then
+  GEM5_CMD+=("--acc-spm-voltage" "$ACC_SPM_VOLTAGE")
+fi
 
 if [[ "$DRY_RUN" == True ]]; then
   GEM5_CMD+=("--dry-run")
 fi
+
 
 if ! "$M5_PATH/util/SALAM-tools/SALAM-Configurator/systembuilder.py" \
     --sys-name "$BENCH" \

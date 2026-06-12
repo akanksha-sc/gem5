@@ -1191,6 +1191,81 @@ FMul::compute()
 #endif
 }
 
+// SALAM-FMulAdd // --------------------------------------------------------//
+void // Debugging Interface
+FMulAdd::dumper()
+{}
+
+std::shared_ptr<SALAM::Instruction>
+createFMulAddInst(uint64_t id, gem5::SimObject *owner, bool dbg,
+                  uint64_t OpCode, uint64_t cycles, uint64_t fu)
+{
+    return std::make_shared<SALAM::FMulAdd>(id, owner, dbg, OpCode, cycles,
+                                            fu);
+}
+
+FMulAdd::FMulAdd(uint64_t id, gem5::SimObject *owner, bool dbg,
+                 uint64_t OpCode, uint64_t cycles, uint64_t fu)
+    : Instruction(id, owner, dbg, OpCode, cycles, fu)
+{
+    std::vector<uint64_t> base_params;
+    base_params.push_back(id);
+    base_params.push_back(OpCode);
+    base_params.push_back(cycles);
+    conditions.push_back(base_params);
+}
+
+void
+FMulAdd::initialize(llvm::Value *irval, irvmap *irmap,
+                    SALAM::valueListTy *valueList)
+{
+    SALAM::Instruction::initialize(irval, irmap, valueList);
+    if (!staticDependencies.empty()) {
+        staticDependencies.pop_back();
+    }
+}
+
+void
+FMulAdd::compute()
+{
+    if (dbg) {
+        DPRINTFS(RuntimeCompute, owner, "|| Computing %s\n", ir_string);
+    }
+#if USE_LLVM_AP_VALUES
+    llvm::APFloat op0 = operands.at(0).getFloatRegValue();
+    llvm::APFloat op1 = operands.at(1).getFloatRegValue();
+    llvm::APFloat op2 = operands.at(2).getFloatRegValue();
+    llvm::APFloat product = op0 * op1;
+    llvm::APFloat result = product + op2;
+    setRegisterValue(result);
+#else
+    uint64_t bitcastResult;
+    switch (size) {
+        case 64: {
+            double op0 = operands.at(0).getDoubleFromReg();
+            double op1 = operands.at(1).getDoubleFromReg();
+            double op2 = operands.at(2).getDoubleFromReg();
+            double result = op0 * op1 + op2;
+            bitcastResult = *(uint64_t *)&result;
+            break;
+        }
+        case 32: {
+            float op0 = operands.at(0).getFloatFromReg();
+            float op1 = operands.at(1).getFloatFromReg();
+            float op2 = operands.at(2).getFloatFromReg();
+            float result = op0 * op1 + op2;
+            uint32_t tmp_val = *(uint32_t *)&result;
+            bitcastResult = tmp_val;
+            break;
+        }
+        default: {
+            assert(0 && "Unsupported floating point type for fmuladd.");
+        }
+    }
+    setRegisterValue(bitcastResult);
+#endif
+}
+
 // SALAM-UDiv // -----------------------------------------------------------//
 void // Debugging Interface
 UDiv::dumper()

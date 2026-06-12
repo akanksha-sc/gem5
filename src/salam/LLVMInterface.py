@@ -54,7 +54,7 @@ class LLVMInterface(AccComputeUnit):
         "top", "Name of the top-level function for the accelerator"
     )
     window_stats_enable = Param.Bool(
-        True,
+        False,
         "Emit fixed-size window summaries for compute-burst / phase analysis",
     )
     window_size = Param.UInt32(

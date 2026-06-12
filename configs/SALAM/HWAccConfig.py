@@ -41,6 +41,60 @@ from m5.objects import *
 from m5.util import *
 
 
+def _apply_fu_hardware_limits(acc, fu_limits):
+    """Apply per-benchmark synthesized FU instance caps."""
+    fu_map = {
+        "integer_adder": acc.hw_interface.functional_units.integer_adder,
+        "integer_multiplier": acc.hw_interface.functional_units.integer_multiplier,
+        "bit_shifter": acc.hw_interface.functional_units.bit_shifter,
+        "bitwise_operations": acc.hw_interface.functional_units.bitwise_operations,
+        "float_adder": acc.hw_interface.functional_units.float_adder,
+        "float_multiplier": acc.hw_interface.functional_units.float_multiplier,
+        "double_adder": acc.hw_interface.functional_units.double_adder,
+        "double_multiplier": acc.hw_interface.functional_units.double_multiplier,
+    }
+    pm = acc.hw_interface.salam_power_model
+    for fu_name, limit in fu_limits.items():
+        if fu_name == "half_adder":
+            pm.half_adder_area_cap = limit
+        elif fu_name in fu_map:
+            fu_map[fu_name].limit = limit
+
+
+def _apply_power_calibration(acc, calibration):
+    """Apply per-kernel power model modes from config.yml."""
+    if not calibration:
+        return
+    pm = acc.hw_interface.salam_power_model
+    if "half_adder_dynamic" in calibration:
+        pm.half_adder_dynamic = calibration["half_adder_dynamic"]
+    if "integer_mul_dynamic" in calibration:
+        pm.integer_mul_dynamic = calibration["integer_mul_dynamic"]
+    if "fp_add_dynamic" in calibration:
+        pm.fp_add_dynamic = calibration["fp_add_dynamic"]
+    if "fp_mul_dynamic" in calibration:
+        pm.fp_mul_dynamic = calibration["fp_mul_dynamic"]
+    if "dynamic_activity_scale" in calibration:
+        pm.dynamic_activity_scale = calibration["dynamic_activity_scale"]
+    if calibration.get("static_synthesis_floor"):
+        pm.static_synthesis_floor = True
+
+
+def _load_accel_hw_profile(config_file, benchname, benchPath, m5PathLen):
+    """Return hw_config profile dict for this accelerator, or None."""
+    with open(config_file) as fu_yaml:
+        if benchPath[m5PathLen + 1] == "mobilenetv2":
+            for yaml_inst_list in yaml.safe_load_all(fu_yaml):
+                current_acc = (
+                    yaml_inst_list["hw_config"]["name"] + "_" + benchname
+                )
+                if benchPath[9] == current_acc:
+                    return yaml_inst_list["hw_config"][current_acc]
+            return None
+        yaml_inst_list = yaml.safe_load(fu_yaml)
+        return yaml_inst_list["hw_config"].get(benchname)
+
+
 def AccConfig(acc, bench_file, config_file):
     # Initialize LLVMInterface Objects
     acc.llvm_interface = LLVMInterface()
@@ -95,6 +149,9 @@ def AccConfig(acc, bench_file, config_file):
             return bench_cfg["instructions"]
 
     inst_overrides = _load_instruction_overrides()
+    accel_hw_profile = _load_accel_hw_profile(
+        config_file, benchname, benchPath, m5PathLen
+    )
 
     #  Functional Units
     acc.hw_interface.functional_units = FunctionalUnits()
@@ -184,7 +241,9 @@ def AccConfig(acc, bench_file, config_file):
 
     # Apply instruction-level overrides from hw_config
     for inst_name, inst_data in inst_overrides.items():
-        if "runtime_cycles" in inst_data:
+        if "runtime_cycles" in inst_data and hasattr(
+            acc.hw_interface.cycle_counts, inst_name
+        ):
             setattr(
                 acc.hw_interface.cycle_counts,
                 inst_name,
@@ -225,3 +284,11 @@ def AccConfig(acc, bench_file, config_file):
     )
     acc.hw_interface.simulator_config = SimulatorConfig()
     acc.hw_interface.opcodes = InstOpCodes()
+
+    if accel_hw_profile is not None:
+        calibration = accel_hw_profile.get("power_calibration")
+        if calibration:
+            _apply_power_calibration(acc, calibration)
+        fu_limits = accel_hw_profile.get("fu_hardware_limits")
+        if fu_limits:
+            _apply_fu_hardware_limits(acc, fu_limits)

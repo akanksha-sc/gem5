@@ -313,7 +313,7 @@ CommInterface::checkMMR()
             *mmreg &= 0xfe;
             *mmreg |= 0x02;
             computationNeeded = true;
-            cu->initialize();
+            cu->scheduleInitialize();
         }
 
         if (processingDone) {
@@ -1306,4 +1306,26 @@ CommInterface::countIssuedAccess(Addr addr, size_t size, bool is_read)
 
     cycleIfaceStats.memOps[t][a]++;
     cycleIfaceStats.memBytes[t][a] += size;
+}
+
+int
+CommInterface::getReadPorts()
+{
+    // gem5-SALAM leaves this unimplemented (returns 0); LLVMInterface keeps
+    // its default read_ports=2 for CACTI Table 2 validation.
+    return 0;
+}
+
+int
+CommInterface::getWritePorts()
+{
+    return 0;
+}
+
+int
+CommInterface::getPmemRange()
+{
+    // gem5-SALAM leaves this unimplemented (returns 0); printPowerResults uses
+    // a 4096-byte default scratchpad size for CACTI leakage sizing.
+    return 0;
 }

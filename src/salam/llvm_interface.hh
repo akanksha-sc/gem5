@@ -67,11 +67,13 @@
 // SALAM Includes
 #include "params/LLVMInterface.hh"
 #include "salam/HWModeling/hw_interface.hh"
+#include "salam/HWModeling/salam_power_model.hh"
 #include "salam/LLVMRead/basic_block.hh"
 #include "salam/LLVMRead/debug_flags.hh"
 #include "salam/LLVMRead/function.hh"
 #include "salam/LLVMRead/operand.hh"
 #include "salam/acc_compute_unit.hh"
+#include "salam/common/src/macros.hh"
 
 class LLVMInterface : public AccComputeUnit
 {
@@ -79,7 +81,7 @@ class LLVMInterface : public AccComputeUnit
     std::string filename;
     std::string topName;
     uint32_t scheduling_threshold;
-    int cycle;
+    int cycle = 0;
     // Debug / sanity metric only
     // Counts compute-domain runtime cycles where there was active work
     // in-flight, but no forward progress this cycle
@@ -103,6 +105,7 @@ class LLVMInterface : public AccComputeUnit
 
     uint64_t dynCallsIssued = 0;
     uint64_t dynCallsCommitted = 0;
+    uint64_t latencyWeightedCycles = 0;
 
     enum class CycleCause : uint8_t
     {
@@ -203,6 +206,7 @@ class LLVMInterface : public AccComputeUnit
     uint64_t aggComputeAndMemoryOutstandingWaitCycles = 0;
     uint64_t aggSchedulingBlockedCycles = 0;
     uint64_t aggIdleCycles = 0;
+    uint64_t aggLatencyWeightedCycles = 0;
 
     bool windowStatsEnable;
     uint32_t windowSize;
@@ -419,6 +423,19 @@ class LLVMInterface : public AccComputeUnit
     std::vector<std::shared_ptr<SALAM::Function>> functions;
     std::vector<std::shared_ptr<SALAM::Value>> values;
 
+    FUCounts _FunctionalUnits;
+    FUCounts _MaxFU;
+    FUCounts _MaxParsed;
+    RegisterStats regStats;
+
+    // CACTI SPM / cache sizing (gem5-SALAM Table 2 power path).
+    uint64_t memory_loads = 0;
+    uint64_t memory_stores = 0;
+    int spm_size = 0;
+    int cache_size = 65536;
+    int read_ports = 2;
+    int write_ports = 2;
+
   protected:
     virtual bool
     debug()
@@ -444,6 +461,17 @@ class LLVMInterface : public AccComputeUnit
     void writeCommit(MemoryRequest *req);
     void dumpModule(llvm::Module *m);
     void printResults();
+    void printPowerResults();
+    SALAMPowerModel *powerModel();
+    void initFU();
+    void clearFU();
+    void updateFU(int8_t fu);
+    void updateParsedFU(int8_t fu);
+    uint64_t resolvePowerFunctionalUnit(uint64_t yaml_fu,
+                                        uint64_t opcode) const;
+    void countInstructionFU(const std::shared_ptr<SALAM::Instruction> &inst);
+    void maxFU(const FUCounts &fu);
+    void computeStaticFUCounts();
     void emitSummaryLine() const;
     void snapshotQueueDepthStart();
     void snapshotQueueDepthEnd();
@@ -463,6 +491,9 @@ class LLVMInterface : public AccComputeUnit
     void emitWindowSummary() const;
     void resetWindowStats();
     void rollUpCurrentInvocationIntoAggregate();
+    void resetCurrentInvocationCounters();
+    void
+    recordCommittedLatency(const std::shared_ptr<SALAM::Instruction> &inst);
     bool hasCurrentInvocationData() const;
     uint64_t disjointCycleBreakdownTotal() const;
     void printDisjointCycleBreakdown() const;

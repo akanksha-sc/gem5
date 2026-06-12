@@ -32,19 +32,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "cacti_wrapper.hh"
+#include "salam/HWModeling/cacti_wrapper.hh"
+
+#include "../../../../ext/mcpat/cacti/cacti_interface.h"
+
+namespace
+{
 
 uca_org_t
 cactiWrapper(unsigned num_of_bytes, unsigned wordsize, unsigned num_ports,
              int cache_type)
 {
     int cache_size = num_of_bytes;
-    int line_size = wordsize; // in bytes
+    int line_size = wordsize;
     if (wordsize < 4) {
         line_size = 4;
     }
     if (cache_size / line_size < 64) {
-        cache_size = line_size * 64; // min scratchpad size: 64 words
+        cache_size = line_size * 64;
     }
     int associativity = 1;
     int rw_ports = num_ports;
@@ -56,7 +61,7 @@ cactiWrapper(unsigned num_of_bytes, unsigned wordsize, unsigned num_ports,
     int single_ended_read_ports = 0;
     int search_ports = 0;
     int banks = 1;
-    double tech_node = 40; // in nm
+    double tech_node = 40;
     int page_sz = 0;
     int burst_length = 8;
     int pre_width = 8;
@@ -115,4 +120,40 @@ cactiWrapper(unsigned num_of_bytes, unsigned wordsize, unsigned num_ports,
         BROADCAST_ADDR_DATAIN_OVER_VERTICAL_HTREES_in, page_sz, burst_length,
         pre_width, force_wiretype, wiretype, force_config, ndwl, ndbl, nspd,
         ndcm, ndsam1, ndsam2, ecc);
+}
+
+int
+cactiBytes(int bytes)
+{
+    return bytes > 0 ? bytes : 0;
+}
+
+} // namespace
+
+SpmPowerBreakdown
+computeSpmPower(int spm_bytes, int read_ports, int write_ports,
+                uint64_t memory_loads, uint64_t memory_stores)
+{
+    const int spm_size = spm_bytes > 0 ? spm_bytes : 4096;
+    const double exponential = 1e12;
+    const int leak_scale = 1000;
+
+    uca_org_t cacti_spm_leak =
+        cactiWrapper(spm_size, 8, read_ports + write_ports, 0);
+    uca_org_t cacti_spm_rd = cactiWrapper(
+        cactiBytes(static_cast<int>(memory_loads * 8)), 8, read_ports, 0);
+    uca_org_t cacti_spm_wr = cactiWrapper(
+        cactiBytes(static_cast<int>(memory_stores * 8)), 8, write_ports, 0);
+
+    SpmPowerBreakdown out;
+    out.leakage_mw = (cacti_spm_leak.power.readOp.leakage +
+                      cacti_spm_leak.power.writeOp.leakage) *
+                     leak_scale;
+    out.read_dynamic_mw = memory_loads > 0
+                              ? cacti_spm_rd.power.readOp.dynamic * exponential
+                              : 0.0;
+    out.write_dynamic_mw =
+        memory_stores > 0 ? cacti_spm_wr.power.writeOp.dynamic * exponential
+                          : 0.0;
+    return out;
 }

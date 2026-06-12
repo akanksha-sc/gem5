@@ -40,8 +40,6 @@
 #include <map>
 #include <vector>
 
-#include "../salam_power_model.hh"
-
 class FunctionalUnitBase
 {
   private:
@@ -126,7 +124,7 @@ class FunctionalUnitBase
           _leakage_power(leakage_power),
           _area(area),
           _path_delay(path_delay),
-          _available(limit),
+          _available(0),
           _in_use(0)
     {}
     std::string

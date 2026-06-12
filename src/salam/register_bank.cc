@@ -88,8 +88,11 @@ RegisterBank::getAccessLatency(PacketPtr pkt) const
 {
     const Cycles c =
         pkt->isWrite() ? writeVisibilityCycles : readLatencyCycles;
-    const Cycles adj = (c == Cycles(0)) ? Cycles(1) : c;
-    return tickEngine->clockPeriod() * adj;
+    if (c == Cycles(0)) {
+        // gem5-SALAM: timing reads are immediate; writes still pay visibility.
+        return pkt->isWrite() ? tickEngine->clockPeriod() : 0;
+    }
+    return tickEngine->clockPeriod() * c;
 }
 
 void
@@ -302,9 +305,21 @@ RegisterBank::recvTimingReq(PacketPtr pkt)
     registerAccess(pkt);
 
     if (needsResponse) {
-        const Cycles raw =
-            pkt->isWrite() ? writeVisibilityCycles : readLatencyCycles;
-        const Cycles lat = (raw == Cycles(0)) ? Cycles(1) : raw;
+        const Cycles lat = pkt->isWrite() ? (writeVisibilityCycles == Cycles(0)
+                                                 ? Cycles(1)
+                                                 : writeVisibilityCycles)
+                                          : readLatencyCycles;
+
+        // HLS pipeline registers: reads are combinational (0-cycle).
+        // Writes latch at the next clock edge via the tick engine.
+        if (pkt->isRead() && lat == Cycles(0)) {
+            retryResp = !port.sendTimingResp(pkt);
+            if (!retryResp) {
+                return true;
+            }
+            respQueue.emplace_back(pkt, Cycles(0));
+            return true;
+        }
 
         respQueue.emplace_back(pkt, lat);
         tickEngine->start();

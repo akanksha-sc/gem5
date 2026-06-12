@@ -77,8 +77,6 @@ AllowShortFunctionsOnASingleLine: InlineOnly
 # Require curly braces after control statements (if, else, for, do, while)
 # unless inside macro definitions or if the braces would enclose preprocessor
 # directives
-InsertBraces: true
-
 # Each constructor initializer in separate line
 BreakConstructorInitializers: BeforeColon
 BreakConstructorInitializersBeforeComma: false

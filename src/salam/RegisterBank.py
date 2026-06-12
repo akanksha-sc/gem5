@@ -45,7 +45,7 @@ class RegisterBank(AbstractMemory):
     tick_engine = Param.SALAMTickEngine(
         Parent.any, "Cycle tick engine driving this register bank"
     )
-    read_latency_cycles = Param.Cycles(1, "Read response latency in cycles")
+    read_latency_cycles = Param.Cycles(0, "Read response latency in cycles")
     write_visibility_cycles = Param.Cycles(
         1, "Write visibility/response latency in cycles"
     )

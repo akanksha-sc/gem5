@@ -1,35 +1,3 @@
-# Copyright (c) 2025 Akanksha Chaudhari, Matt Sinclair
-# All rights reserved.
-#
-# This file contains modifications and/or code derived from:
-# gem5-SALAM: https://github.com/TeCSAR-UNCC/gem5-SALAM
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice,
-# this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-# this list of conditions and the following disclaimer in the documentation
-# and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-# contributors may be used to endorse or promote products derived from this
-# software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-
 # AUTO-GENERATED FILE (See util/SALAM-docs/README_SALAM.md for details)
 
 from m5.params import *
@@ -124,26 +92,24 @@ class FloatDivider(SimObject):
     area_units = Param.String(
         "um^2", "Default values set from float_divider.yml"
     )
-    fu_latency = Param.UInt32(5, "Default values set from float_divider.yml")
-    internal_power = Param.UInt32(
-        0.009743773, "Default values set from float_divider.yml"
+    fu_latency = Param.UInt32(10, "Default values set from float_divider.yml")
+    internal_power = Param.Float(
+        0.2908399, "Default values set from float_divider.yml"
     )
-    switch_power = Param.UInt32(
-        0.007400587, "Default values set from float_divider.yml"
+    switch_power = Param.Float(
+        0.5956748, "Default values set from float_divider.yml"
     )
-    dynamic_power = Param.UInt32(
-        0.001800732, "Default values set from float_divider.yml"
+    dynamic_power = Param.Float(
+        0.8865146, "Default values set from float_divider.yml"
     )
-    dynamic_energy = Param.UInt32(
-        0.009003937, "Default values set from float_divider.yml"
+    dynamic_energy = Param.Float(
+        26.59543, "Default values set from float_divider.yml"
     )
-    leakage_power = Param.UInt32(
-        7.395312e-05, "Default values set from float_divider.yml"
+    leakage_power = Param.Float(
+        0.04476567, "Default values set from float_divider.yml"
     )
-    area = Param.UInt32(5.981433, "Default values set from float_divider.yml")
-    path_delay = Param.UInt32(
-        1.75, "Default values set from float_divider.yml"
-    )
+    area = Param.Float(5421.698, "Default values set from float_divider.yml")
+    path_delay = Param.Float(1.0, "Default values set from float_divider.yml")
 
 
 class FloatAdder(SimObject):
@@ -177,24 +143,24 @@ class FloatAdder(SimObject):
     area_units = Param.String(
         "um^2", "Default values set from float_adder.yml"
     )
-    fu_latency = Param.UInt32(5, "Default values set from float_adder.yml")
-    internal_power = Param.UInt32(
-        0.009743773, "Default values set from float_adder.yml"
+    fu_latency = Param.UInt32(10, "Default values set from float_adder.yml")
+    internal_power = Param.Float(
+        1.171926, "Default values set from float_adder.yml"
     )
-    switch_power = Param.UInt32(
-        0.007400587, "Default values set from float_adder.yml"
+    switch_power = Param.Float(
+        0.1395194, "Default values set from float_adder.yml"
     )
-    dynamic_power = Param.UInt32(
-        0.001800732, "Default values set from float_adder.yml"
+    dynamic_power = Param.Float(
+        0.2567121, "Default values set from float_adder.yml"
     )
-    dynamic_energy = Param.UInt32(
-        0.009003937, "Default values set from float_adder.yml"
+    dynamic_energy = Param.Float(
+        7.701362, "Default values set from float_adder.yml"
     )
-    leakage_power = Param.UInt32(
-        7.395312e-05, "Default values set from float_adder.yml"
+    leakage_power = Param.Float(
+        0.01525465, "Default values set from float_adder.yml"
     )
-    area = Param.UInt32(5.981433, "Default values set from float_adder.yml")
-    path_delay = Param.UInt32(1.75, "Default values set from float_adder.yml")
+    area = Param.Float(2063.594, "Default values set from float_adder.yml")
+    path_delay = Param.Float(1.0, "Default values set from float_adder.yml")
 
 
 class DoubleMultiplier(SimObject):
@@ -253,28 +219,28 @@ class DoubleMultiplier(SimObject):
         "um^2", "Default values set from double_multiplier.yml"
     )
     fu_latency = Param.UInt32(
-        5, "Default values set from double_multiplier.yml"
+        10, "Default values set from double_multiplier.yml"
     )
-    internal_power = Param.UInt32(
-        0.009743773, "Default values set from double_multiplier.yml"
+    internal_power = Param.Float(
+        0.9056301, "Default values set from double_multiplier.yml"
     )
-    switch_power = Param.UInt32(
-        0.007400587, "Default values set from double_multiplier.yml"
+    switch_power = Param.Float(
+        1.97993, "Default values set from double_multiplier.yml"
     )
-    dynamic_power = Param.UInt32(
-        0.001800732, "Default values set from double_multiplier.yml"
+    dynamic_power = Param.Float(
+        2.885502, "Default values set from double_multiplier.yml"
     )
-    dynamic_energy = Param.UInt32(
-        0.009003937, "Default values set from double_multiplier.yml"
+    dynamic_energy = Param.Float(
+        86.56505, "Default values set from double_multiplier.yml"
     )
-    leakage_power = Param.UInt32(
-        7.395312e-05, "Default values set from double_multiplier.yml"
+    leakage_power = Param.Float(
+        0.1232215, "Default values set from double_multiplier.yml"
     )
-    area = Param.UInt32(
-        5.981433, "Default values set from double_multiplier.yml"
+    area = Param.Float(
+        13944.92, "Default values set from double_multiplier.yml"
     )
-    path_delay = Param.UInt32(
-        1.75, "Default values set from double_multiplier.yml"
+    path_delay = Param.Float(
+        1.0, "Default values set from double_multiplier.yml"
     )
 
 
@@ -313,24 +279,24 @@ class DoubleAdder(SimObject):
     area_units = Param.String(
         "um^2", "Default values set from double_adder.yml"
     )
-    fu_latency = Param.UInt32(5, "Default values set from double_adder.yml")
-    internal_power = Param.UInt32(
-        0.009743773, "Default values set from double_adder.yml"
+    fu_latency = Param.UInt32(10, "Default values set from double_adder.yml")
+    internal_power = Param.Float(
+        0.2413056, "Default values set from double_adder.yml"
     )
-    switch_power = Param.UInt32(
-        0.007400587, "Default values set from double_adder.yml"
+    switch_power = Param.Float(
+        0.3513326, "Default values set from double_adder.yml"
     )
-    dynamic_power = Param.UInt32(
-        0.001800732, "Default values set from double_adder.yml"
+    dynamic_power = Param.Float(
+        0.5926381, "Default values set from double_adder.yml"
     )
-    dynamic_energy = Param.UInt32(
-        0.009003937, "Default values set from double_adder.yml"
+    dynamic_energy = Param.Float(
+        17.77915, "Default values set from double_adder.yml"
     )
-    leakage_power = Param.UInt32(
-        7.395312e-05, "Default values set from double_adder.yml"
+    leakage_power = Param.Float(
+        0.03017909, "Default values set from double_adder.yml"
     )
-    area = Param.UInt32(5.981433, "Default values set from double_adder.yml")
-    path_delay = Param.UInt32(1.75, "Default values set from double_adder.yml")
+    area = Param.Float(3989.615, "Default values set from double_adder.yml")
+    path_delay = Param.Float(1.0, "Default values set from double_adder.yml")
 
 
 class BitShifter(SimObject):
@@ -364,24 +330,24 @@ class BitShifter(SimObject):
     area_units = Param.String(
         "um^2", "Default values set from bit_shifter.yml"
     )
-    fu_latency = Param.UInt32(5, "Default values set from bit_shifter.yml")
-    internal_power = Param.UInt32(
-        0.009743773, "Default values set from bit_shifter.yml"
+    fu_latency = Param.UInt32(10, "Default values set from bit_shifter.yml")
+    internal_power = Param.Float(
+        0.008120019, "Default values set from bit_shifter.yml"
     )
-    switch_power = Param.UInt32(
-        0.007400587, "Default values set from bit_shifter.yml"
+    switch_power = Param.Float(
+        0.03338565, "Default values set from bit_shifter.yml"
     )
-    dynamic_power = Param.UInt32(
-        0.001800732, "Default values set from bit_shifter.yml"
+    dynamic_power = Param.Float(
+        0.04150581, "Default values set from bit_shifter.yml"
     )
-    dynamic_energy = Param.UInt32(
-        0.009003937, "Default values set from bit_shifter.yml"
+    dynamic_energy = Param.Float(
+        0.4150581, "Default values set from bit_shifter.yml"
     )
-    leakage_power = Param.UInt32(
-        7.395312e-05, "Default values set from bit_shifter.yml"
+    leakage_power = Param.Float(
+        0.0016951, "Default values set from bit_shifter.yml"
     )
-    area = Param.UInt32(5.981433, "Default values set from bit_shifter.yml")
-    path_delay = Param.UInt32(1.75, "Default values set from bit_shifter.yml")
+    area = Param.Float(249.6461, "Default values set from bit_shifter.yml")
+    path_delay = Param.Float(0.7, "Default values set from bit_shifter.yml")
 
 
 class IntegerMultiplier(SimObject):
@@ -440,28 +406,28 @@ class IntegerMultiplier(SimObject):
         "um^2", "Default values set from integer_multiplier.yml"
     )
     fu_latency = Param.UInt32(
-        5, "Default values set from integer_multiplier.yml"
+        10, "Default values set from integer_multiplier.yml"
     )
-    internal_power = Param.UInt32(
-        0.009743773, "Default values set from integer_multiplier.yml"
+    internal_power = Param.Float(
+        0.3459049, "Default values set from integer_multiplier.yml"
     )
-    switch_power = Param.UInt32(
-        0.007400587, "Default values set from integer_multiplier.yml"
+    switch_power = Param.Float(
+        0.5337095, "Default values set from integer_multiplier.yml"
     )
-    dynamic_power = Param.UInt32(
-        0.001800732, "Default values set from integer_multiplier.yml"
+    dynamic_power = Param.Float(
+        0.8796144, "Default values set from integer_multiplier.yml"
     )
-    dynamic_energy = Param.UInt32(
-        0.009003937, "Default values set from integer_multiplier.yml"
+    dynamic_energy = Param.Float(
+        8.796144, "Default values set from integer_multiplier.yml"
     )
-    leakage_power = Param.UInt32(
-        7.395312e-05, "Default values set from integer_multiplier.yml"
+    leakage_power = Param.Float(
+        0.04817683, "Default values set from integer_multiplier.yml"
     )
-    area = Param.UInt32(
-        5.981433, "Default values set from integer_multiplier.yml"
+    area = Param.Float(
+        4595.0, "Default values set from integer_multiplier.yml"
     )
-    path_delay = Param.UInt32(
-        1.75, "Default values set from integer_multiplier.yml"
+    path_delay = Param.Float(
+        4.9, "Default values set from integer_multiplier.yml"
     )
 
 
@@ -498,24 +464,22 @@ class BitRegister(SimObject):
     area_units = Param.String(
         "um^2", "Default values set from bit_register.yml"
     )
-    fu_latency = Param.UInt32(5, "Default values set from bit_register.yml")
-    internal_power = Param.UInt32(
-        0.009743773, "Default values set from bit_register.yml"
+    fu_latency = Param.UInt32(10, "Default values set from bit_register.yml")
+    internal_power = Param.Float(
+        0.000553531, "Default values set from bit_register.yml"
     )
-    switch_power = Param.UInt32(
-        0.007400587, "Default values set from bit_register.yml"
+    switch_power = Param.Float(0.0, "Default values set from bit_register.yml")
+    dynamic_power = Param.Float(
+        0.000553531, "Default values set from bit_register.yml"
     )
-    dynamic_power = Param.UInt32(
-        0.001800732, "Default values set from bit_register.yml"
+    dynamic_energy = Param.Float(
+        0.00553531, "Default values set from bit_register.yml"
     )
-    dynamic_energy = Param.UInt32(
-        0.009003937, "Default values set from bit_register.yml"
+    leakage_power = Param.Float(
+        7.358945e-05, "Default values set from bit_register.yml"
     )
-    leakage_power = Param.UInt32(
-        7.395312e-05, "Default values set from bit_register.yml"
-    )
-    area = Param.UInt32(5.981433, "Default values set from bit_register.yml")
-    path_delay = Param.UInt32(1.75, "Default values set from bit_register.yml")
+    area = Param.Float(5.981433, "Default values set from bit_register.yml")
+    path_delay = Param.Float(0.0, "Default values set from bit_register.yml")
 
 
 class DoubleDivider(SimObject):
@@ -567,26 +531,24 @@ class DoubleDivider(SimObject):
     area_units = Param.String(
         "um^2", "Default values set from double_divider.yml"
     )
-    fu_latency = Param.UInt32(5, "Default values set from double_divider.yml")
-    internal_power = Param.UInt32(
-        0.009743773, "Default values set from double_divider.yml"
+    fu_latency = Param.UInt32(10, "Default values set from double_divider.yml")
+    internal_power = Param.Float(
+        0.9056301, "Default values set from double_divider.yml"
     )
-    switch_power = Param.UInt32(
-        0.007400587, "Default values set from double_divider.yml"
+    switch_power = Param.Float(
+        1.97993, "Default values set from double_divider.yml"
     )
-    dynamic_power = Param.UInt32(
-        0.001800732, "Default values set from double_divider.yml"
+    dynamic_power = Param.Float(
+        2.885502, "Default values set from double_divider.yml"
     )
-    dynamic_energy = Param.UInt32(
-        0.009003937, "Default values set from double_divider.yml"
+    dynamic_energy = Param.Float(
+        86.56505, "Default values set from double_divider.yml"
     )
-    leakage_power = Param.UInt32(
-        7.395312e-05, "Default values set from double_divider.yml"
+    leakage_power = Param.Float(
+        0.1232215, "Default values set from double_divider.yml"
     )
-    area = Param.UInt32(5.981433, "Default values set from double_divider.yml")
-    path_delay = Param.UInt32(
-        1.75, "Default values set from double_divider.yml"
-    )
+    area = Param.Float(13944.92, "Default values set from double_divider.yml")
+    path_delay = Param.Float(1.0, "Default values set from double_divider.yml")
 
 
 class FloatMultiplier(SimObject):
@@ -645,28 +607,28 @@ class FloatMultiplier(SimObject):
         "um^2", "Default values set from float_multiplier.yml"
     )
     fu_latency = Param.UInt32(
-        5, "Default values set from float_multiplier.yml"
+        10, "Default values set from float_multiplier.yml"
     )
-    internal_power = Param.UInt32(
-        0.009743773, "Default values set from float_multiplier.yml"
+    internal_power = Param.Float(
+        0.2908399, "Default values set from float_multiplier.yml"
     )
-    switch_power = Param.UInt32(
-        0.007400587, "Default values set from float_multiplier.yml"
+    switch_power = Param.Float(
+        0.5956748, "Default values set from float_multiplier.yml"
     )
-    dynamic_power = Param.UInt32(
-        0.001800732, "Default values set from float_multiplier.yml"
+    dynamic_power = Param.Float(
+        0.8865146, "Default values set from float_multiplier.yml"
     )
-    dynamic_energy = Param.UInt32(
-        0.009003937, "Default values set from float_multiplier.yml"
+    dynamic_energy = Param.Float(
+        26.59543, "Default values set from float_multiplier.yml"
     )
-    leakage_power = Param.UInt32(
-        7.395312e-05, "Default values set from float_multiplier.yml"
+    leakage_power = Param.Float(
+        0.04476567, "Default values set from float_multiplier.yml"
     )
-    area = Param.UInt32(
-        5.981433, "Default values set from float_multiplier.yml"
+    area = Param.Float(
+        5421.698, "Default values set from float_multiplier.yml"
     )
-    path_delay = Param.UInt32(
-        1.75, "Default values set from float_multiplier.yml"
+    path_delay = Param.Float(
+        1.0, "Default values set from float_multiplier.yml"
     )
 
 
@@ -709,26 +671,24 @@ class IntegerAdder(SimObject):
     area_units = Param.String(
         "um^2", "Default values set from integer_adder.yml"
     )
-    fu_latency = Param.UInt32(5, "Default values set from integer_adder.yml")
-    internal_power = Param.UInt32(
-        0.009743773, "Default values set from integer_adder.yml"
+    fu_latency = Param.UInt32(10, "Default values set from integer_adder.yml")
+    internal_power = Param.Float(
+        0.004832257, "Default values set from integer_adder.yml"
     )
-    switch_power = Param.UInt32(
-        0.007400587, "Default values set from integer_adder.yml"
+    switch_power = Param.Float(
+        0.00370182, "Default values set from integer_adder.yml"
     )
-    dynamic_power = Param.UInt32(
-        0.001800732, "Default values set from integer_adder.yml"
+    dynamic_power = Param.Float(
+        0.008534078, "Default values set from integer_adder.yml"
     )
-    dynamic_energy = Param.UInt32(
-        0.009003937, "Default values set from integer_adder.yml"
+    dynamic_energy = Param.Float(
+        0.08534078, "Default values set from integer_adder.yml"
     )
-    leakage_power = Param.UInt32(
-        7.395312e-05, "Default values set from integer_adder.yml"
+    leakage_power = Param.Float(
+        0.002380803, "Default values set from integer_adder.yml"
     )
-    area = Param.UInt32(5.981433, "Default values set from integer_adder.yml")
-    path_delay = Param.UInt32(
-        1.75, "Default values set from integer_adder.yml"
-    )
+    area = Param.Float(179.443, "Default values set from integer_adder.yml")
+    path_delay = Param.Float(1.75, "Default values set from integer_adder.yml")
 
 
 class BitwiseOperations(SimObject):
@@ -787,26 +747,26 @@ class BitwiseOperations(SimObject):
         "um^2", "Default values set from bitwise_operations.yml"
     )
     fu_latency = Param.UInt32(
-        5, "Default values set from bitwise_operations.yml"
+        10, "Default values set from bitwise_operations.yml"
     )
-    internal_power = Param.UInt32(
-        0.009743773, "Default values set from bitwise_operations.yml"
+    internal_power = Param.Float(
+        0.001011508, "Default values set from bitwise_operations.yml"
     )
-    switch_power = Param.UInt32(
-        0.007400587, "Default values set from bitwise_operations.yml"
+    switch_power = Param.Float(
+        0.0007957616, "Default values set from bitwise_operations.yml"
     )
-    dynamic_power = Param.UInt32(
-        0.001800732, "Default values set from bitwise_operations.yml"
+    dynamic_power = Param.Float(
+        0.001807256, "Default values set from bitwise_operations.yml"
     )
-    dynamic_energy = Param.UInt32(
-        0.009003937, "Default values set from bitwise_operations.yml"
+    dynamic_energy = Param.Float(
+        0.01807256, "Default values set from bitwise_operations.yml"
     )
-    leakage_power = Param.UInt32(
-        7.395312e-05, "Default values set from bitwise_operations.yml"
+    leakage_power = Param.Float(
+        0.0006111633, "Default values set from bitwise_operations.yml"
     )
-    area = Param.UInt32(
-        5.981433, "Default values set from bitwise_operations.yml"
+    area = Param.Float(
+        50.36996, "Default values set from bitwise_operations.yml"
     )
-    path_delay = Param.UInt32(
-        1.75, "Default values set from bitwise_operations.yml"
+    path_delay = Param.Float(
+        0.06, "Default values set from bitwise_operations.yml"
     )

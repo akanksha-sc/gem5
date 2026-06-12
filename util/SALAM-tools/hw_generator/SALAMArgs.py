@@ -40,4 +40,16 @@ def HWArgs():
     parser.add_argument(
         "-b", "--bench", type=str, required=True, help="Name of benchmark"
     )
+    parser.add_argument(
+        "--latency",
+        type=str,
+        default="5ns",
+        choices=["5ns", "10ns"],
+        help="40nm FU profile latency epoch (default: 5ns)",
+    )
+    parser.add_argument(
+        "--fu-only",
+        action="store_true",
+        help="Regenerate FunctionalUnits only (skip InstConfig/inst_list)",
+    )
     return parser.parse_args()

@@ -95,6 +95,8 @@ def makeHWAcc(options, system):
         getattr(system, "acc_clk_domain", system.clk_domain),
     )
     AccConfig(system.acctest.acc, acc_config, acc_bench)
+    system.acctest.acc.process_cycles = 1
+    system.acctest.acc.mmio_cycles = 1
 
     # Add an SPM for the accelerator
     system.acctest.acc_spm = ScratchpadMemory()
@@ -108,11 +110,16 @@ def makeHWAcc(options, system):
     system.acctest.acc_spm.engine = SALAMTickEngine(
         clk_domain=getattr(
             system,
-            "acc_mem_clk_domain",
-            getattr(system, "acc_clk_domain", system.clk_domain),
+            "acc_spm_clk_domain",
+            getattr(
+                system,
+                "acc_mem_clk_domain",
+                getattr(system, "acc_clk_domain", system.clk_domain),
+            ),
         )
     )
     system.acctest.acc_spm.tick_engine = system.acctest.acc_spm.engine
+    system.acctest.acc_spm.access_latency_cycles = 1
 
     system.acctest._connect_spm(system.acctest.acc_spm)
     system.acctest.acc_spm.reset_on_scratchpad_read = False

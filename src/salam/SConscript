@@ -159,6 +159,39 @@ if env["CONF"]["USE_ARM_ISA"]:
     Source("HWModeling/salam_power_model.cc")
     Source("HWModeling/simulator_config.cc")
 
+    cacti_dir = Dir("#ext/mcpat/cacti")
+    cacti_build_flags = {
+        "CCFLAGS": [
+            "-w",
+            "-Wno-unknown-pragmas",
+            "-DNTHREADS=1",
+        ],
+        "CPPPATH": [cacti_dir],
+    }
+    for cacti_src in [
+        "area.cc",
+        "bank.cc",
+        "mat.cc",
+        "Ucache.cc",
+        "io.cc",
+        "technology.cc",
+        "basic_circuit.cc",
+        "parameter.cc",
+        "decoder.cc",
+        "component.cc",
+        "uca.cc",
+        "subarray.cc",
+        "wire.cc",
+        "htree2.cc",
+        "cacti_interface.cc",
+        "router.cc",
+        "nuca.cc",
+        "crossbar.cc",
+        "arbiter.cc",
+    ]:
+        Source(cacti_dir.File(cacti_src), append=cacti_build_flags)
+    Source("HWModeling/cacti_wrapper.cc", append=cacti_build_flags)
+
     DebugFlag("CommInterface")
     DebugFlag("CommInterfaceQueues")
     DebugFlag("DeviceMMR")

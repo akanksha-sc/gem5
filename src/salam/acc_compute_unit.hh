@@ -70,7 +70,29 @@ class AccComputeUnit : public ClockedObject
         }
     };
 
+    class InitEvent : public Event
+    {
+      private:
+        AccComputeUnit *acc_comp_unit;
+
+      public:
+        InitEvent(AccComputeUnit *_acc_comp_unit)
+            : Event(CPU_Tick_Pri), acc_comp_unit(_acc_comp_unit)
+        {}
+        void
+        process()
+        {
+            acc_comp_unit->initialize();
+        }
+        virtual const char *
+        description() const
+        {
+            return "AccComputeUnit init";
+        }
+    };
+
     TickEvent tickEvent;
+    InitEvent initEvent;
 
   public:
     virtual void
@@ -80,6 +102,13 @@ class AccComputeUnit : public ClockedObject
     virtual void
     initialize()
     {}
+    void
+    scheduleInitialize()
+    {
+        if (!initEvent.scheduled()) {
+            schedule(initEvent, clockEdge(Cycles(1)));
+        }
+    }
     virtual void
     readCommit(MemoryRequest *req)
     {}

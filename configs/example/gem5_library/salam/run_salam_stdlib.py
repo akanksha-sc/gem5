@@ -116,6 +116,8 @@ def parse_args():
     p.add_argument("--acc-dma-voltage", default=None)
     p.add_argument("--acc-localbus-clock", default=None)
     p.add_argument("--acc-localbus-voltage", default=None)
+    p.add_argument("--acc-spm-clock", default=None)
+    p.add_argument("--acc-spm-voltage", default=None)
 
     p.add_argument("--dry-run", action="store_true")
 
@@ -156,6 +158,12 @@ def make_salam_clocks(args):
     localbus_clock = args.acc_localbus_clock or mem_clock
     localbus_voltage = args.acc_localbus_voltage or mem_voltage
 
+    # Only create a dedicated SPM domain when explicitly requested (e.g. via
+    # --acc-spm-clock). Otherwise leave it None so SPM tick engines fall back
+    # to the accelerator memory domain.
+    spm_clock = args.acc_spm_clock
+    spm_voltage = args.acc_spm_voltage or mem_voltage if spm_clock else None
+
     return SALAMClockConfig(
         compute_clock=compute_clock,
         compute_voltage=compute_voltage,
@@ -165,6 +173,8 @@ def make_salam_clocks(args):
         dma_voltage=dma_voltage,
         localbus_clock=localbus_clock,
         localbus_voltage=localbus_voltage,
+        spm_clock=spm_clock,
+        spm_voltage=spm_voltage,
     )
 
 
@@ -257,6 +267,8 @@ def main():
         print(f"  acc_mem: {board.acc_mem_clk_domain.clock}")
         print(f"  acc_dma: {board.acc_dma_clk_domain.clock}")
         print(f"  acc_localbus: {board.acc_localbus_clk_domain.clock}")
+        if hasattr(board, "acc_spm_clk_domain"):
+            print(f"  acc_spm: {board.acc_spm_clk_domain.clock}")
         return
 
     simulator = Simulator(board=board)

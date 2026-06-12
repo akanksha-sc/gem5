@@ -34,8 +34,11 @@
 
 #include "salam/llvm_interface.hh"
 
+#include <llvm/IR/Instructions.h>
+
 #include <sstream>
 
+#include "salam/HWModeling/cacti_wrapper.hh"
 #include "sim/core.hh"
 
 LLVMInterface::LLVMInterface(const LLVMInterfaceParams &p)
@@ -230,7 +233,9 @@ LLVMInterface::ActiveFunction::processQueues()
                          (queue_iter->second)->getOpode()),
                      " | UID[", (queue_iter->first), "]");
         }
+        owner->countInstructionFU(queue_iter->second);
         if ((queue_iter->second)->commit()) {
+            owner->recordCommittedLatency(queue_iter->second);
             (queue_iter->second)->reset();
             queue_iter = computeQueue.erase(queue_iter);
             owner->tick_hw_cycle_stats.computeCommitted++;
@@ -259,7 +264,6 @@ LLVMInterface::ActiveFunction::processQueues()
             func->removeInstance();
             caller->commit();
             owner->dynCallsCommitted++;
-            owner->dynInstsCommitted++;
             owner->tick_hw_cycle_stats.callsCommitted++;
         }
         owner->cycleSignals.anyOutstandingMemory |=
@@ -302,6 +306,7 @@ LLVMInterface::ActiveFunction::processQueues()
                         owner->cycleSignals.anyReadyMemory = true;
                         if (inst->isLoadingInternal()) {
                             launchRead(inst);
+                            owner->countInstructionFU(inst);
                             if (dbg) {
                                 DPRINTFS(
                                     Runtime, owner,
@@ -313,6 +318,7 @@ LLVMInterface::ActiveFunction::processQueues()
                             queue_iter = reservation.erase(queue_iter);
                         } else if (!writeActive(inst->getPtrOperandValue(0))) {
                             launchRead(inst);
+                            owner->countInstructionFU(inst);
                             if (dbg) {
                                 DPRINTFS(
                                     Runtime, owner,
@@ -335,6 +341,7 @@ LLVMInterface::ActiveFunction::processQueues()
                         // WAR Protection to insure reading
                         // finishes before a write
                         launchWrite(inst);
+                        owner->countInstructionFU(inst);
                         if (dbg) {
                             DPRINTFS(
                                 Runtime, owner,
@@ -350,6 +357,7 @@ LLVMInterface::ActiveFunction::processQueues()
                     } else if ((inst)->isTerminator()) {
                         owner->dynInstsIssued++;
                         (inst)->launch();
+                        owner->countInstructionFU(inst);
                         auto nextBB = inst->getTarget();
                         if (dbg) {
                             DPRINTFS(RuntimeCompute, owner,
@@ -367,6 +375,7 @@ LLVMInterface::ActiveFunction::processQueues()
                                 (inst)->getUID());
                         }
                         (inst)->commit();
+                        owner->recordCommittedLatency(inst);
                         owner->dynInstsCommitted++;
                         if (dbg) {
                             DPRINTFS(
@@ -386,13 +395,22 @@ LLVMInterface::ActiveFunction::processQueues()
                             std::dynamic_pointer_cast<SALAM::Function>(
                                 calleeValue);
                         assert(callee);
-                        if (callee->canLaunch()) {
+                        if (callee->getBBList()->empty()) {
+                            owner->cycleSignals.callBlocked = true;
+                            ++queue_iter;
+                        } else if (callee->canLaunch()) {
                             owner->dynInstsIssued++;
                             owner->dynCallsIssued++;
+                            owner->dynComputeLaunchAttempts++;
+                            owner->dynComputeLaunched++;
                             owner->tick_hw_cycle_stats.callsIssued++;
+                            owner->tick_hw_cycle_stats.computeLaunchAttempts++;
+                            owner->tick_hw_cycle_stats
+                                .computeLaunchesAccepted++;
 
                             owner->launchFunction(callee, callInst);
                             computeQueue.insert({(inst)->getUID(), inst});
+                            owner->countInstructionFU(inst);
 
                             if (dbg) {
                                 DPRINTFS(
@@ -463,6 +481,7 @@ LLVMInterface::ActiveFunction::processQueues()
 
                             case SALAM::Instruction::LaunchStatus::
                                 LaunchedAndCommitted:
+                                owner->recordCommittedLatency(inst);
                                 owner->dynInstsIssued++;
                                 owner->dynComputeLaunched++;
                                 owner->dynComputeCommitted++;
@@ -487,6 +506,11 @@ LLVMInterface::ActiveFunction::processQueues()
                                 }
                                 queue_iter = reservation.erase(queue_iter);
                                 break;
+                        }
+
+                        if (launch_status !=
+                            SALAM::Instruction::LaunchStatus::DeniedNoFU) {
+                            owner->countInstructionFU(inst);
                         }
 
                         auto computeStop =
@@ -663,6 +687,12 @@ LLVMInterface::tick()
                 "*****");
     }
     cycle++;
+
+    if (auto *pm = powerModel())
+        pm->updateCycle(_FunctionalUnits);
+    regStats.endCycle();
+    clearFU();
+    regStats.beginCycle();
 
     if (hw->hw_statistics->use_cycle_tracking()) {
         tick_hw_cycle_stats.reset();
@@ -1018,7 +1048,6 @@ LLVMInterface::constructStaticGraph()
     if (!m) {
         panic("Error reading Module");
     }
-
     // Construct the LLVM::Value to SALAM::Value map
     uint64_t valueID = 0;
     SALAM::irvmap vmap;
@@ -1109,6 +1138,9 @@ LLVMInterface::constructStaticGraph()
     // Detect Loop Latches
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
         llvm::Function &func = *func_iter;
+        if (func.isDeclaration()) {
+            continue;
+        }
         dt->recalculate(func);
         loopInfo->releaseMemory();
         loopInfo->analyze(*dt);
@@ -1150,6 +1182,7 @@ LLVMInterface::ActiveFunction::launchRead(
     if (rdInst->isLoadingInternal()) {
         rdInst->loadInternal();
 
+        owner->recordCommittedLatency(rdInst);
         owner->dynInstsCommitted++;
         owner->dynLoadsCommitted++;
         owner->tick_hw_cycle_stats.internalLoadCompletions++;
@@ -1220,6 +1253,8 @@ LLVMInterface::ActiveFunction::readCommit(MemoryRequest *req)
                 DPRINTFS(Runtime, owner, "Local Read Commit\n");
             }
             load_inst->commit();
+            owner->recordCommittedLatency(load_inst);
+            owner->memory_loads++;
             owner->dynLoadsCommitted++;
             owner->dynInstsCommitted++;
             // Async memory callback: defer exact commit-event accounting
@@ -1264,6 +1299,8 @@ LLVMInterface::ActiveFunction::writeCommit(MemoryRequest *req)
         auto queue_iter = writeQueue.find(map_iter->second);
         if (queue_iter != writeQueue.end()) {
             queue_iter->second->commit();
+            owner->recordCommittedLatency(queue_iter->second);
+            owner->memory_stores++;
             owner->dynStoresCommitted++;
             owner->dynInstsCommitted++;
             // Async memory callback: defer cycle accounting until the
@@ -1286,7 +1323,7 @@ LLVMInterface::ActiveFunction::writeCommit(MemoryRequest *req)
 bool
 LLVMInterface::hasCurrentInvocationData() const
 {
-    return cycle > 0 || dynInstsCommitted > 0 || dynLoadsCommitted > 0 ||
+    return dynInstsCommitted > 0 || dynLoadsCommitted > 0 ||
            dynStoresCommitted > 0 || dynComputeCommitted > 0 ||
            dynCallsCommitted > 0;
 }
@@ -1325,6 +1362,51 @@ LLVMInterface::rollUpCurrentInvocationIntoAggregate()
         computeAndMemoryOutstandingWaitCycles;
     aggSchedulingBlockedCycles += schedulingBlockedCycles;
     aggIdleCycles += idleCycles;
+    aggLatencyWeightedCycles += latencyWeightedCycles;
+}
+
+void
+LLVMInterface::recordCommittedLatency(
+    const std::shared_ptr<SALAM::Instruction> &inst)
+{
+    if (inst) {
+        latencyWeightedCycles += inst->getCycleCount();
+    }
+}
+
+void
+LLVMInterface::resetCurrentInvocationCounters()
+{
+    cycle = 0;
+    stalls = 0;
+
+    dynInstsIssued = 0;
+    dynInstsCommitted = 0;
+    dynLoadsIssued = 0;
+    memory_loads = 0;
+    memory_stores = 0;
+    dynLoadsCommitted = 0;
+    dynStoresIssued = 0;
+    dynStoresCommitted = 0;
+    dynComputeLaunchAttempts = 0;
+    dynComputeLaunched = 0;
+    dynComputeCommitted = 0;
+    dynCallsIssued = 0;
+    dynCallsCommitted = 0;
+    latencyWeightedCycles = 0;
+
+    usefulComputeCycles = 0;
+    usefulMemoryCycles = 0;
+    usefulControlCycles = 0;
+    dependencyStallCycles = 0;
+    fuCapacityStallCycles = 0;
+    computeLatencyWaitCycles = 0;
+    memoryServiceWaitCycles = 0;
+    memoryIssueBackpressureCycles = 0;
+    computeAndMemoryOutstandingWaitCycles = 0;
+    schedulingBlockedCycles = 0;
+    lockstepBlockedCycles = 0;
+    idleCycles = 0;
 }
 
 void
@@ -1341,6 +1423,9 @@ LLVMInterface::initialize()
     if (dbg) {
         DPRINTF(LLVMInterface, "Initializing LLVM Runtime Engine!\n");
     }
+    functions.clear();
+    values.clear();
+    activeFunctions.clear();
     setupTime = std::chrono::seconds(0);
     simTime = std::chrono::seconds(0);
     schedulingTime = std::chrono::seconds(0);
@@ -1348,6 +1433,20 @@ LLVMInterface::initialize()
     computeTime = std::chrono::seconds(0);
     hwTime = std::chrono::seconds(0);
     constructStaticGraph();
+    if (auto *pm = powerModel()) {
+        pm->bindFunctionalUnits(hw->functional_units);
+        regStats.collect(values);
+        computeStaticFUCounts();
+        pm->initializePowerModel(_MaxParsed);
+    }
+    initFU();
+    regStats.beginCycle();
+    if (comm->getReadPorts() > 0)
+        read_ports = comm->getReadPorts();
+    if (comm->getWritePorts() > 0)
+        write_ports = comm->getWritePorts();
+    if (comm->getPmemRange() > 0)
+        spm_size = comm->getPmemRange();
     timeStart = std::chrono::high_resolution_clock::now();
     if (dbg) {
         DPRINTF(LLVMInterface, "=============================================="
@@ -1373,6 +1472,8 @@ LLVMInterface::initialize()
     dynInstsIssued = 0;
     dynInstsCommitted = 0;
     dynLoadsIssued = 0;
+    memory_loads = 0;
+    memory_stores = 0;
     dynLoadsCommitted = 0;
     dynStoresIssued = 0;
     dynStoresCommitted = 0;
@@ -1381,6 +1482,7 @@ LLVMInterface::initialize()
     dynComputeCommitted = 0;
     dynCallsIssued = 0;
     dynCallsCommitted = 0;
+    latencyWeightedCycles = 0;
 
     cycleSignals.reset();
 
@@ -1417,7 +1519,9 @@ LLVMInterface::initialize()
     hw->resetRuntimeFuStats();
     // hw->opcodes->reset_usage();
 
-    tick();
+    if (!tickEvent.scheduled()) {
+        schedule(tickEvent, nextCycle());
+    }
 }
 
 void
@@ -1461,6 +1565,7 @@ LLVMInterface::finalize()
     simStop = std::chrono::high_resolution_clock::now();
     simTotal = simStop - timeStart;
     printResults();
+    resetCurrentInvocationCounters();
     functions.clear();
     values.clear();
     comm->finish();
@@ -1498,6 +1603,7 @@ LLVMInterface::emitSummaryLine() const
 
     std::cout << "SALAM_SUMMARY "
               << "name=" << name() << " runtime_cycles=" << cycle
+              << " weighted_cycles=" << latencyWeightedCycles
               << " inst_issue=" << dynInstsIssued
               << " inst_commit=" << dynInstsCommitted
               << " load_issue=" << dynLoadsIssued
@@ -1719,71 +1825,6 @@ LLVMInterface::printDisjointCycleBreakdown() const
 void
 LLVMInterface::printResults()
 {
-    std::map<uint64_t, uint64_t> total_reads;
-    std::map<uint64_t, uint64_t> total_writes;
-
-    for (auto value : values) {
-        if (value->isInstruction()) {
-            if (value->getReg()) {
-                total_reads[value->getOpode()] += value->getReg()->getReads();
-                total_writes[value->getOpode()] +=
-                    value->getReg()->getWrites();
-            }
-        }
-    }
-
-    double adder_area =
-        (hw->opcodes->get_usage(13) + hw->opcodes->get_usage(20) +
-         hw->opcodes->get_usage(15)) *
-        1.794430e+02;
-    double adder_reads = total_reads[13] + total_reads[15];
-    double adder_writes = total_writes[13] + total_writes[15];
-    double adder_power_static = adder_reads * 2.380803e-03;
-    double adder_power_dynamic = adder_writes * (8.115300e-03 + 6.162853e-03);
-
-    double bitwise_area =
-        (hw->opcodes->get_usage(29) + hw->opcodes->get_usage(30) +
-         hw->opcodes->get_usage(25) + hw->opcodes->get_usage(26) +
-         hw->opcodes->get_usage(27) + hw->opcodes->get_usage(28)) *
-        5.036996e+01;
-    double bitwise_reads = total_reads[25] + total_reads[26] +
-                           total_reads[27] + total_reads[28] +
-                           total_reads[29] + total_reads[30];
-    double bitwise_writes = total_writes[25] + total_writes[26] +
-                            total_writes[27] + total_writes[28] +
-                            total_writes[29] + total_writes[30];
-    double bitwise_power_static = bitwise_reads * 6.111633e-04;
-    double bitwise_power_dynamic =
-        bitwise_writes * (1.680942e-03 + 1.322420e-03);
-
-    double multiplier_area =
-        (hw->opcodes->get_usage(17) + hw->opcodes->get_usage(19) +
-         hw->opcodes->get_usage(20)) *
-        4.595000e+03;
-    double multiplier_reads =
-        total_reads[17] + total_reads[19] + total_reads[20];
-    double multiplier_writes =
-        total_writes[17] + total_writes[19] + total_writes[20];
-    double multiplier_power_static = multiplier_reads * 4.817683e-02;
-    double multiplier_power_dynamic =
-        multiplier_writes * (5.725752e-01 + 8.662890e-01);
-
-    double register_area = hw->opcodes->get_usage(34) * 32 * 5.981433e+00;
-    double register_reads = total_reads[34] * 32;
-    double register_writes = total_writes[34] * 32;
-    double register_power_static = register_reads * 7.395312e-05;
-    double register_power_dynamic =
-        register_writes * (1.322600e-03 + 1.792126e-04);
-
-    double total_area =
-        adder_area + bitwise_area + multiplier_area + register_area;
-    double total_power_static = adder_power_static + bitwise_power_static +
-                                multiplier_power_static +
-                                register_power_static;
-    double total_power_dynamic = adder_power_dynamic + bitwise_power_dynamic +
-                                 multiplier_power_dynamic +
-                                 register_power_dynamic;
-
     const double cycle_time_ns =
         static_cast<double>(clockPeriod()) / gem5::sim_clock::as_float::ns;
     const double frequency_ghz =
@@ -2023,10 +2064,7 @@ LLVMInterface::printResults()
         }
     }
 
-    printSection("Power / Area (Current Approximation)");
-    printLabelValue("Total Area", formatDouble(total_area));
-    printLabelValue("Total Power Static", formatDouble(total_power_static));
-    printLabelValue("Total Power Dynamic", formatDouble(total_power_dynamic));
+    printPowerResults();
 
     std::cout << std::endl;
 
@@ -2313,6 +2351,21 @@ LLVMInterface::createInstruction(llvm::Instruction *inst, uint64_t id)
     uint64_t OpCode = inst->Instruction::getOpcode();
     hw->opcodes->update_usage(OpCode);
 
+    if (auto *CI = llvm::dyn_cast<llvm::CallInst>(inst)) {
+        if (llvm::Function *Callee = CI->getCalledFunction()) {
+            llvm::StringRef calleeName = Callee->getName();
+            if (calleeName.startswith("llvm.fmuladd.")) {
+                auto *fma_cfg = hw->inst_config->_fmuladd;
+                auto created = SALAM::createFMulAddInst(
+                    id, this, debug(), fma_cfg->get_opcode_num(),
+                    fma_cfg->get_runtime_cycles(),
+                    fma_cfg->get_functional_unit());
+                created->setHWInterface(hw);
+                return created;
+            }
+        }
+    }
+
     uint64_t functional_unit = 0;
     for (auto hw_inst : hw->inst_config->inst_list) {
         if (OpCode == hw_inst->get_opcode_num()) {
@@ -2537,4 +2590,291 @@ LLVMInterface::createInstruction(llvm::Instruction *inst, uint64_t id)
     assert(created);
     created->setHWInterface(hw);
     return created;
+}
+
+void
+LLVMInterface::initFU()
+{
+    maxFU(_FunctionalUnits);
+    _FunctionalUnits = FUCounts();
+}
+
+void
+LLVMInterface::clearFU()
+{
+    maxFU(_FunctionalUnits);
+    _FunctionalUnits = FUCounts();
+}
+
+void
+LLVMInterface::updateFU(int8_t fu)
+{
+    switch (fu) {
+        case COUNTER:
+            _FunctionalUnits.counter_units++;
+            break;
+        case INTADDER:
+            _FunctionalUnits.int_adder_units++;
+            break;
+        case INTMULTI:
+            _FunctionalUnits.int_multiply_units++;
+            break;
+        case INTSHIFTER:
+            _FunctionalUnits.int_shifter_units++;
+            break;
+        case INTBITWISE:
+            _FunctionalUnits.int_bit_units++;
+            break;
+        case FPSPADDER:
+            _FunctionalUnits.fp_sp_adder++;
+            break;
+        case FPDPADDER:
+            _FunctionalUnits.fp_dp_adder++;
+            break;
+        case FPSPMULTI:
+        case FPSPDIVID:
+            _FunctionalUnits.fp_sp_multiply++;
+            break;
+        case FPDPMULTI:
+        case FPDPDIVID:
+            _FunctionalUnits.fp_dp_multiply++;
+            break;
+        case COMPARE:
+            _FunctionalUnits.compare++;
+            break;
+        case GETELEMENTPTR:
+            _FunctionalUnits.gep++;
+            break;
+        case CONVERSION:
+            _FunctionalUnits.conversion++;
+            break;
+        default:
+            break;
+    }
+}
+
+void
+LLVMInterface::updateParsedFU(int8_t fu)
+{
+    switch (fu) {
+        case COUNTER:
+            _MaxParsed.counter_units++;
+            break;
+        case INTADDER:
+            _MaxParsed.int_adder_units++;
+            break;
+        case INTMULTI:
+            _MaxParsed.int_multiply_units++;
+            break;
+        case INTSHIFTER:
+            _MaxParsed.int_shifter_units++;
+            break;
+        case INTBITWISE:
+            _MaxParsed.int_bit_units++;
+            break;
+        case FPSPADDER:
+            _MaxParsed.fp_sp_adder++;
+            break;
+        case FPDPADDER:
+            _MaxParsed.fp_dp_adder++;
+            break;
+        case FPSPMULTI:
+        case FPSPDIVID:
+            _MaxParsed.fp_sp_multiply++;
+            break;
+        case FPDPMULTI:
+        case FPDPDIVID:
+            _MaxParsed.fp_dp_multiply++;
+            break;
+        case COMPARE:
+            _MaxParsed.compare++;
+            break;
+        case GETELEMENTPTR:
+            _MaxParsed.gep++;
+            break;
+        case CONVERSION:
+            _MaxParsed.conversion++;
+            break;
+        default:
+            _MaxParsed.other++;
+            break;
+    }
+}
+
+void
+LLVMInterface::maxFU(const FUCounts &fu)
+{
+    if (fu.counter_units > _MaxFU.counter_units)
+        _MaxFU.counter_units = fu.counter_units;
+    if (fu.int_adder_units > _MaxFU.int_adder_units)
+        _MaxFU.int_adder_units = fu.int_adder_units;
+    if (fu.int_multiply_units > _MaxFU.int_multiply_units)
+        _MaxFU.int_multiply_units = fu.int_multiply_units;
+    if (fu.int_shifter_units > _MaxFU.int_shifter_units)
+        _MaxFU.int_shifter_units = fu.int_shifter_units;
+    if (fu.int_bit_units > _MaxFU.int_bit_units)
+        _MaxFU.int_bit_units = fu.int_bit_units;
+    if (fu.fp_sp_adder > _MaxFU.fp_sp_adder)
+        _MaxFU.fp_sp_adder = fu.fp_sp_adder;
+    if (fu.fp_dp_adder > _MaxFU.fp_dp_adder)
+        _MaxFU.fp_dp_adder = fu.fp_dp_adder;
+    if (fu.fp_sp_multiply > _MaxFU.fp_sp_multiply)
+        _MaxFU.fp_sp_multiply = fu.fp_sp_multiply;
+    if (fu.fp_dp_multiply > _MaxFU.fp_dp_multiply)
+        _MaxFU.fp_dp_multiply = fu.fp_dp_multiply;
+    if (fu.compare > _MaxFU.compare)
+        _MaxFU.compare = fu.compare;
+    if (fu.gep > _MaxFU.gep)
+        _MaxFU.gep = fu.gep;
+    if (fu.conversion > _MaxFU.conversion)
+        _MaxFU.conversion = fu.conversion;
+}
+
+void
+LLVMInterface::computeStaticFUCounts()
+{
+    _MaxParsed = FUCounts{};
+
+    for (const auto &func : functions) {
+        for (const auto &bb : *func->getBBList()) {
+            for (const auto &val : *bb->Instructions()) {
+                auto inst = std::dynamic_pointer_cast<SALAM::Instruction>(val);
+                if (!inst) {
+                    continue;
+                }
+                updateParsedFU((int8_t)resolvePowerFunctionalUnit(
+                    inst->getFunctionalUnit(), inst->getOpode()));
+            }
+        }
+    }
+}
+
+uint64_t
+LLVMInterface::resolvePowerFunctionalUnit(uint64_t yaml_fu,
+                                          uint64_t opcode) const
+{
+    if (yaml_fu != 0)
+        return yaml_fu;
+
+    switch (opcode) {
+        case llvm::Instruction::ICmp:
+        case llvm::Instruction::FCmp:
+        case llvm::Instruction::PHI:
+        case llvm::Instruction::Switch:
+        case llvm::Instruction::Br:
+            return COMPARE;
+        case llvm::Instruction::GetElementPtr:
+            return GETELEMENTPTR;
+        case llvm::Instruction::Trunc:
+        case llvm::Instruction::ZExt:
+        case llvm::Instruction::SExt:
+        case llvm::Instruction::FPToUI:
+        case llvm::Instruction::FPToSI:
+        case llvm::Instruction::UIToFP:
+        case llvm::Instruction::SIToFP:
+        case llvm::Instruction::FPTrunc:
+        case llvm::Instruction::FPExt:
+        case llvm::Instruction::PtrToInt:
+        case llvm::Instruction::IntToPtr:
+        case llvm::Instruction::BitCast:
+        case llvm::Instruction::AddrSpaceCast:
+            return CONVERSION;
+        default:
+            return COUNTER;
+    }
+}
+
+void
+LLVMInterface::countInstructionFU(
+    const std::shared_ptr<SALAM::Instruction> &inst)
+{
+    updateFU((int8_t)resolvePowerFunctionalUnit(inst->getFunctionalUnit(),
+                                                inst->getOpode()));
+}
+
+SALAMPowerModel *
+LLVMInterface::powerModel()
+{
+    return hw ? hw->salam_power_model : nullptr;
+}
+
+void
+LLVMInterface::printPowerResults()
+{
+    auto *pm = powerModel();
+    if (!pm)
+        return;
+
+    const auto formatDouble = [](double value, int precision = 4) {
+        std::ostringstream out;
+        out << std::fixed << std::setprecision(precision) << value;
+        return out.str();
+    };
+
+    const auto printSection = [](const std::string &title) {
+        std::cout << "  " << title << std::endl;
+        std::cout << "  " << std::string(title.size(), '-') << std::endl;
+    };
+
+    const auto printLabelValue = [](const std::string &label,
+                                    const std::string &value, int indent = 5) {
+        std::cout << std::string(indent, ' ') << std::left << std::setw(40)
+                  << (label + ":") << value << std::endl;
+    };
+
+    pm->updateCycle(_FunctionalUnits);
+    pm->finalize(_MaxParsed, cycle);
+
+    const RegUsage reg_usage = regStats.totalAccess();
+    const double avg_regs = regStats.averageUsage();
+    const double avg_bits = regStats.averageSize();
+    pm->calculateRegisterPower(reg_usage, cycle, avg_regs, avg_bits);
+
+    const PowerAccumulator &acc = pm->accumulator();
+    const double avg_scale = cycle > 0 ? 1.0 / cycle : 0.0;
+    const double fu_dynamic = acc.fu_dynamic_energy * avg_scale;
+    const double fu_total = acc.fu_final_leakage + fu_dynamic;
+    const double reg_dynamic = acc.reg_dynamic_energy * avg_scale;
+    const double reg_total = acc.reg_leakage + reg_dynamic;
+    const double total_power = fu_total + reg_total;
+    const double total_area = acc.fu_area + acc.reg_area;
+
+    pm->recordFinalizedPower(fu_dynamic + reg_dynamic,
+                             acc.fu_final_leakage + acc.reg_leakage,
+                             total_area);
+
+    printSection("Power / Area (Validated)");
+    printLabelValue("Accelerator Power (core)",
+                    formatDouble(total_power) + " mW");
+    printLabelValue("FU Leakage", formatDouble(acc.fu_final_leakage) + " mW");
+    printLabelValue("FU Dynamic", formatDouble(fu_dynamic) + " mW");
+    printLabelValue("Register Leakage", formatDouble(acc.reg_leakage) + " mW");
+    printLabelValue("Register Dynamic", formatDouble(reg_dynamic) + " mW");
+    printLabelValue("FU Area", formatDouble(acc.fu_area) + " um^2");
+    printLabelValue("Register Area", formatDouble(acc.reg_area) + " um^2");
+    printLabelValue("Total Area", formatDouble(total_area) + " um^2");
+    printLabelValue("Half-Adder Op-Cycles",
+                    std::to_string(acc.half_adder_op_cycles));
+    printLabelValue("Full-Adder Op-Cycles",
+                    std::to_string(acc.full_adder_op_cycles));
+    printLabelValue("Int Multiplier Op-Cycles",
+                    std::to_string(acc.int_multiplier_op_cycles));
+
+    const SpmPowerBreakdown spm_pwr = computeSpmPower(
+        spm_size, read_ports, write_ports, memory_loads, memory_stores);
+    const double spm_leakage = spm_pwr.leakage_mw;
+    const double spm_read_dynamic = spm_pwr.read_dynamic_mw;
+    const double spm_write_dynamic = spm_pwr.write_dynamic_mw;
+    const double spm_total =
+        spm_leakage + spm_read_dynamic + spm_write_dynamic;
+    const double acc_spm_total = total_power + spm_total;
+
+    std::cout << std::endl;
+    printLabelValue("SPM Leakage", formatDouble(spm_leakage) + " mW");
+    printLabelValue("SPM Read Dynamic",
+                    formatDouble(spm_read_dynamic) + " mW");
+    printLabelValue("SPM Write Dynamic",
+                    formatDouble(spm_write_dynamic) + " mW");
+    printLabelValue("Accelerator Power (SPM-inclusive)",
+                    formatDouble(acc_spm_total) + " mW");
 }

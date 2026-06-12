@@ -585,16 +585,8 @@ class CommInterface : public BasicPioDevice
     }
 
     uint64_t getGlobalVar(unsigned offset, unsigned size);
-    virtual int
-    getReadPorts()
-    {
-        return 0;
-    }
-    virtual int
-    getWritePorts()
-    {
-        return 0;
-    }
+    virtual int getReadPorts();
+    virtual int getWritePorts();
     virtual int
     getReadBusWidth()
     {
@@ -605,11 +597,7 @@ class CommInterface : public BasicPioDevice
     {
         return 0;
     }
-    virtual int
-    getPmemRange()
-    {
-        return 0;
-    }
+    virtual int getPmemRange();
     void
     registerCompUnit(AccComputeUnit *compunit)
     {

@@ -60,6 +60,12 @@ class SALAMClockConfig(NamedTuple):
     dma_voltage: str
     localbus_clock: str
     localbus_voltage: str
+    # Optional dedicated scratchpad-memory domain. When set (e.g. 500 MHz so
+    # a 1-cycle SPM access latency maps to 2 ns), generated configs bind SPM
+    # tick engines to system.acc_spm_clk_domain. Left None for normal runs,
+    # where SPM falls back to the accelerator memory domain.
+    spm_clock: Optional[str] = None
+    spm_voltage: Optional[str] = None
 
 
 class SALAMArmBoard(ArmBoard):
@@ -173,6 +179,21 @@ class SALAMArmBoard(ArmBoard):
             clock=self._salam_clocks.localbus_clock,
             voltage_domain=self.acc_localbus_voltage_domain,
         )
+
+        # Optional dedicated scratchpad domain (validation profile only).
+        # Generated SALAM SPM tick engines look up system.acc_spm_clk_domain
+        # and fall back to acc_mem_clk_domain when it is absent.
+        if self._salam_clocks.spm_clock is not None:
+            self.acc_spm_voltage_domain = VoltageDomain(
+                voltage=(
+                    self._salam_clocks.spm_voltage
+                    or self._salam_clocks.mem_voltage
+                )
+            )
+            self.acc_spm_clk_domain = SrcClockDomain(
+                clock=self._salam_clocks.spm_clock,
+                voltage_domain=self.acc_spm_voltage_domain,
+            )
 
         # Legacy alias names. Do not use normal SimObject assignment:
         #   self.acc_clk_domain = self.acc_compute_clk_domain

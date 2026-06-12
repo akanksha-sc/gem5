@@ -35,9 +35,17 @@
 #ifndef __HWMODEL_CACTI_WRAPPER_HH__
 #define __HWMODEL_CACTI_WRAPPER_HH__
 
-#include "../../../../ext/mcpat/cacti/cacti_interface.h"
+#include <cstdint>
 
-uca_org_t cactiWrapper(unsigned num_of_bytes, unsigned wordsize,
-                       unsigned num_ports, int cache_type);
+struct SpmPowerBreakdown
+{
+    double leakage_mw = 0.0;
+    double read_dynamic_mw = 0.0;
+    double write_dynamic_mw = 0.0;
+};
+
+SpmPowerBreakdown computeSpmPower(int spm_bytes, int read_ports,
+                                  int write_ports, uint64_t memory_loads,
+                                  uint64_t memory_stores);
 
 #endif //__HWMODEL_CACTI_WRAPPER_HH__
