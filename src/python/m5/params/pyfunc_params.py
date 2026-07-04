@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2018, 2021 Arm Limited
+# Copyright (c) 2012-2014, 2017-2019, 2021, 2024-2025 Arm Limited
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -9,6 +9,10 @@
 # terms below provided that you ensure that this notice is replicated
 # unmodified and in its entirety in all distributions of the software,
 # modified or unmodified, in source code or in binary form.
+#
+# Copyright (c) 2004-2006 The Regents of The University of Michigan
+# Copyright (c) 2010-2011 Advanced Micro Devices, Inc.
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -33,53 +37,35 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from m5.params import *
-from m5.SimObject import *
+from .base_params import ParamValue
 
 
-# Enum for a type of  power model
-class PMType(Enum):
-    vals = ["All", "Static", "Dynamic"]
+class PyFunc(ParamValue):
+    """A parameter type that allows for python functions to be passed as
+    parameters. This is useful for creating callbacks to python functions
+    from C++ code.
+    Usage example:
+    ```
+    class SomeDevice(SimObject):
+        callback = Param.PyFunc(lambda x: print(x))
+    ```
+    """
 
+    cxx_type = "pybind11::object"
 
-# Represents a power model for a simobj
-# The model itself is also a SimObject so we can make use some
-# nice features available such as Parent.any
-class PowerModel(SimObject):
-    type = "PowerModel"
-    cxx_header = "sim/power/power_model.hh"
-    cxx_class = "gem5::PowerModel"
+    def __init__(self, value):
+        self.value = value
 
-    cxx_exports = [
-        PyBindMethod("getDynamicPower"),
-        PyBindMethod("getStaticPower"),
-        PyBindMethod("getSampledDynamicPower"),
-        PyBindMethod("getSampledStaticPower"),
-        PyBindMethod("getSampledTotalPower"),
-        PyBindMethod("getSampledPowerTick"),
-        PyBindMethod("getAccumulatedDynamicPower"),
-        PyBindMethod("getAccumulatedStaticPower"),
-        PyBindMethod("getAccumulatedTotalPower"),
-        PyBindMethod("getAccumulatedPowerTick"),
-        PyBindMethod("getAccumulatedPowerDurationTicks"),
-        PyBindMethod("getAccumulatedPowerSampleCount"),
-        PyBindMethod("clearCachedSample"),
-        PyBindMethod("clearAccumulatedPower"),
-    ]
+    def __call__(self, value):
+        self.__init__(value)
+        return value
 
-    # Keep a list of every model for every power state
-    pm = VectorParam.PowerModelState([], "List of per-state power models.")
+    def getValue(self):
+        return self.value
 
-    # Need a reference to the system so we can query the thermal domain
-    # about temperature (temperature is needed for leakage calculation)
-    subsystem = Param.SubSystem(
-        NULL,
-        "Optional subsystem. If unset, the power model may still be used via "
-        "direct ThermalDomain binding.",
-    )
+    def __str__(self):
+        return str(self.value)
 
-    # Type of power model
-    pm_type = Param.PMType("All", "Type of power model")
-
-    # Ambient temperature to be used when no thermal model is present
-    ambient_temp = Param.Temperature("25.0C", "Ambient temperature")
+    @classmethod
+    def cxx_predecls(cls, code):
+        code('#include "python/pybind11/pybind.hh"')

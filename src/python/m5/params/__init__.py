@@ -50,6 +50,7 @@ from .param_types import *
 from .pin_params import *
 from .port_params import *
 from .power_params import *
+from .pyfunc_params import *
 from .time_params import *
 
 __all__ = [
@@ -135,6 +136,8 @@ __all__ = [
     "Current",
     "Energy",
     "Temperature",
+    # pyfunc_params
+    "PyFunc",
     # time_params
     "Latency",
     "Frequency",

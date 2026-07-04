@@ -45,6 +45,7 @@
 
 #include <vector>
 
+#include "base/types.hh"
 #include "params/SubSystem.hh"
 #include "sim/sim_object.hh"
 
@@ -66,6 +67,19 @@ class SubSystem : public SimObject
     double getDynamicPower() const;
 
     double getStaticPower() const;
+
+    double getSampledDynamicPower() const;
+    double getSampledStaticPower() const;
+    double getSampledTotalPower() const;
+    Tick getSampledPowerTick() const;
+
+    double getAccumulatedDynamicPower() const;
+    double getAccumulatedStaticPower() const;
+    double getAccumulatedTotalPower() const;
+    Tick getAccumulatedPowerTick() const;
+    Tick getAccumulatedPowerDurationTicks() const;
+    uint64_t getAccumulatedPowerSampleCount() const;
+    void clearAccumulatedPower();
 
     void registerPowerProducer(PowerModel *pm) {
         powerProducers.push_back(pm);

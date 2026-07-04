@@ -38,8 +38,10 @@
 #ifndef __SIM_THERMAL_MODEL_HH__
 #define __SIM_THERMAL_MODEL_HH__
 
+#include <string>
 #include <vector>
 
+#include "base/statistics.hh"
 #include "base/temperature.hh"
 #include "sim/clocked_object.hh"
 #include "sim/power/thermal_domain.hh"
@@ -54,6 +56,8 @@ struct ThermalCapacitorParams;
 struct ThermalModelParams;
 struct ThermalReferenceParams;
 struct ThermalResistorParams;
+
+class ThermalModelPyFunc;
 
 /**
  * A ThermalResistor is used to model a thermal resistance between two
@@ -159,6 +163,22 @@ class ThermalModel : public ClockedObject
     void startup() override;
     void doStep();
 
+    void startStepping();
+    void stopStepping();
+    void flushStepNow();
+
+    Tick
+    getEffectiveIntervalTicks() const
+    {
+        return intervalTicks;
+    }
+
+    Tick
+    getLastConsumedPowerTick() const
+    {
+        return lastConsumedPowerTickValue;
+    }
+
   private:
 
     /* Keep track of all components used for the thermal model */
@@ -178,6 +198,67 @@ class ThermalModel : public ClockedObject
 
     /** Step in seconds for thermal updates */
     const double _step;
+
+    const Cycles thermal_interval;
+    const Tick thermal_interval_ticks;
+    const bool auto_start;
+    const Tick sample_wait_timeout_ticks;
+    const Tick thermal_post_power_delay_ticks;
+    ThermalModelPyFunc *solver;
+    const bool enable_trace;
+    std::string trace_file;
+    bool stepping_active = false;
+
+    Tick intervalTicks = 0;
+    Tick nextIntervalStepTick = 0;
+    Tick lastConsumedPowerTickValue = 0;
+    Tick steppingStartTick = 0;
+    Tick waitStartTick = 0;
+    bool hasConsumedPowerSample = false;
+    uint64_t lastStepSolverSubsteps = 1;
+
+    uint64_t numThermalSteps = 0;
+    uint64_t numThermalIntervalSteps = 0;
+    uint64_t numThermalFlushSteps = 0;
+    uint64_t numThermalWaitRetries = 0;
+
+    Tick lastThermalStepTickValue = 0;
+    Tick lastStepDtTicksValue = 0;
+    double lastStepDtSecondsValue = 0.0;
+    std::string lastStepKind = "none";
+
+    /**
+     * Domain temperatures immediately before the last thermal backend solve.
+     * Used only for trace output so the trace can distinguish sampled-power
+     * temperature, solver input temperature, and solver output temperature.
+     */
+    mutable std::vector<double> traceInputTempsK;
+    mutable std::vector<double> traceAccumDynW;
+    mutable std::vector<double> traceAccumStW;
+    mutable std::vector<double> traceAccumTotalW;
+    mutable uint64_t tracePowerWindowSampleCount = 0;
+
+    EventFunctionWrapper intervalStepEvent;
+    bool consumeSampledPower(bool reschedule_next);
+    void stepAtInterval();
+    void appendTemperatureTrace() const;
+
+    bool
+    intervalSteppingConfigured() const
+    {
+        return thermal_interval_ticks > 0 || thermal_interval > 0;
+    }
+
+    Tick computeEffectiveIntervalTicks() const;
+
+    statistics::Value thermalStepCount;
+    statistics::Value thermalIntervalStepCount;
+    statistics::Value thermalFlushStepCount;
+    statistics::Value thermalWaitRetryCount;
+    statistics::Value lastThermalStepTick;
+    statistics::Value lastConsumedPowerTick;
+    statistics::Value lastStepDtTicks;
+    statistics::Value lastStepDtSeconds;
 };
 
 } // namespace gem5

@@ -69,6 +69,14 @@ def write_header_file(sim_object: Type, param_hh: str):
     # Need to import after the importer is installed
     from m5.objects.SimObject import SimObject
     from m5.params import Enum
+    from m5.params.pyfunc_params import PyFunc
+
+    def uses_pyfunc(params):
+        for p in params:
+            ptype = getattr(p, "ptype", None)
+            if isinstance(ptype, type) and issubclass(ptype, PyFunc):
+                return True
+        return False
 
     code = code_formatter()
 
@@ -199,12 +207,19 @@ def write_header_file(sim_object: Type, param_hh: str):
             code('#include "enums/${{ptype.__name__}}.hh"', add_once=True)
             code()
 
+    if uses_pyfunc(params):
+        code('#include "base/compiler.hh"', add_once=True)
+        code()
+
     code("namespace gem5")
     code("{")
     code("")
 
     # now generate the actual param struct
-    code("struct ${sim_object}Params")
+    if uses_pyfunc(params):
+        code("struct GEM5_LOCAL ${sim_object}Params")
+    else:
+        code("struct ${sim_object}Params")
     if sim_object._base:
         code("    : public ${{sim_object._base.type}}Params")
     code("{")

@@ -77,6 +77,64 @@ class PowerModelState : public SimObject
      */
     virtual double getStaticPower() const = 0;
 
+    virtual double
+    getCachedDynamicPower() const
+    {
+        return 0.0;
+    }
+    virtual double
+    getCachedStaticPower() const
+    {
+        return 0.0;
+    }
+    virtual Tick
+    getCachedPowerTick() const
+    {
+        return 0;
+    }
+    virtual double
+    getCachedTemperatureKelvin() const
+    {
+        return 0.0;
+    }
+
+    virtual void
+    clearCachedSample()
+    {}
+    virtual void
+    clearAccumulatedPower()
+    {}
+    virtual double
+    getAccumulatedDynamicPower() const
+    {
+        return 0.0;
+    }
+    virtual double
+    getAccumulatedStaticPower() const
+    {
+        return 0.0;
+    }
+    virtual double
+    getAccumulatedTotalPower() const
+    {
+        return 0.0;
+    }
+    virtual Tick
+    getAccumulatedPowerTick() const
+    {
+        return 0;
+    }
+    virtual Tick
+    getAccumulatedPowerDurationTicks() const
+    {
+        return 0;
+    }
+    virtual uint64_t
+    getAccumulatedPowerSampleCount() const
+    {
+        return 0;
+    }
+
     /**
      * Temperature update.
      *
@@ -125,6 +183,21 @@ class PowerModel : public SimObject
      * @return Power (Watts) consumed by this object (static component)
      */
     double getStaticPower() const;
+
+    double getSampledDynamicPower() const;
+    double getSampledStaticPower() const;
+    double getSampledTotalPower() const;
+    Tick getSampledPowerTick() const;
+    double getSampledTemperatureKelvin() const;
+
+    double getAccumulatedDynamicPower() const;
+    double getAccumulatedStaticPower() const;
+    double getAccumulatedTotalPower() const;
+    Tick getAccumulatedPowerTick() const;
+    Tick getAccumulatedPowerDurationTicks() const;
+    uint64_t getAccumulatedPowerSampleCount() const;
+    void clearCachedSample();
+    void clearAccumulatedPower();
 
     void setClockedObject(ClockedObject *clkobj);
 

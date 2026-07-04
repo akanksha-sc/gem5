@@ -43,7 +43,31 @@ class ThermalDomain(SimObject):
     cxx_header = "sim/power/thermal_domain.hh"
     cxx_class = "gem5::ThermalDomain"
 
-    cxx_exports = [PyBindMethod("setNode")]
+    cxx_exports = [
+        PyBindMethod("setNode"),
+        PyBindMethod("setDirectPowerModel"),
+        PyBindMethod("getSampledDynamicPower"),
+        PyBindMethod("getSampledStaticPower"),
+        PyBindMethod("getSampledPower"),
+        PyBindMethod("getSampledPowerTick"),
+        PyBindMethod("getSampledTemperatureKelvin"),
+        PyBindMethod("recordTemperatureSample"),
+        PyBindMethod("getAccumulatedDynamicPower"),
+        PyBindMethod("getAccumulatedStaticPower"),
+        PyBindMethod("getAccumulatedTotalPower"),
+        PyBindMethod("getAccumulatedPower"),
+        PyBindMethod("getAccumulatedPowerTick"),
+        PyBindMethod("getAccumulatedPowerDurationTicks"),
+        PyBindMethod("getAccumulatedPowerSampleCount"),
+        PyBindMethod("clearAccumulatedPower"),
+    ]
 
     # Static temperature which may change over time
     initial_temperature = Param.Temperature("25.0C", "Initial temperature")
+
+    label = Param.String("", "Human-readable component name for trace output")
+    power_model = Param.PowerModel(
+        NULL,
+        "Direct power model attachment. Used both as a direct power source "
+        "and as a temperature update target when no SubSystem path is used.",
+    )

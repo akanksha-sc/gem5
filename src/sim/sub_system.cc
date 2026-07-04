@@ -70,4 +70,139 @@ SubSystem::getStaticPower() const
     return ret;
 }
 
+double
+SubSystem::getSampledDynamicPower() const
+{
+    double ret = 0.0f;
+    for (auto &obj : powerProducers)
+        ret += obj->getSampledDynamicPower();
+    return ret;
+}
+
+double
+SubSystem::getSampledStaticPower() const
+{
+    double ret = 0.0f;
+    for (auto &obj : powerProducers)
+        ret += obj->getSampledStaticPower();
+    return ret;
+}
+
+double
+SubSystem::getSampledTotalPower() const
+{
+    return getSampledDynamicPower() + getSampledStaticPower();
+}
+
+Tick
+SubSystem::getSampledPowerTick() const
+{
+    Tick common = 0;
+
+    for (auto &obj : powerProducers) {
+        Tick t = obj->getSampledPowerTick();
+
+        if (t == 0) {
+            return 0;
+        }
+
+        if (common == 0) {
+            common = t;
+        } else if (t != common) {
+            return 0;
+        }
+    }
+
+    return common;
+}
+
+namespace
+{
+
+Tick
+commonProducerTick(const std::vector<PowerModel *> &producers,
+                   Tick (PowerModel::*getter)() const)
+{
+    Tick common = 0;
+    for (auto *obj : producers) {
+        Tick t = (obj->*getter)();
+        if (t == 0)
+            return 0;
+        if (common == 0)
+            common = t;
+        else if (common != t)
+            return 0;
+    }
+    return common;
+}
+
+uint64_t
+commonProducerSampleCount(const std::vector<PowerModel *> &producers)
+{
+    uint64_t common = 0;
+    for (auto *obj : producers) {
+        uint64_t c = obj->getAccumulatedPowerSampleCount();
+        if (c == 0)
+            return 0;
+        if (common == 0)
+            common = c;
+        else if (common != c)
+            return 0;
+    }
+    return common;
+}
+
+} // anonymous namespace
+
+double
+SubSystem::getAccumulatedDynamicPower() const
+{
+    double ret = 0.0f;
+    for (auto &obj : powerProducers)
+        ret += obj->getAccumulatedDynamicPower();
+    return ret;
+}
+
+double
+SubSystem::getAccumulatedStaticPower() const
+{
+    double ret = 0.0f;
+    for (auto &obj : powerProducers)
+        ret += obj->getAccumulatedStaticPower();
+    return ret;
+}
+
+double
+SubSystem::getAccumulatedTotalPower() const
+{
+    return getAccumulatedDynamicPower() + getAccumulatedStaticPower();
+}
+
+Tick
+SubSystem::getAccumulatedPowerTick() const
+{
+    return commonProducerTick(powerProducers,
+                              &PowerModel::getAccumulatedPowerTick);
+}
+
+Tick
+SubSystem::getAccumulatedPowerDurationTicks() const
+{
+    return commonProducerTick(powerProducers,
+                              &PowerModel::getAccumulatedPowerDurationTicks);
+}
+
+uint64_t
+SubSystem::getAccumulatedPowerSampleCount() const
+{
+    return commonProducerSampleCount(powerProducers);
+}
+
+void
+SubSystem::clearAccumulatedPower()
+{
+    for (auto &obj : powerProducers)
+        obj->clearAccumulatedPower();
+}
+
 } // namespace gem5

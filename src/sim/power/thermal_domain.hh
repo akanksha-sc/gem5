@@ -38,10 +38,12 @@
 #ifndef __SIM_THERMAL_DOMAIN_HH__
 #define __SIM_THERMAL_DOMAIN_HH__
 
+#include <string>
 #include <vector>
 
 #include "base/statistics.hh"
 #include "base/temperature.hh"
+#include "base/types.hh"
 #include "params/ThermalDomain.hh"
 #include "sim/power/thermal_entity.hh"
 #include "sim/power/thermal_node.hh"
@@ -52,6 +54,7 @@ namespace gem5
 {
 
 template <class T> class ProbePointArg;
+class PowerModel;
 
 /**
  * A ThermalDomain is used to group objects under that operate under
@@ -97,17 +100,66 @@ class ThermalDomain : public SimObject, public ThermalEntity
       */
     void setSubSystem(SubSystem * ss);
 
+    void
+    setDirectPowerModel(PowerModel *pm)
+    {
+        directPowerModel = pm;
+    }
+    double getSampledDynamicPower() const;
+    double getSampledStaticPower() const;
+    double getSampledPower() const;
+    Tick getSampledPowerTick() const;
+    double getSampledTemperatureKelvin() const;
+    void recordTemperatureSample();
+
+    double getAccumulatedDynamicPower() const;
+    double getAccumulatedStaticPower() const;
+    double getAccumulatedTotalPower() const;
+    double getAccumulatedPower() const;
+    Tick getAccumulatedPowerTick() const;
+    Tick getAccumulatedPowerDurationTicks() const;
+    uint64_t getAccumulatedPowerSampleCount() const;
+    void clearAccumulatedPower();
+
+    /** Label used in trace output; falls back to SimObject name(). */
+    std::string
+    traceLabel() const
+    {
+        return _label.empty() ? SimObject::name() : _label;
+    }
+
   private:
     const Temperature _initTemperature;
+    const std::string _label;
     ThermalNode * node;
     SubSystem * subsystem;
+    /** Optional directly attached power model. When present, the domain reads
+     * power from it and also pushes temperature updates back to it. */
+    PowerModel *directPowerModel;
 
     /** Stat for reporting voltage of the domain */
     statistics::Value currentTemp;
+    statistics::Value sampledDynamicPower;
+    statistics::Value sampledStaticPower;
+    statistics::Value sampledTotalPower;
+    statistics::Value sampledPowerTick;
+    statistics::Value sampledTemperatureK;
+
+    statistics::Histogram tempDist;
+    statistics::Value tempSampleCount;
+    statistics::Value tempMinK;
+    statistics::Value tempMaxK;
+    statistics::Value tempAvgK;
+    statistics::Value tempFinalK;
+
+    unsigned _temp_sample_count = 0;
+    double _sum_temp_k = 0.0;
+    double _min_temp_k = 1e18;
+    double _max_temp_k = 0.0;
+    double _final_temp_k = 0.0;
 
     /** Probe to signal for temperature changes in this domain */
-    ProbePointArg<Temperature> *ppThermalUpdate;
-
+    ProbePointArg<Temperature> *ppThermalUpdate = nullptr;
 };
 
 } // namespace gem5

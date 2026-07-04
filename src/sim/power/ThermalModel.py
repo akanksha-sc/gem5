@@ -97,11 +97,46 @@ class ThermalModel(ClockedObject):
         PyBindMethod("addDomain"),
         PyBindMethod("addNode"),
         PyBindMethod("doStep"),
+        PyBindMethod("startStepping"),
+        PyBindMethod("stopStepping"),
+        PyBindMethod("flushStepNow"),
+        PyBindMethod("getEffectiveIntervalTicks"),
+        PyBindMethod("getLastConsumedPowerTick"),
     ]
 
     step = Param.Float(
         0.01, "Simulation step (in seconds) for thermal simulation"
     )
+
+    thermal_interval = Param.Cycles(
+        0, "Interval for ROI-controlled thermal stepping (0 = disabled)"
+    )
+    thermal_interval_ticks = Param.Tick(
+        0,
+        "Absolute simulated tick interval for ROI-controlled thermal "
+        "stepping. If nonzero, this overrides thermal_interval. If zero, "
+        "legacy thermal_interval cycles are converted to ticks using the "
+        "ThermalModel clock period.",
+    )
+    thermal_post_power_delay_ticks = Param.Tick(
+        1,
+        "Delay between expected power sample tick and thermal consume event. "
+        "Default 1 preserves the current ordering where thermal stepping runs "
+        "one tick after power sampling.",
+    )
+    auto_start = Param.Bool(
+        False,
+        "Automatically start interval thermal stepping at startup. "
+        "Default false preserves ROI-controlled behavior.",
+    )
+    sample_wait_timeout_ticks = Param.Tick(
+        0,
+        "Maximum ticks to wait for aligned power samples before panicking. "
+        "0 means wait indefinitely.",
+    )
+    solver = Param.ThermalModelPyFunc(NULL, "Optional Python solver backend")
+    enable_trace = Param.Bool(False, "Enable temperature trace output")
+    trace_file = Param.String("", "CSV path for temperature trace")
 
     def populate(self):
         if not hasattr(self, "_capacitors"):

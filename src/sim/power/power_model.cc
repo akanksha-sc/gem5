@@ -67,9 +67,9 @@ PowerModel::PowerModel(const Params &p)
       ADD_STAT(staticPower, statistics::units::Watt::get(),
                          "Static power for this power state")
 {
-    panic_if(subsystem == NULL,
-             "Subsystem is NULL! This is not acceptable for a PowerModel!\n");
-    subsystem->registerPowerProducer(this);
+    if (subsystem) {
+        subsystem->registerPowerProducer(this);
+    }
     // The temperature passed here will be overwritten, if there is
     // a thermal model present
     for (auto & pms: states_pm){
@@ -102,6 +102,10 @@ PowerModel::thermalUpdateCallback(const Temperature &temp)
 void
 PowerModel::regProbePoints()
 {
+    if (!subsystem) {
+        return;
+    }
+
     thermalListener =
         subsystem->getProbeManager()->connect<ThermalProbeListener>(
             *this, "thermalUpdate");
@@ -162,6 +166,200 @@ PowerModel::getStaticPower() const
             power += states_pm[i]->getStaticPower() * w[i + 1];
 
     return power;
+}
+
+double
+PowerModel::getSampledDynamicPower() const
+{
+    assert(clocked_object);
+
+    if (power_model_type == enums::PMType::Static)
+        return 0;
+
+    std::vector<double> w = clocked_object->powerState->getWeights();
+    assert(w.size() - 1 == states_pm.size());
+
+    double power = 0;
+    for (unsigned i = 0; i < states_pm.size(); i++)
+        if (w[i + 1] > 0.0f)
+            power += states_pm[i]->getCachedDynamicPower() * w[i + 1];
+    return power;
+}
+
+double
+PowerModel::getSampledStaticPower() const
+{
+    assert(clocked_object);
+
+    if (power_model_type == enums::PMType::Dynamic)
+        return 0;
+
+    std::vector<double> w = clocked_object->powerState->getWeights();
+    assert(w.size() - 1 == states_pm.size());
+
+    double power = 0;
+    for (unsigned i = 0; i < states_pm.size(); i++)
+        if (w[i + 1] > 0.0f)
+            power += states_pm[i]->getCachedStaticPower() * w[i + 1];
+    return power;
+}
+
+double
+PowerModel::getSampledTotalPower() const
+{
+    return getSampledDynamicPower() + getSampledStaticPower();
+}
+
+Tick
+PowerModel::getSampledPowerTick() const
+{
+    Tick latest = 0;
+    for (auto &pms : states_pm) {
+        Tick t = pms->getCachedPowerTick();
+        if (t > latest)
+            latest = t;
+    }
+    return latest;
+}
+
+double
+PowerModel::getSampledTemperatureKelvin() const
+{
+    for (auto &pms : states_pm) {
+        double t = pms->getCachedTemperatureKelvin();
+        if (t > 0.0)
+            return t;
+    }
+    return 0.0;
+}
+
+namespace
+{
+
+Tick
+commonAccumulatedTick(const std::vector<PowerModelState *> &states_pm,
+                      const std::vector<double> &w,
+                      Tick (PowerModelState::*getter)() const)
+{
+    Tick common = 0;
+    for (unsigned i = 0; i < states_pm.size(); i++) {
+        if (w[i + 1] <= 0.0f)
+            continue;
+        Tick t = (states_pm[i]->*getter)();
+        if (t == 0)
+            return 0;
+        if (common == 0)
+            common = t;
+        else if (common != t)
+            return 0;
+    }
+    return common;
+}
+
+uint64_t
+commonAccumulatedSampleCount(const std::vector<PowerModelState *> &states_pm,
+                             const std::vector<double> &w)
+{
+    uint64_t common = 0;
+    for (unsigned i = 0; i < states_pm.size(); i++) {
+        if (w[i + 1] <= 0.0f)
+            continue;
+        uint64_t c = states_pm[i]->getAccumulatedPowerSampleCount();
+        if (c == 0)
+            return 0;
+        if (common == 0)
+            common = c;
+        else if (common != c)
+            return 0;
+    }
+    return common;
+}
+
+} // anonymous namespace
+
+double
+PowerModel::getAccumulatedDynamicPower() const
+{
+    assert(clocked_object);
+
+    if (power_model_type == enums::PMType::Static)
+        return 0;
+
+    std::vector<double> w = clocked_object->powerState->getWeights();
+    assert(w.size() - 1 == states_pm.size());
+
+    double power = 0;
+    for (unsigned i = 0; i < states_pm.size(); i++)
+        if (w[i + 1] > 0.0f)
+            power += states_pm[i]->getAccumulatedDynamicPower() * w[i + 1];
+    return power;
+}
+
+double
+PowerModel::getAccumulatedStaticPower() const
+{
+    assert(clocked_object);
+
+    if (power_model_type == enums::PMType::Dynamic)
+        return 0;
+
+    std::vector<double> w = clocked_object->powerState->getWeights();
+    assert(w.size() - 1 == states_pm.size());
+
+    double power = 0;
+    for (unsigned i = 0; i < states_pm.size(); i++)
+        if (w[i + 1] > 0.0f)
+            power += states_pm[i]->getAccumulatedStaticPower() * w[i + 1];
+    return power;
+}
+
+double
+PowerModel::getAccumulatedTotalPower() const
+{
+    return getAccumulatedDynamicPower() + getAccumulatedStaticPower();
+}
+
+Tick
+PowerModel::getAccumulatedPowerTick() const
+{
+    assert(clocked_object);
+    std::vector<double> w = clocked_object->powerState->getWeights();
+    assert(w.size() - 1 == states_pm.size());
+    return commonAccumulatedTick(states_pm, w,
+                                 &PowerModelState::getAccumulatedPowerTick);
+}
+
+Tick
+PowerModel::getAccumulatedPowerDurationTicks() const
+{
+    assert(clocked_object);
+    std::vector<double> w = clocked_object->powerState->getWeights();
+    assert(w.size() - 1 == states_pm.size());
+    return commonAccumulatedTick(
+        states_pm, w, &PowerModelState::getAccumulatedPowerDurationTicks);
+}
+
+uint64_t
+PowerModel::getAccumulatedPowerSampleCount() const
+{
+    assert(clocked_object);
+    std::vector<double> w = clocked_object->powerState->getWeights();
+    assert(w.size() - 1 == states_pm.size());
+    return commonAccumulatedSampleCount(states_pm, w);
+}
+
+void
+PowerModel::clearCachedSample()
+{
+    for (auto &pms : states_pm)
+        pms->clearCachedSample();
+}
+
+void
+PowerModel::clearAccumulatedPower()
+{
+    for (auto &pms : states_pm)
+        pms->clearAccumulatedPower();
 }
 
 } // namespace gem5
