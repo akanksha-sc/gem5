@@ -1,0 +1,6 @@
+Local AArch64 SE workloads for configs under gem5_library (e.g.
+arm_a9_with_mcpat_and_hotspot.py).
+
+Sources and Makefile live here; binaries are produced locally with `make`
+(requires aarch64-linux-gnu-g++ and gem5 m5 headers). Built executables are
+gitignored—do not commit dax, daxpy, iax, iaxpy, sax, or saxpy binaries.
