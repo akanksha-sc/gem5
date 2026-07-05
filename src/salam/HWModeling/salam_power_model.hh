@@ -35,15 +35,29 @@
 #ifndef __HWMODEL_SALAM_POWER_MODEL_HH__
 #define __HWMODEL_SALAM_POWER_MODEL_HH__
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <vector>
 
+#include "base/statistics.hh"
 #include "params/SALAMPowerModel.hh"
 #include "salam/LLVMRead/value.hh"
 #include "sim/sim_object.hh"
 
 using namespace gem5;
+
+enum class SalamPowerComponent : unsigned
+{
+    FuDynamic = 0,
+    FuStatic,
+    RegDynamic,
+    RegStatic,
+    SpmReadDynamic,
+    SpmWriteDynamic,
+    SpmStatic,
+    NumComponents
+};
 
 struct FUCounts
 {
@@ -71,6 +85,7 @@ struct RegUsage
 
 class FunctionalUnitBase;
 class FunctionalUnits;
+class SALAMPowerModel;
 
 class RegisterStats
 {
@@ -84,6 +99,7 @@ class RegisterStats
     void collect(std::vector<std::shared_ptr<SALAM::Value>> &values);
     void beginCycle();
     void endCycle();
+    void endCycle(SALAMPowerModel *pm, FunctionalUnits *fu);
 
     double averageUsage() const;
     double averageSize() const;
@@ -158,6 +174,12 @@ class PowerAccumulator
     }
     void updateCycle(const FUCounts &units);
     void configureStaticCounts(const FUCounts &static_units);
+    void prepareStaticLeakage();
+    double
+    lastCycleFuDynamic() const
+    {
+        return last_cycle_fu_dynamic_;
+    }
     void finalize(const FUCounts &static_units, int cycles,
                   int half_adder_cap = 0);
     void calculateRegisterPower(const RegUsage &usage, int cycles,
@@ -169,6 +191,7 @@ class PowerAccumulator
     PowerModelConfig config_;
     int half_adder_cap_cfg = 0;
     FUCounts static_synthesis_;
+    double last_cycle_fu_dynamic_ = 0.0;
     static constexpr int kFpMacroFactor = 5;
     static constexpr int kIntMulStaticPerUnitThreshold = 6;
 
@@ -200,9 +223,19 @@ class PowerAccumulator
 
 class SALAMPowerModel : public SimObject
 {
+  public:
+    struct PowerStats : public statistics::Group
+    {
+        statistics::Vector componentEnergy;
+        statistics::Scalar accCycles;
+
+        PowerStats(statistics::Group *parent);
+    };
+
   private:
     PowerAccumulator *accum_;
     FunctionalUnits *functional_units_;
+    PowerStats powerStats;
 
     uint32_t half_adder_area_cap_;
     uint8_t half_adder_dynamic_;
@@ -216,7 +249,19 @@ class SALAMPowerModel : public SimObject
     double static_power_w_ = 0.0;
     double area_um2_ = 0.0;
 
+    bool static_fu_leakage_ready_ = false;
+    bool spm_configured_ = false;
+    double spm_read_dynamic_mw_ = 0.0;
+    double spm_write_dynamic_mw_ = 0.0;
+    double spm_leakage_mw_ = 0.0;
+    std::array<double, static_cast<size_t>(SalamPowerComponent::NumComponents)>
+        component_energy_totals_{};
+    uint64_t acc_cycles_tracked_ = 0;
+
     void ensureAccumulator();
+    void addComponentEnergy(SalamPowerComponent component, double mw_cycles);
+    void ensureComponentTotal(SalamPowerComponent component,
+                              double target_mw_cycles);
 
   public:
     SALAMPowerModel(const SALAMPowerModelParams &params);
@@ -224,12 +269,24 @@ class SALAMPowerModel : public SimObject
 
     void bindFunctionalUnits(FunctionalUnits *fu);
     void initializePowerModel(const FUCounts &static_counts);
+    void configureSpm(int spm_bytes, int read_ports, int write_ports);
     void updateCycle(const FUCounts &units);
+    void noteRegisterAccess(uint64_t read_delta, uint64_t write_delta);
+    void noteSpmRead();
+    void noteSpmWrite();
     void finalize(const FUCounts &static_units, int cycles);
     void calculateRegisterPower(const RegUsage &usage, int cycles,
                                 double avg_regs, double avg_bits);
+    void syncFinalizedComponentStats(int cycles, double fu_dynamic_mw,
+                                     double fu_static_mw,
+                                     double reg_dynamic_mw,
+                                     double reg_static_mw,
+                                     double spm_read_dynamic_mw,
+                                     double spm_write_dynamic_mw,
+                                     double spm_static_mw);
     void recordFinalizedPower(double dynamic_mw, double static_mw,
                               double area_um2);
+    void regStats() override;
 
     const PowerAccumulator &accumulator() const;
     PowerAccumulator &accumulator();

@@ -36,6 +36,7 @@
 
 #include <algorithm>
 
+#include "salam/HWModeling/cacti_wrapper.hh"
 #include "salam/HWModeling/functional_units.hh"
 #include "salam/HWModeling/functional_units/base.hh"
 
@@ -43,6 +44,7 @@ SALAMPowerModel::SALAMPowerModel(const SALAMPowerModelParams &params)
     : SimObject(params),
       accum_(nullptr),
       functional_units_(nullptr),
+      powerStats(this),
       half_adder_area_cap_(params.half_adder_area_cap),
       half_adder_dynamic_(params.half_adder_dynamic),
       integer_mul_dynamic_(params.integer_mul_dynamic),
@@ -51,6 +53,57 @@ SALAMPowerModel::SALAMPowerModel(const SALAMPowerModelParams &params)
       dynamic_activity_scale_(params.dynamic_activity_scale),
       static_synthesis_floor_(params.static_synthesis_floor)
 {}
+
+SALAMPowerModel::PowerStats::PowerStats(statistics::Group *parent)
+    : statistics::Group(parent, "power"),
+      ADD_STAT(componentEnergy, statistics::units::Count::get(),
+               "Per-component energy accumulator (mW·cycles)"),
+      ADD_STAT(accCycles, statistics::units::Cycle::get(),
+               "Accelerator power-model cycles tracked")
+{
+    componentEnergy.init(static_cast<int>(SalamPowerComponent::NumComponents))
+        .subname(static_cast<int>(SalamPowerComponent::FuDynamic), "fuDynamic")
+        .subname(static_cast<int>(SalamPowerComponent::FuStatic), "fuStatic")
+        .subname(static_cast<int>(SalamPowerComponent::RegDynamic),
+                 "regDynamic")
+        .subname(static_cast<int>(SalamPowerComponent::RegStatic), "regStatic")
+        .subname(static_cast<int>(SalamPowerComponent::SpmReadDynamic),
+                 "spmReadDynamic")
+        .subname(static_cast<int>(SalamPowerComponent::SpmWriteDynamic),
+                 "spmWriteDynamic")
+        .subname(static_cast<int>(SalamPowerComponent::SpmStatic),
+                 "spmStatic");
+}
+
+void
+SALAMPowerModel::regStats()
+{
+    SimObject::regStats();
+}
+
+void
+SALAMPowerModel::addComponentEnergy(SalamPowerComponent component,
+                                    double mw_cycles)
+{
+    if (mw_cycles <= 0.0)
+        return;
+    const auto idx = static_cast<size_t>(component);
+    component_energy_totals_[idx] += mw_cycles;
+    powerStats.componentEnergy[static_cast<int>(component)] += mw_cycles;
+}
+
+void
+SALAMPowerModel::ensureComponentTotal(SalamPowerComponent component,
+                                      double target_mw_cycles)
+{
+    const auto idx = static_cast<size_t>(component);
+    const double current = component_energy_totals_[idx];
+    if (target_mw_cycles > current) {
+        const double delta = target_mw_cycles - current;
+        component_energy_totals_[idx] = target_mw_cycles;
+        powerStats.componentEnergy[static_cast<int>(component)] += delta;
+    }
+}
 
 SALAMPowerModel::~SALAMPowerModel()
 {
@@ -116,6 +169,27 @@ SALAMPowerModel::initializePowerModel(const FUCounts &static_counts)
 {
     ensureAccumulator();
     accum_->configureStaticCounts(static_counts);
+    accum_->prepareStaticLeakage();
+    static_fu_leakage_ready_ = true;
+}
+
+void
+SALAMPowerModel::configureSpm(int spm_bytes, int read_ports, int write_ports)
+{
+    if (spm_bytes <= 0)
+        return;
+
+    const SpmPowerBreakdown one_read =
+        computeSpmPower(spm_bytes, read_ports, write_ports, 1, 0);
+    const SpmPowerBreakdown one_write =
+        computeSpmPower(spm_bytes, read_ports, write_ports, 0, 1);
+    const SpmPowerBreakdown idle =
+        computeSpmPower(spm_bytes, read_ports, write_ports, 0, 0);
+
+    spm_read_dynamic_mw_ = one_read.read_dynamic_mw;
+    spm_write_dynamic_mw_ = one_write.write_dynamic_mw;
+    spm_leakage_mw_ = idle.leakage_mw;
+    spm_configured_ = true;
 }
 
 void
@@ -123,7 +197,74 @@ SALAMPowerModel::updateCycle(const FUCounts &units)
 {
     if (!accum_)
         return;
+
+    const double before = accum_->fu_dynamic_energy;
     accum_->updateCycle(units);
+    addComponentEnergy(SalamPowerComponent::FuDynamic,
+                       accum_->fu_dynamic_energy - before);
+
+    if (static_fu_leakage_ready_)
+        addComponentEnergy(SalamPowerComponent::FuStatic,
+                           accum_->fu_final_leakage);
+
+    powerStats.accCycles++;
+    acc_cycles_tracked_++;
+}
+
+void
+SALAMPowerModel::noteRegisterAccess(uint64_t read_delta, uint64_t write_delta)
+{
+    if (!functional_units_ || (read_delta == 0 && write_delta == 0))
+        return;
+
+    FunctionalUnitBase *reg = functional_units_->_bit_register;
+    const double reg_dyn = reg->get_internal_power() + reg->get_switch_power();
+    addComponentEnergy(SalamPowerComponent::RegDynamic,
+                       static_cast<double>(read_delta + write_delta) *
+                           reg_dyn);
+}
+
+void
+SALAMPowerModel::noteSpmRead()
+{
+    // SPM energy is reconciled in syncFinalizedComponentStats().
+}
+
+void
+SALAMPowerModel::noteSpmWrite()
+{
+    // SPM energy is reconciled in syncFinalizedComponentStats().
+}
+
+void
+SALAMPowerModel::syncFinalizedComponentStats(
+    int cycles, double fu_dynamic_mw, double fu_static_mw,
+    double reg_dynamic_mw, double reg_static_mw, double spm_read_dynamic_mw,
+    double spm_write_dynamic_mw, double spm_static_mw)
+{
+    if (cycles <= 0)
+        return;
+
+    ensureComponentTotal(SalamPowerComponent::FuDynamic,
+                         fu_dynamic_mw * cycles);
+    ensureComponentTotal(SalamPowerComponent::FuStatic, fu_static_mw * cycles);
+    ensureComponentTotal(SalamPowerComponent::RegDynamic,
+                         reg_dynamic_mw * cycles);
+    ensureComponentTotal(SalamPowerComponent::RegStatic,
+                         reg_static_mw * cycles);
+    ensureComponentTotal(SalamPowerComponent::SpmReadDynamic,
+                         spm_read_dynamic_mw * cycles);
+    ensureComponentTotal(SalamPowerComponent::SpmWriteDynamic,
+                         spm_write_dynamic_mw * cycles);
+    ensureComponentTotal(SalamPowerComponent::SpmStatic,
+                         spm_static_mw * cycles);
+
+    const double target_cycles = static_cast<double>(cycles);
+    if (target_cycles > static_cast<double>(acc_cycles_tracked_)) {
+        const double delta = target_cycles - acc_cycles_tracked_;
+        acc_cycles_tracked_ = cycles;
+        powerStats.accCycles += delta;
+    }
 }
 
 void
@@ -178,17 +319,22 @@ RegisterStats::beginCycle()
 }
 
 void
-RegisterStats::endCycle()
+RegisterStats::endCycle(SALAMPowerModel *pm, FunctionalUnits *fu)
 {
     if (snap_reads.size() != registers.size())
         return;
 
     int count = 0;
     int size = 0;
+    uint64_t read_delta = 0;
+    uint64_t write_delta = 0;
     for (size_t i = 0; i < registers.size(); ++i) {
         auto *reg = registers[i];
-        if (reg->getReads() > snap_reads[i] ||
-            reg->getWrites() > snap_writes[i]) {
+        const uint64_t reads = reg->getReads();
+        const uint64_t writes = reg->getWrites();
+        read_delta += reads - snap_reads[i];
+        write_delta += writes - snap_writes[i];
+        if (reads > snap_reads[i] || writes > snap_writes[i]) {
             count++;
             size += 32;
         }
@@ -198,6 +344,15 @@ RegisterStats::endCycle()
     if (count > reg_max_usage)
         reg_max_usage = count;
     cycles_tracked++;
+
+    if (pm && fu)
+        pm->noteRegisterAccess(read_delta, write_delta);
+}
+
+void
+RegisterStats::endCycle()
+{
+    endCycle(nullptr, nullptr);
 }
 
 double
@@ -373,6 +528,13 @@ PowerAccumulator::configureStaticCounts(const FUCounts &static_units)
 }
 
 void
+PowerAccumulator::prepareStaticLeakage()
+{
+    const FUCounts synthesis = applyHardwareLimits(static_synthesis_);
+    calculateStaticLeakage(synthesis);
+}
+
+void
 PowerAccumulator::accumulateDynamic(const FUCounts &units)
 {
     double cycle_dynamic = 0;
@@ -542,8 +704,11 @@ PowerAccumulator::accumulateDynamic(const FUCounts &units)
 void
 PowerAccumulator::updateCycle(const FUCounts &units)
 {
+    last_cycle_fu_dynamic_ = 0.0;
+    const double before = fu_dynamic_energy;
     accumulatePerCycleLeakage(units);
     accumulateDynamic(units);
+    last_cycle_fu_dynamic_ = fu_dynamic_energy - before;
 }
 
 void

@@ -690,7 +690,7 @@ LLVMInterface::tick()
 
     if (auto *pm = powerModel())
         pm->updateCycle(_FunctionalUnits);
-    regStats.endCycle();
+    regStats.endCycle(powerModel(), hw ? hw->functional_units : nullptr);
     clearFU();
     regStats.beginCycle();
 
@@ -1255,6 +1255,8 @@ LLVMInterface::ActiveFunction::readCommit(MemoryRequest *req)
             load_inst->commit();
             owner->recordCommittedLatency(load_inst);
             owner->memory_loads++;
+            if (auto *pm = owner->powerModel())
+                pm->noteSpmRead();
             owner->dynLoadsCommitted++;
             owner->dynInstsCommitted++;
             // Async memory callback: defer exact commit-event accounting
@@ -1301,6 +1303,8 @@ LLVMInterface::ActiveFunction::writeCommit(MemoryRequest *req)
             queue_iter->second->commit();
             owner->recordCommittedLatency(queue_iter->second);
             owner->memory_stores++;
+            if (auto *pm = owner->powerModel())
+                pm->noteSpmWrite();
             owner->dynStoresCommitted++;
             owner->dynInstsCommitted++;
             // Async memory callback: defer cycle accounting until the
@@ -1447,6 +1451,8 @@ LLVMInterface::initialize()
         write_ports = comm->getWritePorts();
     if (comm->getPmemRange() > 0)
         spm_size = comm->getPmemRange();
+    if (auto *pm = powerModel())
+        pm->configureSpm(spm_size, read_ports, write_ports);
     timeStart = std::chrono::high_resolution_clock::now();
     if (dbg) {
         DPRINTF(LLVMInterface, "=============================================="
@@ -2868,6 +2874,10 @@ LLVMInterface::printPowerResults()
     const double spm_total =
         spm_leakage + spm_read_dynamic + spm_write_dynamic;
     const double acc_spm_total = total_power + spm_total;
+
+    pm->syncFinalizedComponentStats(
+        cycle, fu_dynamic, acc.fu_final_leakage, reg_dynamic, acc.reg_leakage,
+        spm_read_dynamic, spm_write_dynamic, spm_leakage);
 
     std::cout << std::endl;
     printLabelValue("SPM Leakage", formatDouble(spm_leakage) + " mW");
