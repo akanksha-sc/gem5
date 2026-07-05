@@ -37,6 +37,25 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+_LIB_DIR = Path(__file__).resolve().parent.parent
+if str(_LIB_DIR) not in sys.path:
+    sys.path.insert(0, str(_LIB_DIR))
+
+from power_thermal_runtime import (
+    get_on_state,
+    remove_trace_files,
+    sample_power_now,
+    set_power_sampling_auto_start,
+    start_power_sampling,
+    stop_power_sampling,
+)
+from salam_pm.salam_thermal_helper import (
+    collect_salam_power_bindings,
+    create_salam_thermal_network,
+    get_salam_power_models,
+)
+
+import m5
 from m5.objects import VExpress_GEM5_V1
 from m5.util import (
     fatal,
@@ -121,7 +140,159 @@ def parse_args():
 
     p.add_argument("--dry-run", action="store_true")
 
+    p.add_argument(
+        "--salam-power-sampling",
+        action="store_true",
+        help="Attach SALAM block PowerModelPyFunc models and optional traces.",
+    )
+    p.add_argument(
+        "--salam-thermal-sampling",
+        action="store_true",
+        help="Enable per-block ThermalDomain stepping (requires power sampling).",
+    )
+    p.add_argument(
+        "--power-interval-cycles",
+        type=int,
+        default=1000,
+        help="Power sample interval in accelerator compute cycles.",
+    )
+    p.add_argument(
+        "--thermal-interval-cycles",
+        type=int,
+        default=1000,
+        help="Thermal step interval in accelerator compute cycles.",
+    )
+    p.add_argument(
+        "--power-interval-ticks",
+        type=int,
+        default=0,
+        help="Override power interval in absolute gem5 ticks.",
+    )
+    p.add_argument(
+        "--thermal-interval-ticks",
+        type=int,
+        default=0,
+        help="Override thermal interval in absolute gem5 ticks.",
+    )
+    p.add_argument(
+        "--hotspot-ambient-temp-k",
+        type=float,
+        default=300.0,
+        help="Initial/ambient temperature for SALAM thermal domains.",
+    )
+    p.add_argument(
+        "--power-trace-debug",
+        action="store_true",
+        help="Write power_trace.csv during sampling.",
+    )
+    p.add_argument(
+        "--thermal-trace-debug",
+        action="store_true",
+        help="Write thermal_trace.csv during thermal stepping.",
+    )
+    p.add_argument(
+        "--salam-power-auto-start",
+        action="store_true",
+        help="Start power/thermal sampling at simulation begin (no ROI).",
+    )
+
     return p.parse_args()
+
+
+import re
+
+
+def _parse_frequency_to_period_ticks(freq: str) -> int:
+    freq = freq.strip().lower()
+    match = re.match(r"([\d.]+)\s*(ghz|mhz|khz|hz)", freq)
+    if not match:
+        raise ValueError(f"Unsupported clock frequency: {freq}")
+    val = float(match.group(1))
+    unit = match.group(2)
+    mult = {"hz": 1.0, "khz": 1e3, "mhz": 1e6, "ghz": 1e9}[unit]
+    hz = val * mult
+    return int(1e12 / hz)
+
+
+def _compute_interval_ticks(args, interval_cycles, override_ticks):
+    if override_ticks > 0:
+        return override_ticks
+    clock = args.acc_compute_clock or args.acc_clock or args.sys_clock
+    period = _parse_frequency_to_period_ticks(clock)
+    return int(interval_cycles * period)
+
+
+def _refresh_salam_trace_labels(bindings):
+    for label, stat_source, pm in bindings:
+        prefix = (
+            stat_source.path()
+            .rsplit(".hw_interface.salam_power_model", 1)[0]
+            .replace("<orphan SALAMArmBoard>", "board")
+        )
+        block = label.rsplit(".", 1)[-1]
+        on = get_on_state(pm)
+        if hasattr(on, "trace_label"):
+            on.trace_label = f"{prefix}.{block}"
+
+
+def _setup_salam_power_thermal(board, args):
+    if not args.salam_power_sampling:
+        return None, []
+
+    power_ticks = _compute_interval_ticks(
+        args, args.power_interval_cycles, args.power_interval_ticks
+    )
+    thermal_ticks = _compute_interval_ticks(
+        args, args.thermal_interval_cycles, args.thermal_interval_ticks
+    )
+
+    trace_debug = args.power_trace_debug or args.thermal_trace_debug
+
+    if args.salam_thermal_sampling:
+        thermal_model, bindings = create_salam_thermal_network(
+            board,
+            interval=0,
+            interval_ticks=power_ticks,
+            thermal_interval=0,
+            thermal_interval_ticks=thermal_ticks,
+            trace_debug=trace_debug,
+            ambient_temp_k=args.hotspot_ambient_temp_k,
+            auto_start_power=args.salam_power_auto_start,
+            auto_start_thermal=args.salam_power_auto_start,
+        )
+        if not bindings:
+            warn("SALAM power sampling enabled but no HWInterface PMs found.")
+        return thermal_model, bindings
+
+    bindings = collect_salam_power_bindings(
+        board,
+        interval=0,
+        interval_ticks=power_ticks,
+        trace_debug=args.power_trace_debug,
+    )
+    if not bindings:
+        warn("SALAM power sampling enabled but no HWInterface PMs found.")
+    elif args.salam_power_auto_start:
+        set_power_sampling_auto_start(
+            [pm for _label, _src, pm in bindings], True
+        )
+    return None, bindings
+
+
+def _finalize_salam_power_thermal(board, thermal_model, args, bindings=None):
+    if not args.salam_power_sampling:
+        return
+
+    pms = [pm for _label, _src, pm in bindings or []]
+    if not pms:
+        pms = get_salam_power_models(board)
+    if pms:
+        sample_power_now(pms)
+        stop_power_sampling(pms)
+
+    if thermal_model is not None:
+        thermal_model.getCCObject().flushStepNow()
+        thermal_model.getCCObject().stopStepping()
 
 
 def make_salam_options(args):
@@ -251,7 +422,6 @@ def main():
     if args.dry_run:
         board._pre_instantiate(full_system=True)
         print("SALAM stdlib dry-run attach complete.")
-        print("Validated:")
         print("  - stdlib ARM board setup")
         print("  - generated SALAM module import")
         print("  - SALAM compatibility aliases")
@@ -269,10 +439,41 @@ def main():
         print(f"  acc_localbus: {board.acc_localbus_clk_domain.clock}")
         if hasattr(board, "acc_spm_clk_domain"):
             print(f"  acc_spm: {board.acc_spm_clk_domain.clock}")
+        if args.salam_power_sampling:
+            bindings = collect_salam_power_bindings(board, interval_ticks=1)
+            print(f"SALAM PM bindings: {len(bindings)}")
         return
 
+    if args.salam_power_sampling:
+        remove_trace_files(
+            m5.options.outdir, "power_trace.csv", "thermal_trace.csv"
+        )
+        board._attach_salam()
+
+    salam_pm_bindings = []
+    thermal_model = None
+    if args.salam_power_sampling:
+        thermal_model, salam_pm_bindings = _setup_salam_power_thermal(
+            board, args
+        )
+
     simulator = Simulator(board=board)
+    simulator._instantiate()
+
+    if args.salam_power_sampling and args.salam_power_auto_start:
+        _refresh_salam_trace_labels(salam_pm_bindings)
+        pms = [pm for _label, _src, pm in salam_pm_bindings]
+        if not pms:
+            pms = get_salam_power_models(board)
+        start_power_sampling(pms)
+        if thermal_model is not None:
+            thermal_model.getCCObject().startStepping()
+
     simulator.run()
+
+    _finalize_salam_power_thermal(
+        board, thermal_model, args, salam_pm_bindings
+    )
 
 
 if __name__ == "__m5_main__":

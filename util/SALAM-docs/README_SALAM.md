@@ -167,3 +167,7 @@ The [SALAM Object Overview](https://github.com/TeCSAR-UNCC/gem5-SALAM/blob/maste
 Please download the latest version of the Linux Kernel for ARM from the [gem5 ARM kernel page](http://gem5.org/ARM_Kernel).
 You will also need the [ARM disk images](http://www.gem5.org/dist/current/arm/) for full system simulation.
 Devices operate in the physical memory address space.
+
+## Power and thermal modeling
+
+See [POWER_MODEL_VALIDATION.md](POWER_MODEL_VALIDATION.md) for validation status of SALAM vs host (gem5-pm) power models, SPM CACTI technique, and interval sampling phases.

@@ -1451,6 +1451,8 @@ LLVMInterface::initialize()
         write_ports = comm->getWritePorts();
     if (comm->getPmemRange() > 0)
         spm_size = comm->getPmemRange();
+    else if (spm_size <= 0)
+        spm_size = 4096;
     if (auto *pm = powerModel())
         pm->configureSpm(spm_size, read_ports, write_ports);
     timeStart = std::chrono::high_resolution_clock::now();
@@ -2866,18 +2868,21 @@ LLVMInterface::printPowerResults()
     printLabelValue("Int Multiplier Op-Cycles",
                     std::to_string(acc.int_multiplier_op_cycles));
 
-    const SpmPowerBreakdown spm_pwr = computeSpmPower(
-        spm_size, read_ports, write_ports, memory_loads, memory_stores);
-    const double spm_leakage = spm_pwr.leakage_mw;
-    const double spm_read_dynamic = spm_pwr.read_dynamic_mw;
-    const double spm_write_dynamic = spm_pwr.write_dynamic_mw;
+    const double spm_leakage = pm->spmLeakageMwPerCycle();
+    const double spm_read_dynamic =
+        cycle > 0 ? pm->spmPerAccessReadMw() *
+                        static_cast<double>(memory_loads) / cycle
+                  : 0.0;
+    const double spm_write_dynamic =
+        cycle > 0 ? pm->spmPerAccessWriteMw() *
+                        static_cast<double>(memory_stores) / cycle
+                  : 0.0;
     const double spm_total =
         spm_leakage + spm_read_dynamic + spm_write_dynamic;
     const double acc_spm_total = total_power + spm_total;
 
-    pm->syncFinalizedComponentStats(
-        cycle, fu_dynamic, acc.fu_final_leakage, reg_dynamic, acc.reg_leakage,
-        spm_read_dynamic, spm_write_dynamic, spm_leakage);
+    pm->syncFinalizedComponentStats(cycle, fu_dynamic, acc.fu_final_leakage,
+                                    reg_dynamic, acc.reg_leakage);
 
     std::cout << std::endl;
     printLabelValue("SPM Leakage", formatDouble(spm_leakage) + " mW");

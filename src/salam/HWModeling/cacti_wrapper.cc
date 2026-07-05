@@ -157,3 +157,22 @@ computeSpmPower(int spm_bytes, int read_ports, int write_ports,
                           : 0.0;
     return out;
 }
+
+SpmPerAccessPower
+computeSpmPerAccess(int spm_bytes, int read_ports, int write_ports)
+{
+    const int spm_size = spm_bytes > 0 ? spm_bytes : 4096;
+    const double exponential = 1e12;
+
+    uca_org_t idle = cactiWrapper(spm_size, 8, read_ports + write_ports, 0);
+    uca_org_t read_uca = cactiWrapper(spm_size, 8, read_ports, 0);
+    uca_org_t write_uca = cactiWrapper(spm_size, 8, write_ports, 0);
+
+    SpmPerAccessPower per_access;
+    per_access.read_dynamic_mw = read_uca.power.readOp.dynamic * exponential;
+    per_access.write_dynamic_mw =
+        write_uca.power.writeOp.dynamic * exponential;
+    per_access.leakage_mw =
+        (idle.power.readOp.leakage + idle.power.writeOp.leakage) * 1000.0;
+    return per_access;
+}

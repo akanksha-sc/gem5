@@ -44,8 +44,18 @@ struct SpmPowerBreakdown
     double write_dynamic_mw = 0.0;
 };
 
+struct SpmPerAccessPower
+{
+    double read_dynamic_mw = 0.0;
+    double write_dynamic_mw = 0.0;
+    double leakage_mw = 0.0;
+};
+
 SpmPowerBreakdown computeSpmPower(int spm_bytes, int read_ports,
                                   int write_ports, uint64_t memory_loads,
                                   uint64_t memory_stores);
+
+SpmPerAccessPower computeSpmPerAccess(int spm_bytes, int read_ports,
+                                      int write_ports);
 
 #endif //__HWMODEL_CACTI_WRAPPER_HH__

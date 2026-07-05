@@ -251,8 +251,8 @@ class SALAMPowerModel : public SimObject
 
     bool static_fu_leakage_ready_ = false;
     bool spm_configured_ = false;
-    double spm_read_dynamic_mw_ = 0.0;
-    double spm_write_dynamic_mw_ = 0.0;
+    double spm_per_access_read_mw_ = 0.0;
+    double spm_per_access_write_mw_ = 0.0;
     double spm_leakage_mw_ = 0.0;
     std::array<double, static_cast<size_t>(SalamPowerComponent::NumComponents)>
         component_energy_totals_{};
@@ -280,10 +280,7 @@ class SALAMPowerModel : public SimObject
     void syncFinalizedComponentStats(int cycles, double fu_dynamic_mw,
                                      double fu_static_mw,
                                      double reg_dynamic_mw,
-                                     double reg_static_mw,
-                                     double spm_read_dynamic_mw,
-                                     double spm_write_dynamic_mw,
-                                     double spm_static_mw);
+                                     double reg_static_mw);
     void recordFinalizedPower(double dynamic_mw, double static_mw,
                               double area_um2);
     void regStats() override;
@@ -311,6 +308,24 @@ class SALAMPowerModel : public SimObject
     setHalfAdderAreaCap(uint32_t cap)
     {
         half_adder_area_cap_ = cap;
+    }
+
+    double
+    spmPerAccessReadMw() const
+    {
+        return spm_per_access_read_mw_;
+    }
+
+    double
+    spmPerAccessWriteMw() const
+    {
+        return spm_per_access_write_mw_;
+    }
+
+    double
+    spmLeakageMwPerCycle() const
+    {
+        return spm_leakage_mw_;
     }
 };
 

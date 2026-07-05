@@ -176,19 +176,13 @@ SALAMPowerModel::initializePowerModel(const FUCounts &static_counts)
 void
 SALAMPowerModel::configureSpm(int spm_bytes, int read_ports, int write_ports)
 {
-    if (spm_bytes <= 0)
-        return;
+    const int size = spm_bytes > 0 ? spm_bytes : 4096;
+    const SpmPerAccessPower per_access =
+        computeSpmPerAccess(size, read_ports, write_ports);
 
-    const SpmPowerBreakdown one_read =
-        computeSpmPower(spm_bytes, read_ports, write_ports, 1, 0);
-    const SpmPowerBreakdown one_write =
-        computeSpmPower(spm_bytes, read_ports, write_ports, 0, 1);
-    const SpmPowerBreakdown idle =
-        computeSpmPower(spm_bytes, read_ports, write_ports, 0, 0);
-
-    spm_read_dynamic_mw_ = one_read.read_dynamic_mw;
-    spm_write_dynamic_mw_ = one_write.write_dynamic_mw;
-    spm_leakage_mw_ = idle.leakage_mw;
+    spm_per_access_read_mw_ = per_access.read_dynamic_mw;
+    spm_per_access_write_mw_ = per_access.write_dynamic_mw;
+    spm_leakage_mw_ = per_access.leakage_mw;
     spm_configured_ = true;
 }
 
@@ -206,6 +200,9 @@ SALAMPowerModel::updateCycle(const FUCounts &units)
     if (static_fu_leakage_ready_)
         addComponentEnergy(SalamPowerComponent::FuStatic,
                            accum_->fu_final_leakage);
+
+    if (spm_configured_)
+        addComponentEnergy(SalamPowerComponent::SpmStatic, spm_leakage_mw_);
 
     powerStats.accCycles++;
     acc_cycles_tracked_++;
@@ -227,20 +224,26 @@ SALAMPowerModel::noteRegisterAccess(uint64_t read_delta, uint64_t write_delta)
 void
 SALAMPowerModel::noteSpmRead()
 {
-    // SPM energy is reconciled in syncFinalizedComponentStats().
+    if (!spm_configured_)
+        return;
+    addComponentEnergy(SalamPowerComponent::SpmReadDynamic,
+                       spm_per_access_read_mw_);
 }
 
 void
 SALAMPowerModel::noteSpmWrite()
 {
-    // SPM energy is reconciled in syncFinalizedComponentStats().
+    if (!spm_configured_)
+        return;
+    addComponentEnergy(SalamPowerComponent::SpmWriteDynamic,
+                       spm_per_access_write_mw_);
 }
 
 void
-SALAMPowerModel::syncFinalizedComponentStats(
-    int cycles, double fu_dynamic_mw, double fu_static_mw,
-    double reg_dynamic_mw, double reg_static_mw, double spm_read_dynamic_mw,
-    double spm_write_dynamic_mw, double spm_static_mw)
+SALAMPowerModel::syncFinalizedComponentStats(int cycles, double fu_dynamic_mw,
+                                             double fu_static_mw,
+                                             double reg_dynamic_mw,
+                                             double reg_static_mw)
 {
     if (cycles <= 0)
         return;
@@ -252,12 +255,6 @@ SALAMPowerModel::syncFinalizedComponentStats(
                          reg_dynamic_mw * cycles);
     ensureComponentTotal(SalamPowerComponent::RegStatic,
                          reg_static_mw * cycles);
-    ensureComponentTotal(SalamPowerComponent::SpmReadDynamic,
-                         spm_read_dynamic_mw * cycles);
-    ensureComponentTotal(SalamPowerComponent::SpmWriteDynamic,
-                         spm_write_dynamic_mw * cycles);
-    ensureComponentTotal(SalamPowerComponent::SpmStatic,
-                         spm_static_mw * cycles);
 
     const double target_cycles = static_cast<double>(cycles);
     if (target_cycles > static_cast<double>(acc_cycles_tracked_)) {
