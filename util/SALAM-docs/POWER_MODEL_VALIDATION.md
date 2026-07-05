@@ -68,7 +68,23 @@ Implementation lives under `configs/example/gem5_library/salam_pm/`.
 | **2** | CPU + L1/L2 McPAT validation harness | Done (`e2fa37dc23`) |
 | **3** | SALAM per-component gem5 stats (`power.componentEnergy`, `power.accCycles`) | Done (`d610b978ab`) |
 | **4** | SALAM `SalamBlockPowerModel`, per-block thermal domains, leakage regression, power trace | **Done** — per-access SPM CACTI, power-state ON, interval trace validated on BFS (~0.1–0.8% vs stats) |
-| **5** | HotSpot floorplan for SALAM blocks, ROI hypercalls, closed-loop thermal on bfs/gemm/md_knn | Not started |
+| **5** | HotSpot floorplan for SALAM blocks, ROI hypercalls, closed-loop thermal on bfs/gemm/md_knn | **Done** — HotSpot per-block floorplan, hypercall 1999/2000 ROI, closed-loop validated on BFS |
+
+### Phase 5 CLI (HotSpot + ROI)
+
+```bash
+build/ARM/gem5.opt configs/example/gem5_library/salam/run_salam_stdlib.py \
+  --bench bfs ... \
+  --salam-power-sampling \
+  --salam-thermal-sampling \
+  --salam-roi-sampling \
+  --salam-thermal-solver hotspot \
+  --power-interval-cycles 1000 \
+  --thermal-interval-cycles 5000 \
+  --power-trace-debug --thermal-trace-debug
+```
+
+Workloads must call `m5_hypercall(SALAM_ROI_BEGIN)` / `m5_hypercall(SALAM_ROI_END)` around the accelerator kernel (see `benchmarks/common/m5ops.h`). Use `--salam-power-auto-start` for bring-up without ROI markers.
 
 ### Phase 4 CLI (stdlib runner)
 
@@ -81,11 +97,12 @@ build/ARM/gem5.opt configs/example/gem5_library/salam/run_salam_stdlib.py \
   --power-trace-debug
 ```
 
-Optional thermal (simple RC solver until Phase 5 HotSpot):
+Optional thermal (simple RC solver for smoke tests):
 
 ```bash
   --salam-thermal-sampling \
-  --thermal-interval-ticks 5000
+  --salam-thermal-solver simple \
+  --thermal-interval-cycles 5000
 ```
 
 ### Validation scripts
@@ -94,11 +111,12 @@ Optional thermal (simple RC solver until Phase 5 HotSpot):
 |--------|---------|
 | `salam/check_salam_pm_stats.py` | Window sums of `power.componentEnergy` vs `printPowerResults` |
 | `salam/compare_salam_power_trace.py` | Active-interval dynamic power in trace vs stat deltas |
+| `salam/compare_salam_thermal_loop.py` | Closed-loop thermal: power intervals + temperature rise |
 | `salam/check_salam_pm_domains.py` | Domain wiring smoke test |
 
 ---
 
-## 5. Known gaps and follow-ups
+## 6. Known gaps and follow-ups
 
 1. **Stream buffers** — no power model; add if SPM traffic modeling requires it.
 2. **Private accelerator cache** — port CACTI path from gem5-SALAM if `--acc-cache` is used in production configs.
@@ -106,7 +124,11 @@ Optional thermal (simple RC solver until Phase 5 HotSpot):
 4. **`CommInterface::getPmemRange()`** — still returns 0 (gem5-SALAM stub); C++ PM uses 4096-byte default until real SPM sizing is wired.
 5. **Last partial interval** — `sample_power_now()` before `stop_power_sampling()` at end of run (implemented in stdlib runner).
 6. **`llvm_interface` power state** — `llvm.power_state.default_state = "ON"` when attaching SALAM PMs (in `collect_salam_power_bindings()`).
-7. **Temperature feedback** — Phase 4 uses `static_regression.py` leakage(T); Phase 5 needs HotSpot floorplan for spatial accuracy.
+7. **Temperature feedback** — leakage(T) regression in Python PM; HotSpot floorplan provides spatial thermal coupling in Phase 5.
+
+---
+
+## 7. References
 
 - Spencer et al., *J. Systems Architecture* 154 (2024) 103211 — Table 2 paper targets.
 - `util/SALAM-tools/docs/TABLE2_VALIDATION.md` — cycle/core-power comparison checkpoint.

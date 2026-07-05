@@ -41,6 +41,7 @@ _LIB_DIR = Path(__file__).resolve().parent.parent
 if str(_LIB_DIR) not in sys.path:
     sys.path.insert(0, str(_LIB_DIR))
 
+import salam_pm.salam_roi_runtime  # noqa: F401 — registers ROI ExitHandlers
 from power_thermal_runtime import (
     get_on_state,
     remove_trace_files,
@@ -48,6 +49,10 @@ from power_thermal_runtime import (
     set_power_sampling_auto_start,
     start_power_sampling,
     stop_power_sampling,
+)
+from salam_pm.salam_roi_runtime import (
+    configure_salam_roi_runtime,
+    finalize_salam_roi_runtime_if_needed,
 )
 from salam_pm.salam_thermal_helper import (
     collect_salam_power_bindings,
@@ -195,6 +200,73 @@ def parse_args():
         action="store_true",
         help="Start power/thermal sampling at simulation begin (no ROI).",
     )
+    p.add_argument(
+        "--salam-roi-sampling",
+        action="store_true",
+        help=(
+            "Start/stop sampling on m5_hypercall(1999)/m5_hypercall(2000) "
+            "ROI markers in the workload."
+        ),
+    )
+    p.add_argument(
+        "--salam-thermal-solver",
+        choices=("hotspot", "simple"),
+        default="hotspot",
+        help="Thermal backend for SALAM domains (requires thermal sampling).",
+    )
+    p.add_argument(
+        "--hotspot-initial-temp-k",
+        type=float,
+        default=300.0,
+        help="Initial temperature for HotSpot backend.",
+    )
+    p.add_argument(
+        "--hotspot-max-external-step-s",
+        type=float,
+        default=1e-6,
+        help="Maximum HotSpot sub-step size in seconds.",
+    )
+    p.add_argument(
+        "--hotspot-method",
+        choices=("rk4", "euler"),
+        default="rk4",
+        help="HotSpot transient integration method.",
+    )
+    p.add_argument(
+        "--hotspot-model-type",
+        choices=("block", "grid"),
+        default="block",
+        help="HotSpot model type.",
+    )
+    p.add_argument(
+        "--hotspot-grid-rows",
+        type=int,
+        default=64,
+        help="HotSpot grid rows when model_type=grid.",
+    )
+    p.add_argument(
+        "--hotspot-grid-cols",
+        type=int,
+        default=64,
+        help="HotSpot grid cols when model_type=grid.",
+    )
+    p.add_argument(
+        "--hotspot-model-secondary",
+        action="store_true",
+        help="Enable HotSpot secondary path (substrate/solder/PCB).",
+    )
+    p.add_argument(
+        "--thermal-post-power-delay-ticks",
+        type=int,
+        default=1,
+        help="Delay between power sample and thermal step.",
+    )
+    p.add_argument(
+        "--thermal-sample-wait-timeout-ticks",
+        type=int,
+        default=0,
+        help="Timeout waiting for power samples before thermal step.",
+    )
 
     return p.parse_args()
 
@@ -235,6 +307,35 @@ def _refresh_salam_trace_labels(bindings):
             on.trace_label = f"{prefix}.{block}"
 
 
+def _validate_sampling_intervals(args):
+    if not args.salam_power_sampling:
+        return
+
+    power_ticks = _compute_interval_ticks(
+        args, args.power_interval_cycles, args.power_interval_ticks
+    )
+    thermal_ticks = _compute_interval_ticks(
+        args, args.thermal_interval_cycles, args.thermal_interval_ticks
+    )
+
+    if power_ticks <= 0:
+        raise ValueError("Power sampling interval must be > 0 ticks")
+
+    if args.salam_thermal_sampling and thermal_ticks <= 0:
+        raise ValueError("Thermal sampling interval must be > 0 ticks")
+
+    if args.salam_thermal_sampling and thermal_ticks % power_ticks != 0:
+        raise ValueError(
+            "Thermal interval ticks must be a multiple of power interval ticks"
+        )
+
+    if args.salam_roi_sampling and args.salam_power_auto_start:
+        raise ValueError(
+            "Use either --salam-roi-sampling or --salam-power-auto-start, "
+            "not both"
+        )
+
+
 def _setup_salam_power_thermal(board, args):
     if not args.salam_power_sampling:
         return None, []
@@ -255,8 +356,12 @@ def _setup_salam_power_thermal(board, args):
             interval_ticks=power_ticks,
             thermal_interval=0,
             thermal_interval_ticks=thermal_ticks,
+            thermal_post_power_delay_ticks=args.thermal_post_power_delay_ticks,
+            sample_wait_timeout_ticks=args.thermal_sample_wait_timeout_ticks,
             trace_debug=trace_debug,
             ambient_temp_k=args.hotspot_ambient_temp_k,
+            thermal_solver=args.salam_thermal_solver,
+            hotspot_args=args,
             auto_start_power=args.salam_power_auto_start,
             auto_start_thermal=args.salam_power_auto_start,
         )
@@ -367,6 +472,7 @@ def import_generated_salam_module(args):
 
 def main():
     args = parse_args()
+    _validate_sampling_intervals(args)
 
     if not Path(args.kernel).is_file():
         fatal(f"Kernel/bare-metal ELF not found: {args.kernel}")
@@ -456,11 +562,21 @@ def main():
         thermal_model, salam_pm_bindings = _setup_salam_power_thermal(
             board, args
         )
+        if args.salam_roi_sampling:
+            configure_salam_roi_runtime(
+                thermal_model,
+                salam_pm_bindings,
+                trace_debug=args.power_trace_debug or args.thermal_trace_debug,
+            )
 
     simulator = Simulator(board=board)
     simulator._instantiate()
 
-    if args.salam_power_sampling and args.salam_power_auto_start:
+    if (
+        args.salam_power_sampling
+        and args.salam_power_auto_start
+        and not args.salam_roi_sampling
+    ):
         _refresh_salam_trace_labels(salam_pm_bindings)
         pms = [pm for _label, _src, pm in salam_pm_bindings]
         if not pms:
@@ -471,9 +587,12 @@ def main():
 
     simulator.run()
 
-    _finalize_salam_power_thermal(
-        board, thermal_model, args, salam_pm_bindings
-    )
+    if args.salam_roi_sampling:
+        finalize_salam_roi_runtime_if_needed()
+    else:
+        _finalize_salam_power_thermal(
+            board, thermal_model, args, salam_pm_bindings
+        )
 
 
 if __name__ == "__m5_main__":

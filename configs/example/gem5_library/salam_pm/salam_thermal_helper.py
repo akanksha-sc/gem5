@@ -6,6 +6,7 @@ from power_thermal_runtime import (
 )
 
 from .salam_block_power_model import SalamBlockPowerModel
+from .salam_hotspot_backend import build_salam_hotspot_backend
 
 SALAM_BLOCKS = ("datapath", "registers", "spm")
 
@@ -90,11 +91,7 @@ def collect_salam_power_bindings(
 
 
 class SimpleSalamThermalSolver:
-    """
-    Lightweight RC-style solver for Phase 4 bring-up.
-
-    HotSpot floorplan wiring lands in Phase 5.
-    """
+    """Lightweight RC-style solver for bring-up and smoke tests."""
 
     def __init__(self, labels, ambient_temp_k=300.0, thermal_resistance=50.0):
         self._labels = list(labels)
@@ -129,6 +126,8 @@ def create_salam_thermal_network(
     sample_wait_timeout_ticks=0,
     trace_debug=False,
     ambient_temp_k=300.0,
+    thermal_solver="hotspot",
+    hotspot_args=None,
     auto_start_power=False,
     auto_start_thermal=False,
 ):
@@ -143,9 +142,18 @@ def create_salam_thermal_network(
         return None, []
 
     labels = [label for label, _src, _pm in bindings]
-    solver_backend = SimpleSalamThermalSolver(
-        labels, ambient_temp_k=ambient_temp_k
-    )
+    if thermal_solver == "hotspot":
+        if hotspot_args is None:
+            raise ValueError(
+                "HotSpot thermal solver requires hotspot_args namespace"
+            )
+        solver_backend = build_salam_hotspot_backend(labels, hotspot_args)
+    elif thermal_solver == "simple":
+        solver_backend = SimpleSalamThermalSolver(
+            labels, ambient_temp_k=ambient_temp_k
+        )
+    else:
+        raise ValueError(f"Unknown SALAM thermal solver: {thermal_solver}")
 
     def solver_callback(domain_data, dt_seconds):
         return solver_backend.solve(domain_data, dt_seconds)
