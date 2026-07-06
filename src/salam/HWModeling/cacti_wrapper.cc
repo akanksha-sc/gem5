@@ -176,3 +176,17 @@ computeSpmPerAccess(int spm_bytes, int read_ports, int write_ports)
         (idle.power.readOp.leakage + idle.power.writeOp.leakage) * 1000.0;
     return per_access;
 }
+
+SpmAreaInfo
+computeSpmArea(int spm_bytes, int read_ports, int write_ports)
+{
+    const int spm_size = spm_bytes > 0 ? spm_bytes : 4096;
+    uca_org_t uca = cactiWrapper(spm_size, 8, read_ports + write_ports, 0);
+
+    SpmAreaInfo info;
+    // CACTI uca.area is height×width in um^2; cache_ht/cache_len are um.
+    info.area_um2 = uca.area;
+    info.height_um = uca.cache_ht;
+    info.width_um = uca.cache_len;
+    return info;
+}

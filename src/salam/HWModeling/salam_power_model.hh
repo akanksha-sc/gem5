@@ -182,6 +182,8 @@ class PowerAccumulator
     }
     void finalize(const FUCounts &static_units, int cycles,
                   int half_adder_cap = 0);
+    void publishStaticFuArea(const FUCounts &static_units, int half_adder_cap);
+    void publishStaticRegisterArea(int reg_total, int bit_width = 32);
     void calculateRegisterPower(const RegUsage &usage, int cycles,
                                 double avg_regs, double avg_bits);
     FUCounts applyHardwareLimits(const FUCounts &units) const;
@@ -228,6 +230,10 @@ class SALAMPowerModel : public SimObject
     {
         statistics::Vector componentEnergy;
         statistics::Scalar accCycles;
+        statistics::Scalar fuAreaUm2;
+        statistics::Scalar regAreaUm2;
+        statistics::Scalar spmAreaUm2;
+        statistics::Scalar areasReady;
 
         PowerStats(statistics::Group *parent);
     };
@@ -254,6 +260,7 @@ class SALAMPowerModel : public SimObject
     double spm_per_access_read_mw_ = 0.0;
     double spm_per_access_write_mw_ = 0.0;
     double spm_leakage_mw_ = 0.0;
+    double spm_area_um2_ = 0.0;
     std::array<double, static_cast<size_t>(SalamPowerComponent::NumComponents)>
         component_energy_totals_{};
     uint64_t acc_cycles_tracked_ = 0;
@@ -262,6 +269,7 @@ class SALAMPowerModel : public SimObject
     void addComponentEnergy(SalamPowerComponent component, double mw_cycles);
     void ensureComponentTotal(SalamPowerComponent component,
                               double target_mw_cycles);
+    void updateBlockAreaStats();
 
   public:
     SALAMPowerModel(const SALAMPowerModelParams &params);
@@ -269,6 +277,7 @@ class SALAMPowerModel : public SimObject
 
     void bindFunctionalUnits(FunctionalUnits *fu);
     void initializePowerModel(const FUCounts &static_counts);
+    void publishStaticRegisterArea(int reg_total, int bit_width = 32);
     void configureSpm(int spm_bytes, int read_ports, int write_ports);
     void updateCycle(const FUCounts &units);
     void noteRegisterAccess(uint64_t read_delta, uint64_t write_delta);

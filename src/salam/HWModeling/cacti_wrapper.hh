@@ -51,11 +51,20 @@ struct SpmPerAccessPower
     double leakage_mw = 0.0;
 };
 
+struct SpmAreaInfo
+{
+    double area_um2 = 0.0;
+    double height_um = 0.0;
+    double width_um = 0.0;
+};
+
 SpmPowerBreakdown computeSpmPower(int spm_bytes, int read_ports,
                                   int write_ports, uint64_t memory_loads,
                                   uint64_t memory_stores);
 
 SpmPerAccessPower computeSpmPerAccess(int spm_bytes, int read_ports,
                                       int write_ports);
+
+SpmAreaInfo computeSpmArea(int spm_bytes, int read_ports, int write_ports);
 
 #endif //__HWMODEL_CACTI_WRAPPER_HH__

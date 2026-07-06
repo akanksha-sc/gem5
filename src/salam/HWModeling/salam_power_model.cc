@@ -59,7 +59,15 @@ SALAMPowerModel::PowerStats::PowerStats(statistics::Group *parent)
       ADD_STAT(componentEnergy, statistics::units::Count::get(),
                "Per-component energy accumulator (mW·cycles)"),
       ADD_STAT(accCycles, statistics::units::Cycle::get(),
-               "Accelerator power-model cycles tracked")
+               "Accelerator power-model cycles tracked"),
+      ADD_STAT(fuAreaUm2, statistics::units::Count::get(),
+               "Functional-unit block area (um^2)"),
+      ADD_STAT(regAreaUm2, statistics::units::Count::get(),
+               "Register block area (um^2)"),
+      ADD_STAT(spmAreaUm2, statistics::units::Count::get(),
+               "SPM block area (um^2)"),
+      ADD_STAT(areasReady, statistics::units::Count::get(),
+               "1 once fu/reg/spm block areas are published")
 {
     componentEnergy.init(static_cast<int>(SalamPowerComponent::NumComponents))
         .subname(static_cast<int>(SalamPowerComponent::FuDynamic), "fuDynamic")
@@ -170,7 +178,17 @@ SALAMPowerModel::initializePowerModel(const FUCounts &static_counts)
     ensureAccumulator();
     accum_->configureStaticCounts(static_counts);
     accum_->prepareStaticLeakage();
+    accum_->publishStaticFuArea(static_counts, half_adder_area_cap_);
     static_fu_leakage_ready_ = true;
+    updateBlockAreaStats();
+}
+
+void
+SALAMPowerModel::publishStaticRegisterArea(int reg_total, int bit_width)
+{
+    ensureAccumulator();
+    accum_->publishStaticRegisterArea(reg_total, bit_width);
+    updateBlockAreaStats();
 }
 
 void
@@ -179,11 +197,28 @@ SALAMPowerModel::configureSpm(int spm_bytes, int read_ports, int write_ports)
     const int size = spm_bytes > 0 ? spm_bytes : 4096;
     const SpmPerAccessPower per_access =
         computeSpmPerAccess(size, read_ports, write_ports);
+    const SpmAreaInfo spm_area = computeSpmArea(size, read_ports, write_ports);
 
     spm_per_access_read_mw_ = per_access.read_dynamic_mw;
     spm_per_access_write_mw_ = per_access.write_dynamic_mw;
     spm_leakage_mw_ = per_access.leakage_mw;
+    spm_area_um2_ = spm_area.area_um2;
     spm_configured_ = true;
+    updateBlockAreaStats();
+}
+
+void
+SALAMPowerModel::updateBlockAreaStats()
+{
+    const double fu_area = accum_ ? accum_->fu_area : 0.0;
+    const double reg_area = accum_ ? accum_->reg_area : 0.0;
+
+    powerStats.fuAreaUm2 = fu_area;
+    powerStats.regAreaUm2 = reg_area;
+    powerStats.spmAreaUm2 = spm_area_um2_;
+
+    const bool ready = fu_area > 0.0 && reg_area > 0.0 && spm_area_um2_ > 0.0;
+    powerStats.areasReady = ready ? 1.0 : 0.0;
 }
 
 void
@@ -771,6 +806,27 @@ PowerAccumulator::calculateRegisterPower(const RegUsage &usage, int cycles,
     reg_dynamic_energy =
         ((double)usage.reads + (double)usage.writes) * scale * reg_dyn;
     reg_area = scale * regBit()->get_area();
+}
+
+void
+PowerAccumulator::publishStaticFuArea(const FUCounts &static_units,
+                                      int half_adder_cap)
+{
+    half_adder_cap_cfg = half_adder_cap;
+    const FUCounts synthesis = applyHardwareLimits(static_units);
+    const FUCounts area_units = capHalfAdderUnits(synthesis, half_adder_cap);
+    calculateStaticArea(area_units);
+}
+
+void
+PowerAccumulator::publishStaticRegisterArea(int reg_total, int bit_width)
+{
+    if (reg_total <= 0 || bit_width <= 0) {
+        reg_area = regBit()->get_area() * 32.0;
+        return;
+    }
+
+    reg_area = reg_total * bit_width * regBit()->get_area();
 }
 
 void

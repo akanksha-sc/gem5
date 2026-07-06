@@ -1442,6 +1442,7 @@ LLVMInterface::initialize()
         regStats.collect(values);
         computeStaticFUCounts();
         pm->initializePowerModel(_MaxParsed);
+        pm->publishStaticRegisterArea(regStats.reg_total);
     }
     initFU();
     regStats.beginCycle();

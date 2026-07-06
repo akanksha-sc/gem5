@@ -6,7 +6,7 @@ from power_thermal_runtime import (
 )
 
 from .salam_block_power_model import SalamBlockPowerModel
-from .salam_hotspot_backend import build_salam_hotspot_backend
+from .salam_hotspot_backend import build_lazy_salam_hotspot_backend
 
 SALAM_BLOCKS = ("datapath", "registers", "spm")
 
@@ -128,6 +128,7 @@ def create_salam_thermal_network(
     ambient_temp_k=300.0,
     thermal_solver="hotspot",
     hotspot_args=None,
+    floorplan_geometry="area",
     auto_start_power=False,
     auto_start_thermal=False,
 ):
@@ -147,7 +148,13 @@ def create_salam_thermal_network(
             raise ValueError(
                 "HotSpot thermal solver requires hotspot_args namespace"
             )
-        solver_backend = build_salam_hotspot_backend(labels, hotspot_args)
+        solver_backend = build_lazy_salam_hotspot_backend(
+            labels,
+            bindings,
+            hotspot_args,
+            geometry_mode=floorplan_geometry,
+            trace_debug=trace_debug,
+        )
     elif thermal_solver == "simple":
         solver_backend = SimpleSalamThermalSolver(
             labels, ambient_temp_k=ambient_temp_k

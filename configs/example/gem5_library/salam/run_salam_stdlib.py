@@ -215,6 +215,15 @@ def parse_args():
         help="Thermal backend for SALAM domains (requires thermal sampling).",
     )
     p.add_argument(
+        "--salam-floorplan-geometry",
+        choices=("area", "fixed"),
+        default="area",
+        help=(
+            "HotSpot floorplan sizing: area-proportional from SALAM PM stats "
+            "or fixed placeholder blocks."
+        ),
+    )
+    p.add_argument(
         "--hotspot-initial-temp-k",
         type=float,
         default=300.0,
@@ -362,6 +371,7 @@ def _setup_salam_power_thermal(board, args):
             ambient_temp_k=args.hotspot_ambient_temp_k,
             thermal_solver=args.salam_thermal_solver,
             hotspot_args=args,
+            floorplan_geometry=args.salam_floorplan_geometry,
             auto_start_power=args.salam_power_auto_start,
             auto_start_thermal=args.salam_power_auto_start,
         )
@@ -577,6 +587,9 @@ def main():
         and args.salam_power_auto_start
         and not args.salam_roi_sampling
     ):
+        # ThermalModel::startup() runs on the first m5.simulate(); defer
+        # startStepping until domain nodes hold initialTemperature (300 K).
+        m5.simulate(0)
         _refresh_salam_trace_labels(salam_pm_bindings)
         pms = [pm for _label, _src, pm in salam_pm_bindings]
         if not pms:
