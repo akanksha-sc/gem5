@@ -292,3 +292,12 @@ def AccConfig(acc, bench_file, config_file):
         fu_limits = accel_hw_profile.get("fu_hardware_limits")
         if fu_limits:
             _apply_fu_hardware_limits(acc, fu_limits)
+
+
+def wire_missing_salam_tick_engines(system):
+    """Delegate to runtime wiring helper (legacy configs import this name)."""
+    from salam_pm.salam_tick_wiring import (
+        wire_missing_salam_tick_engines as _wire,
+    )
+
+    _wire(system)

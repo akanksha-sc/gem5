@@ -59,6 +59,7 @@ from salam_pm.salam_thermal_helper import (
     create_salam_thermal_network,
     get_salam_power_models,
 )
+from salam_pm.salam_tick_wiring import wire_missing_salam_tick_engines
 
 import m5
 from m5.objects import VExpress_GEM5_V1
@@ -429,6 +430,12 @@ def make_salam_options(args):
     )
 
 
+def _ensure_salam_cluster_ready(board):
+    if not board._salam_attached:
+        board._attach_salam()
+    wire_missing_salam_tick_engines(board)
+
+
 def make_salam_clocks(args):
     compute_clock = args.acc_compute_clock or args.acc_clock or args.sys_clock
     compute_voltage = (
@@ -537,6 +544,7 @@ def main():
 
     if args.dry_run:
         board._pre_instantiate(full_system=True)
+        wire_missing_salam_tick_engines(board)
         print("SALAM stdlib dry-run attach complete.")
         print("  - stdlib ARM board setup")
         print("  - generated SALAM module import")
@@ -565,6 +573,7 @@ def main():
             m5.options.outdir, "power_trace.csv", "thermal_trace.csv"
         )
         board._attach_salam()
+        wire_missing_salam_tick_engines(board)
 
     salam_pm_bindings = []
     thermal_model = None
@@ -580,6 +589,7 @@ def main():
             )
 
     simulator = Simulator(board=board)
+    _ensure_salam_cluster_ready(board)
     simulator._instantiate()
 
     if (

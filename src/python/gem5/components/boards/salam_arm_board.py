@@ -26,6 +26,9 @@ from m5.util import fatal
 
 from gem5.components.boards.abstract_board import AbstractBoard
 from gem5.components.boards.arm_board import ArmBoard
+from gem5.components.boards.salam_tick_wiring import (
+    wire_missing_salam_tick_engines,
+)
 
 if TYPE_CHECKING:
     from gem5.components.cachehierarchies.abstract_cache_hierarchy import (
@@ -255,6 +258,7 @@ class SALAMArmBoard(ArmBoard):
         self._setup_salam_legacy_aliases()
 
         self._salam_module.makeHWAcc(self._salam_options, self)
+        wire_missing_salam_tick_engines(self)
         self._salam_attached = True
 
     def _pre_instantiate(self, full_system: Optional[bool] = None) -> Root:
