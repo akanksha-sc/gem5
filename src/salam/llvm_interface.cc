@@ -1131,8 +1131,21 @@ LLVMInterface::constructStaticGraph()
         assert(sfunc);
         sfunc->initialize(&func, &vmap, &values, topName);
     }
-    if (functions.size() == 1) {
-        functions.front()->setTop(true);
+    if (topName.empty()) {
+        std::shared_ptr<SALAM::Function> sole_defined;
+        unsigned defined_count = 0;
+        for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
+            if (func_iter->isDeclaration())
+                continue;
+            defined_count++;
+            auto funcval = vmap.find(&*func_iter)->second;
+            assert(funcval);
+            sole_defined = std::dynamic_pointer_cast<SALAM::Function>(funcval);
+            assert(sole_defined);
+        }
+        if (defined_count == 1 && sole_defined) {
+            sole_defined->setTop(true);
+        }
     }
 
     // Detect Loop Latches

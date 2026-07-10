@@ -299,6 +299,10 @@ SALAM::APIntRegister::getSignedInt(size_t sizeInBits, bool incReads)
     }
     int64_t tmp;
     switch (sizeInBits) {
+        case 1: {
+            tmp = (data & 1) ? -1LL : 0LL;
+            break;
+        }
         case 8: {
             tmp = (int64_t)((int8_t)(data));
             break;

@@ -17,18 +17,17 @@ from m5.objects import (
     ArmFsWorkload,
     ArmRelease,
     Root,
+    SALAMTickEngine,
     SrcClockDomain,
     VExpress_GEM5_Base,
     VExpress_GEM5_V1,
     VoltageDomain,
 )
+from m5.proxy import isproxy
 from m5.util import fatal
 
 from gem5.components.boards.abstract_board import AbstractBoard
 from gem5.components.boards.arm_board import ArmBoard
-from gem5.components.boards.salam_tick_wiring import (
-    wire_missing_salam_tick_engines,
-)
 
 if TYPE_CHECKING:
     from gem5.components.cachehierarchies.abstract_cache_hierarchy import (
@@ -69,6 +68,49 @@ class SALAMClockConfig(NamedTuple):
     # where SPM falls back to the accelerator memory domain.
     spm_clock: Optional[str] = None
     spm_voltage: Optional[str] = None
+
+
+def _salam_spm_clk_domain(system):
+    return getattr(
+        system,
+        "acc_spm_clk_domain",
+        getattr(
+            system,
+            "acc_mem_clk_domain",
+            getattr(system, "acc_clk_domain", system.clk_domain),
+        ),
+    )
+
+
+def _salam_mem_clk_domain(system):
+    return getattr(
+        system,
+        "acc_mem_clk_domain",
+        getattr(system, "acc_clk_domain", system.clk_domain),
+    )
+
+
+def wire_missing_salam_tick_engines(system):
+    """Assign tick engines for ScratchpadMemory/RegisterBank at Parent.any."""
+    for obj in system.descendants():
+        kind = type(obj).__name__
+        if kind not in ("ScratchpadMemory", "RegisterBank"):
+            continue
+
+        tick_engine = getattr(obj, "tick_engine", None)
+        if tick_engine is not None and not isproxy(tick_engine):
+            continue
+
+        clk_domain = (
+            _salam_spm_clk_domain(system)
+            if kind == "ScratchpadMemory"
+            else _salam_mem_clk_domain(system)
+        )
+        engine = SALAMTickEngine(clk_domain=clk_domain)
+        obj.engine = engine
+        obj.tick_engine = engine
+        if kind == "ScratchpadMemory":
+            obj.access_latency_cycles = 1
 
 
 class SALAMArmBoard(ArmBoard):

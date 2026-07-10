@@ -31,6 +31,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import re
 from configparser import ConfigParser
 from pathlib import Path
 
@@ -95,6 +96,19 @@ def _load_accel_hw_profile(config_file, benchname, benchPath, m5PathLen):
         return yaml_inst_list["hw_config"].get(benchname)
 
 
+def _infer_top_name_from_ll(ll_path):
+    """Use the sole defined LLVM function symbol as top_name when unambiguous."""
+    try:
+        with open(ll_path, encoding="utf-8", errors="replace") as ll_file:
+            content = ll_file.read()
+    except OSError:
+        return None
+    defines = re.findall(r"^\s*define\b[^@]*@(\w+)", content, re.MULTILINE)
+    if len(defines) == 1:
+        return defines[0]
+    return None
+
+
 def AccConfig(acc, bench_file, config_file):
     # Initialize LLVMInterface Objects
     acc.llvm_interface = LLVMInterface()
@@ -109,6 +123,9 @@ def AccConfig(acc, bench_file, config_file):
 
     M5_Path = os.getenv("ACC_BENCH_PATH")
     benchname = os.path.splitext(os.path.basename(bench_file))[0]
+    acc.llvm_interface.top_name = (
+        _infer_top_name_from_ll(bench_file) or benchname
+    )
 
     # lenet config launcher custom stuff
     benchPath = Path(bench_file).parts
@@ -295,8 +312,8 @@ def AccConfig(acc, bench_file, config_file):
 
 
 def wire_missing_salam_tick_engines(system):
-    """Delegate to runtime wiring helper (legacy configs import this name)."""
-    from salam_pm.salam_tick_wiring import (
+    """Delegate to stdlib wiring helper (legacy configs import this name)."""
+    from gem5.components.boards.salam_arm_board import (
         wire_missing_salam_tick_engines as _wire,
     )
 

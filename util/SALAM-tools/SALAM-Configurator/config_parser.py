@@ -30,6 +30,22 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import os
+import re
+
+
+def _infer_top_name_from_ll(ll_path):
+    """Use the sole defined LLVM function symbol as top_name when unambiguous."""
+    try:
+        with open(ll_path, encoding="utf-8", errors="replace") as ll_file:
+            content = ll_file.read()
+    except OSError:
+        return None
+    defines = re.findall(r"^\s*define\b[^@]*@(\w+)", content, re.MULTILINE)
+    if len(defines) == 1:
+        return defines[0]
+    return None
+
 
 class AccCluster:
     def __init__(
@@ -276,6 +292,11 @@ class AccCluster:
                                 + self.type
                             )
                             raise Exception(exceptionString)
+            if ir_path and not top_name:
+                top_name = (
+                    _infer_top_name_from_ll(ir_path)
+                    or os.path.splitext(os.path.basename(ir_path))[0]
+                )
             # Append accelerator to the cluster
             acc_class.append(
                 Accelerator(
