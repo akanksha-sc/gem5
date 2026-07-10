@@ -329,6 +329,11 @@ def main():
         action="store_true",
         help="Skip running benchmarks; just parse existing traces",
     )
+    parser.add_argument(
+        "--write-report",
+        action="store_true",
+        help="Also run generate_validation_report.py after parsing",
+    )
     args = parser.parse_args()
 
     m5_path = os.path.abspath(args.m5_path)
@@ -364,6 +369,15 @@ def main():
         results[bench] = parse_kernel_metrics(trace_path, bench)
 
     print_results(results)
+
+    if args.write_report:
+        gen = os.path.join(
+            m5_path, "util/SALAM-tools/generate_validation_report.py"
+        )
+        subprocess.run(
+            [sys.executable, gen, "--m5-path", m5_path],
+            check=False,
+        )
 
 
 if __name__ == "__main__":
